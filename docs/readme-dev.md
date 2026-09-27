@@ -131,7 +131,7 @@ The reusable CLI package currently provides:
 
 ```sh
 workspace-release <package>=<version-spec>
-workspace-publish <package> [--registry=github|npm] [--tag=latest] [--access=public|restricted] [--dry-run]
+workspace-publish [<package>] [--registry=github|npm|both] [--tag=latest] [--access=public|restricted] [--dry-run]
 ```
 
 Examples:
@@ -141,6 +141,8 @@ workspace-release css-expand-collapse=patch
 workspace-publish css-expand-collapse --dry-run
 workspace-publish css-expand-collapse --registry=github
 workspace-publish css-expand-collapse --registry=npm --tag=next
+workspace-publish css-expand-collapse --registry=both
+workspace-publish --dry-run
 ```
 
 `workspace-release` preserves the package-qualified tag convention:
