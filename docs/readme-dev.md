@@ -248,3 +248,38 @@ jobs:
 Repositories that need additional or sectional screenshots can add `readme-screenshots.config.mjs`. For example, `pointer-bubble` can preserve its overview plus MapLibre capture by configuring the second screenshot with a stable selector. Prefer a dedicated `data-readme-screenshot` attribute over visible heading text so documentation automation does not break when copy changes.
 
 The generated screenshot files remain owned by the consuming repository. The reusable workflow starts the site, waits for its URL, invokes the shared capture package, and commits changed files from the configured output directory.
+
+
+## GitHub Pages
+
+The reusable `github-pages.yml` workflow builds and deploys a static site without assuming a framework, workspace name, build script, or output directory.
+
+A consuming repository keeps its trigger and repository-specific build details:
+
+```yaml
+name: GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  pages:
+    uses: moyarich/dev-toolkit/.github/workflows/github-pages.yml@v1
+    with:
+      build-command: npm run build:playground
+      output-directory: apps/playground/dist
+```
+
+Inputs:
+
+- `build-command` — required command that creates the static site.
+- `output-directory` — required path to the generated site, relative to `working-directory`.
+- `node-version` — defaults to Node 24.
+- `install-command` — defaults to `npm ci --include=optional`.
+- `working-directory` — defaults to the repository root.
+
+During the build, the workflow exposes Pages metadata as `PAGES_BASE_PATH`, `PAGES_BASE_URL`, and `PAGES_ORIGIN`. A consuming build can use these values when its framework needs an explicit repository base path. The toolkit does not assume Vite or rewrite application configuration.
+
+The workflow owns the standard Pages plumbing: checkout, Node setup, dependency installation, Pages configuration, build execution, artifact upload, deployment permissions, deployment environment, and deployment.
