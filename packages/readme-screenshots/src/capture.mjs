@@ -3,7 +3,7 @@ import { pathToFileURL } from "node:url";
 import { resolve } from "node:path";
 import { chromium } from "playwright";
 
-async function loadConfig(configPath) {
+export async function loadConfig(configPath) {
   const absolute = resolve(configPath);
   if (!existsSync(absolute)) return {};
   return (await import(pathToFileURL(absolute))).default || {};
