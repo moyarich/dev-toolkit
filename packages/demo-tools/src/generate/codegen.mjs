@@ -14,7 +14,8 @@ export function extractPageActions(source) {
   if (start === -1) throw new Error("Playwright codegen did not record any page actions.");
   const ends = ["// ---------------------", "await context.close()", "await browser.close()"]
     .map((marker) => source.indexOf(marker, start)).filter((index) => index !== -1);
-  const actions = source.slice(start, ends.length ? Math.min(...ends) : source.length);\n  return dedent(actions.replace(/^[ \\t]+(?=await page\\.)/gm, ""));
+  const actions = source.slice(start, ends.length ? Math.min(...ends) : source.length);
+  return dedent(actions.replace(/^[ \\t]+(?=await page\\.)/gm, ""));
 }
 
 export async function captureDemoStrategy({
