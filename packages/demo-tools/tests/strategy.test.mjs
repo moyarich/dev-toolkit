@@ -21,6 +21,13 @@ test("runDemoStrategy derives strategy context from its module URL", async () =>
   assert.match(received.artifactsDirectory, /tests[/\\]artifacts$/);
 });
 
-test("isMainModule is false when another module is imported", () => {
-  assert.equal(isMainModule(import.meta.url), false);
+test("isMainModule compares the module URL with the process entrypoint", () => {
+  const original = process.argv[1];
+  try {
+    process.argv[1] = new URL(import.meta.url).pathname;
+    assert.equal(isMainModule(import.meta.url), true);
+    assert.equal(isMainModule(new URL("./other.mjs", import.meta.url).href), false);
+  } finally {
+    process.argv[1] = original;
+  }
 });
