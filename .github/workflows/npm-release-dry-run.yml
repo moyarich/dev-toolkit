@@ -69,4 +69,9 @@ jobs:
       - name: Preview release
         env:
           NODE_AUTH_TOKEN: ${{ github.token }}
-        run: npx --yes @moyarich/workspace-tools workspace-release "$PACKAGE_KEY=$RELEASE_VALUE" --mode="${{ inputs.release-mode }}" --version="$RELEASE_VALUE" --dry-run
+        run: |
+          if [ -f packages/workspace-tools/bin/workspace-release.mjs ]; then
+            node packages/workspace-tools/bin/workspace-release.mjs "$PACKAGE_KEY=$RELEASE_VALUE" --mode="${{ inputs.release-mode }}" --version="$RELEASE_VALUE" --dry-run
+          else
+            npx --yes @moyarich/workspace-tools workspace-release "$PACKAGE_KEY=$RELEASE_VALUE" --mode="${{ inputs.release-mode }}" --version="$RELEASE_VALUE" --dry-run
+          fi
