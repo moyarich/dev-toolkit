@@ -1,32 +1,32 @@
-/** @typedef {"bubble" | "arrow"} DemoCaptionPointer */
+/** @typedef {"bubble" | "arrow"} CaptionPointer */
 
-/** @typedef {"top-left" | "top-right" | "bottom-left" | "bottom-right"} DemoCaptionPlacementName */
+/** @typedef {"top-left" | "top-right" | "bottom-left" | "bottom-right"} CaptionPlacementName */
 
-/** @typedef {"top" | "right" | "bottom" | "left"} DemoCaptionSide */
+/** @typedef {"top" | "right" | "bottom" | "left"} CaptionSide */
 
 /**
  * @typedef {
- *   DemoCaptionPlacementName
+ *   CaptionPlacementName
  *   | string
  *   | {top?: string, right?: string, bottom?: string, left?: string}
- *   | {x: number, y: number, side: DemoCaptionSide, offset?: number}
+ *   | {x: number, y: number, side: CaptionSide, offset?: number}
  *   | null
- * } DemoCaptionPlacement
+ * } CaptionPlacement
  */
 
 /**
- * @typedef {object} DemoCaption
+ * @typedef {object} Caption
  * @property {string} [title]
  * @property {string} [description]
- * @property {DemoCaptionPlacement} [placement]
- * @property {DemoCaptionPointer} [pointer]
+ * @property {CaptionPlacement} [placement]
+ * @property {CaptionPointer} [pointer]
  * @property {boolean} [visible]
  */
 
-import styleSheet from "./demo-caption-element-style.css" with { type: "css" };
+import styleSheet from "./caption-overlay-style.css" with { type: "css" };
 
-export class DemoCaptionElement extends HTMLElement {
-  static tagName = "demo-caption";
+export class CaptionOverlay extends HTMLElement {
+  static tagName = "moyarich-caption-overlay";
 
   static styleSheets = [styleSheet];
 
@@ -47,7 +47,7 @@ export class DemoCaptionElement extends HTMLElement {
 
   static pointers = new Set(["bubble", "arrow"]);
 
-  #caption = { ...DemoCaptionElement.defaults };
+  #caption = { ...CaptionOverlay.defaults };
 
   #pointer;
 
@@ -60,7 +60,7 @@ export class DemoCaptionElement extends HTMLElement {
 
     const shadowRoot = this.attachShadow({ mode: "open" });
 
-    shadowRoot.adoptedStyleSheets = DemoCaptionElement.styleSheets;
+    shadowRoot.adoptedStyleSheets = CaptionOverlay.styleSheets;
 
     const body = document.createElement("div");
     body.className = "caption__body";
@@ -90,10 +90,10 @@ export class DemoCaptionElement extends HTMLElement {
     this.#render();
   }
 
-  /** @param {DemoCaption} value */
+  /** @param {Caption} value */
   set caption(value) {
     const caption = {
-      ...DemoCaptionElement.defaults,
+      ...CaptionOverlay.defaults,
       ...value,
     };
 
@@ -101,15 +101,15 @@ export class DemoCaptionElement extends HTMLElement {
       ...caption,
       title: String(caption.title),
       description: String(caption.description),
-      pointer: DemoCaptionElement.pointers.has(caption.pointer)
+      pointer: CaptionOverlay.pointers.has(caption.pointer)
         ? caption.pointer
-        : DemoCaptionElement.defaults.pointer,
+        : CaptionOverlay.defaults.pointer,
     };
 
     this.#render();
   }
 
-  /** @returns {DemoCaption} */
+  /** @returns {Caption} */
   get caption() {
     const { placement } = this.#caption;
 
@@ -153,8 +153,8 @@ export class DemoCaptionElement extends HTMLElement {
   }
 
   /**
-   * @param {DemoCaptionPlacement} placement
-   * @returns {DemoCaptionSide | ""}
+   * @param {CaptionPlacement} placement
+   * @returns {CaptionSide | ""}
    */
   #resolveSide(placement) {
     return placement && typeof placement === "object" && "side" in placement
@@ -163,14 +163,14 @@ export class DemoCaptionElement extends HTMLElement {
   }
 
   /**
-   * @param {DemoCaptionPlacement} placement
+   * @param {CaptionPlacement} placement
    * @returns {string}
    */
   #resolveInset(placement) {
     if (typeof placement === "string") {
       const value = placement.trim();
 
-      return DemoCaptionElement.placements.get(value) ?? value;
+      return CaptionOverlay.placements.get(value) ?? value;
     }
 
     if (placement && typeof placement === "object") {
@@ -196,13 +196,13 @@ export class DemoCaptionElement extends HTMLElement {
     }
 
     return (
-      DemoCaptionElement.placements.get(
-        DemoCaptionElement.defaults.placement,
+      CaptionOverlay.placements.get(
+        CaptionOverlay.defaults.placement,
       ) ?? "auto"
     );
   }
 }
 
-if (!customElements.get(DemoCaptionElement.tagName)) {
-  customElements.define(DemoCaptionElement.tagName, DemoCaptionElement);
+if (!customElements.get(CaptionOverlay.tagName)) {
+  customElements.define(CaptionOverlay.tagName, CaptionOverlay);
 }

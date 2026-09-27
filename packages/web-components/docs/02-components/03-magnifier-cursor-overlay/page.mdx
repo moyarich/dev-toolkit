@@ -1,0 +1,41 @@
+# Magnifier cursor overlay
+
+`MagnifierCursorOverlay` renders a circular cursor lens that visually magnifies the rendered DOM beneath the pointer.
+
+## Import
+
+```js
+import {
+  MagnifierCursorOverlay,
+} from "@moyarich/web-components/magnifier-cursor-overlay";
+```
+
+Importing the module registers `<moyarich-magnifier-cursor-overlay>`.
+
+## Usage
+
+```html
+<moyarich-magnifier-cursor-overlay></moyarich-magnifier-cursor-overlay>
+```
+
+Or install it dynamically:
+
+```js
+import "@moyarich/web-components/magnifier-cursor-overlay";
+
+const magnifier = document.createElement(
+  "moyarich-magnifier-cursor-overlay",
+);
+
+document.documentElement.append(magnifier);
+```
+
+The magnifier copies computed styles so content rendered by systems such as Monaco can retain its visual presentation inside the lens. It also mirrors live form state, nested scroll positions, 2D canvas pixels when available, and native text-selection highlighting.
+
+Pointer, selection, mutation, scroll, and resize updates are coalesced with animation frames. The component observes only its current target subtree for DOM changes and can descend into open Shadow DOM while hit testing.
+
+Remove the element when the magnifier is no longer needed:
+
+```js
+magnifier.remove();
+```

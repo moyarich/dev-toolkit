@@ -1,28 +1,85 @@
-# Demo components
+# Presentation adapters
 
-Reusable presentation components include captions, cursor overlays, and a magnifier. The strategy controls when and where presentation appears.
+`@moyarich/demo-tools` controls the reusable custom elements provided by
+`@moyarich/web-components`. Web components owns rendering, styles,
+registration, and the browser-facing component API. Demo tools owns the
+Playwright/CDP automation used by strategies.
 
-## Captions
+For direct component usage, see the `@moyarich/web-components` documentation.
 
-Caption content and placement belong to the strategy:
+## Caption overlay
+
+Use the demo adapter when a Playwright strategy needs to show or hide a caption:
 
 ```js
+import {
+  hideDemoCaption,
+  showDemoCaption,
+} from "@moyarich/demo-tools/components";
+
 await showDemoCaption({
   page,
   caption: {
     title: "Open the color picker",
     description: "Select the CSS color to inspect it.",
-    position: "bottom-right",
+    placement: "bottom-right",
+    pointer: "bubble",
   },
 });
+
+// Perform the visible demo step.
+
+await hideDemoCaption({ page });
 ```
 
-The component owns rendering and positioning mechanics. The strategy owns the requested position, content, timing, and removal.
+The adapter installs and controls the registered
+`<moyarich-caption-overlay>` element. `CaptionOverlay` itself is exported by
+`@moyarich/web-components/caption`.
 
-That boundary also permits strategies to use more precise positioning or anchoring when supported by the component rather than forcing every demo into one global location.
+## Cursor overlay
 
-## VS Code and Trusted Types
+Install the standard cursor presentation with:
 
-Normal browser pages can load components using the standard component importer. VS Code pages may reject data-URL dynamic imports because of Trusted Types.
+```js
+import { installDemoCursor } from "@moyarich/demo-tools/components";
 
-`evaluateComponentViaCDP()` provides the lower-level CDP evaluation mechanism. The caller supplies the source transformation explicitly so component behavior remains visible rather than being hidden by a generic installer.
+await installDemoCursor({ page });
+```
+
+The adapter uses `<moyarich-cursor-overlay>`. The underlying `CursorOverlay`
+class belongs to `@moyarich/web-components/cursor-overlay`.
+
+## Magnifier cursor overlay
+
+For demos that need the magnifying cursor:
+
+```js
+import {
+  installDemoMagnifierCursorOverlay,
+  pointDemoMagnifierCursorAt,
+  removeDemoMagnifierCursorOverlay,
+} from "@moyarich/demo-tools/components";
+
+await installDemoMagnifierCursorOverlay({ page });
+
+await pointDemoMagnifierCursorAt({
+  page,
+  locator: page.getByRole("button", { name: "Inspect" }),
+});
+
+await removeDemoMagnifierCursorOverlay({ page });
+```
+
+The adapter uses `<moyarich-magnifier-cursor-overlay>`. The underlying
+`MagnifierCursorOverlay` class belongs to
+`@moyarich/web-components/magnifier-cursor-overlay`.
+
+## Lower-level component installation
+
+`importHTMLElement()` is available when a strategy needs to install a custom
+element module directly into a normal browser page.
+
+VS Code pages may reject data-URL dynamic imports because of Trusted Types.
+`evaluateComponentViaCDP()` provides the lower-level CDP evaluation mechanism.
+The caller supplies the source transformation explicitly so the implementation
+remains visible rather than being hidden behind a generic installer.

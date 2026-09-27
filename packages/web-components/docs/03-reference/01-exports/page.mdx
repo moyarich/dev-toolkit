@@ -1,0 +1,31 @@
+# Package exports
+
+The package root exports all component classes:
+
+```js
+import {
+  CaptionOverlay,
+  CursorOverlay,
+  MagnifierCursorOverlay,
+} from "@moyarich/web-components";
+```
+
+Each component also has a focused entry point:
+
+```js
+import { CaptionOverlay } from "@moyarich/web-components/caption";
+import { CursorOverlay } from "@moyarich/web-components/cursor-overlay";
+import {
+  MagnifierCursorOverlay,
+} from "@moyarich/web-components/magnifier-cursor-overlay";
+```
+
+Element modules are available when a consumer needs the concrete registration module directly:
+
+```js
+import "@moyarich/web-components/caption/element";
+import "@moyarich/web-components/cursor-overlay/element";
+import "@moyarich/web-components/magnifier-cursor-overlay/element";
+```
+
+The custom-element registry uses the `moyarich-` namespace while the JavaScript class names stay concise.

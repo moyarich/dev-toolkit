@@ -1,7 +1,7 @@
-import styleSheet from "./demo-cursor-overlay-element-style.css" with { type: "css" };
+import styleSheet from "./cursor-overlay-element-style.css" with { type: "css" };
 
-export class DemoCursorOverlay extends HTMLElement {
-  static tagName = "demo-cursor-overlay";
+export class CursorOverlay extends HTMLElement {
+  static tagName = "moyarich-cursor-overlay";
   static styleSheets = [styleSheet];
 
   #cursor;
@@ -25,7 +25,7 @@ export class DemoCursorOverlay extends HTMLElement {
       mode: "open",
     });
 
-    shadowRoot.adoptedStyleSheets = DemoCursorOverlay.styleSheets;
+    shadowRoot.adoptedStyleSheets = CursorOverlay.styleSheets;
 
     this.#cursor = document.createElement("div");
     this.#cursor.className = "cursor";
@@ -55,6 +55,6 @@ export class DemoCursorOverlay extends HTMLElement {
   }
 }
 
-if (!customElements.get(DemoCursorOverlay.tagName)) {
-  customElements.define(DemoCursorOverlay.tagName, DemoCursorOverlay);
+if (!customElements.get(CursorOverlay.tagName)) {
+  customElements.define(CursorOverlay.tagName, CursorOverlay);
 }

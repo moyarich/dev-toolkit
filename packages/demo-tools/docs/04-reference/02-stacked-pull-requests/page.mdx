@@ -1,0 +1,186 @@
+# Stacked pull requests
+
+When pull requests are stacked, every child branch depends on the current head of the branch directly below it.
+
+If an earlier PR changes after newer PRs have been created, sync those changes through every descendant in stack order before continuing development.
+
+```text
+PR A changes
+   ↓
+sync PR B onto new A
+   ↓
+sync PR C onto new B
+   ↓
+verify ancestry + PR-local diffs
+   ↓
+continue development
+```
+
+## Stash local work before syncing
+
+If the working tree contains unfinished changes, stash them before rebasing the stacked branch.
+
+Create a named stash:
+
+```sh
+git stash push -m "work in progress"
+```
+
+Include new or untracked files:
+
+```sh
+git stash push -u -m "work in progress"
+```
+
+Stash only selected files:
+
+```sh
+git stash push -m "demo-tools changes" -- path/to/file1 path/to/file2
+```
+
+List saved stashes:
+
+```sh
+git stash list
+```
+
+Restore the latest stash and remove it from the stash list:
+
+```sh
+git stash pop
+```
+
+Restore a stash without removing it:
+
+```sh
+git stash apply
+```
+
+Restore a specific stash:
+
+```sh
+git stash apply stash@{1}
+```
+
+Delete a specific stash after it is no longer needed:
+
+```sh
+git stash drop stash@{1}
+```
+
+A typical stash + stacked-PR repair flow is:
+
+```sh
+git stash push -u -m "before stack rebase"
+
+git fetch origin
+git rebase origin/<parent-branch>
+
+git stash pop
+```
+
+Resolve any rebase conflicts before restoring the stash. If `git stash pop` itself produces conflicts, resolve them in the working tree before continuing development.
+
+## Repair an out-of-sync child
+
+For the common case where a child branch is behind or diverged from its direct parent:
+
+```sh
+git fetch origin
+
+git switch <child-branch>
+git rebase origin/<parent-branch>
+git push --force-with-lease
+```
+
+This keeps the stack linear and replays the child's commits on top of the latest parent rather than introducing a synchronization merge commit.
+
+## Resolve conflicts
+
+If the rebase reports conflicts:
+
+```sh
+git status
+
+# Fix the conflicted files.
+git add <fixed-files>
+git rebase --continue
+```
+
+Repeat until the rebase completes, then push the rewritten child branch:
+
+```sh
+git push --force-with-lease
+```
+
+Prefer `--force-with-lease` over an unconditional force push.
+
+## Verify the stack
+
+Confirm that the current parent is an ancestor of the child:
+
+```sh
+git fetch origin
+
+git merge-base --is-ancestor \
+  origin/<parent-branch> \
+  origin/<child-branch>
+
+echo $?
+```
+
+An exit code of `0` means the parent → child ancestry is correct.
+
+Then inspect only the child PR's commits and diff:
+
+```sh
+git log --oneline \
+  origin/<parent-branch>..origin/<child-branch>
+
+git diff \
+  origin/<parent-branch>...origin/<child-branch>
+```
+
+The child diff should contain only that PR's intended changes. Changes belonging to an earlier PR appearing again in the child diff indicate that the stack still needs repair.
+
+## Repair a longer stack
+
+Always propagate changes from oldest to newest:
+
+```text
+PR A changes
+   ↓
+rebase PR B onto A
+   ↓
+push --force-with-lease B
+   ↓
+rebase PR C onto updated B
+   ↓
+push --force-with-lease C
+   ↓
+verify ancestry + PR-local diffs
+```
+
+Do not update C before B has been rebuilt on the latest A.
+
+## Explicitly replay the child delta
+
+For more complicated histories, when the old parent head is known, use `--onto`:
+
+```sh
+git rebase --onto <new-parent> <old-parent> <child-branch>
+```
+
+This explicitly takes the commits after `<old-parent>` that belong to the child branch and replays them on `<new-parent>`.
+
+## Pull request bases
+
+Each stacked PR targets its immediate parent branch:
+
+```text
+PR A: branch-a → main
+PR B: branch-b → branch-a
+PR C: branch-c → branch-b
+```
+
+After an earlier PR is amended, the stack is not synchronized until every descendant has been replayed, ancestry is correct, PR-local diffs are clean, and affected checks have been rerun.

@@ -1,0 +1,28 @@
+# Cursor overlay
+
+`CursorOverlay` renders a visual cursor that follows document mouse movement and animates pointer presses.
+
+## Import
+
+```js
+import { CursorOverlay } from "@moyarich/web-components/cursor-overlay";
+```
+
+Importing the module registers `<moyarich-cursor-overlay>`.
+
+## Usage
+
+```html
+<moyarich-cursor-overlay></moyarich-cursor-overlay>
+```
+
+Or create it from JavaScript:
+
+```js
+import "@moyarich/web-components/cursor-overlay";
+
+const cursor = document.createElement("moyarich-cursor-overlay");
+document.documentElement.append(cursor);
+```
+
+When connected, the component opens its popover and listens for mouse movement and mouse presses. Removing the element disconnects those document listeners.
