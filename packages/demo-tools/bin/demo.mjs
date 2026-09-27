@@ -2,6 +2,7 @@
 import { Command } from "commander";
 import { discoverDemoStrategies, runDemoStrategies, selectDemoStrategies } from "../src/index.mjs";
 import { captureDemoStrategy } from "../src/generate/index.mjs";
+import { launchBrowserDemo } from "../src/browser/index.mjs";
 import { encodeGif } from "../src/capture/index.mjs";
 
 const program = new Command()
@@ -66,7 +67,20 @@ program
   .argument("[name]", "strategy name")
   .option("-u, --url <url>", "page URL to record")
   .action(async (name, options) => {
-    await captureDemoStrategy({ name, url: options.url });
+    if (!name) throw new Error("demo create requires a strategy name.");
+    if (!options.url) throw new Error("demo create requires --url <url>.");
+    const { chromium } = await import("playwright-core");
+    const demo = await launchBrowserDemo({
+      chromium,
+      url: options.url,
+      launchOptions: { headless: false },
+    });
+    try {
+      const strategyFile = await captureDemoStrategy({ page: demo.page, name });
+      console.log(strategyFile);
+    } finally {
+      await demo.close();
+    }
   });
 
 program
