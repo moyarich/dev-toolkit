@@ -4,7 +4,7 @@ import { output, packageInfo, repositoryRoot, run } from "./workspace.mjs";
 const VALID_BUMPS = new Set(["major","minor","patch","premajor","preminor","prepatch","prerelease"]);
 const SEMVER = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/;
 
-export function release(argument) {
+export function parseReleaseArgument(argument) {
   if (!argument || !argument.includes("=")) {
     throw new Error("Usage: workspace-release <package>=<version|major|minor|patch|premajor|preminor|prepatch|prerelease>");
   }
@@ -16,6 +16,11 @@ export function release(argument) {
     throw new Error(`Invalid version: ${versionSpec}`);
   }
 
+  return { selector, versionSpec };
+}
+
+export function release(argument) {
+  const { selector, versionSpec } = parseReleaseArgument(argument);
   const root = repositoryRoot();
   const pkg = packageInfo(root, selector);
   if (output("git", ["status", "--porcelain"], { cwd: root })) {
