@@ -94,7 +94,7 @@ jobs:
 
       - name: Install dependencies
         working-directory: ${{ inputs.package-directory }}
-        run: npm install --include=optional
+        run: npm ci --include=optional
 
       - name: Configure release author
         run: |
