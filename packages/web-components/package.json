@@ -5,12 +5,12 @@
   "type": "module",
   "exports": {
     ".": "./src/index.mjs",
-    "./demo-caption": "./src/demo-caption/index.mjs",
-    "./demo-caption/element": "./src/demo-caption/demo-caption-element.mjs",
-    "./demo-cursor-overlay": "./src/demo-cursor-overlay/index.mjs",
-    "./demo-cursor-overlay/element": "./src/demo-cursor-overlay/demo-cursor-overlay-element.mjs",
-    "./demo-magnifier-cursor-overlay": "./src/demo-magnifier-cursor-overlay/index.mjs",
-    "./demo-magnifier-cursor-overlay/element": "./src/demo-magnifier-cursor-overlay/element.mjs"
+    "./caption": "./src/caption/index.mjs",
+    "./caption/element": "./src/caption/caption-element.mjs",
+    "./cursor-overlay": "./src/cursor-overlay/index.mjs",
+    "./cursor-overlay/element": "./src/cursor-overlay/cursor-overlay-element.mjs",
+    "./magnifier-cursor-overlay": "./src/magnifier-cursor-overlay/index.mjs",
+    "./magnifier-cursor-overlay/element": "./src/magnifier-cursor-overlay/element.mjs"
   },
   "files": [
     "src",
@@ -20,6 +20,6 @@
     "node": ">=22"
   },
   "scripts": {
-    "test": "node --check src/index.mjs && node --check src/demo-caption/demo-caption-element.mjs && node --check src/demo-cursor-overlay/demo-cursor-overlay-element.mjs && node --check src/demo-magnifier-cursor-overlay/element.mjs"
+    "test": "node --check src/index.mjs && node --check src/caption/caption-element.mjs && node --check src/cursor-overlay/cursor-overlay-element.mjs && node --check src/magnifier-cursor-overlay/element.mjs"
   }
 }
