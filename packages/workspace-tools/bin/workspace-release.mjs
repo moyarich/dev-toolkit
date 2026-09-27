@@ -2,7 +2,10 @@
 import { release } from "../src/release.mjs";
 
 try {
-  release(process.argv[2]);
+  const args = process.argv.slice(2);
+  const dryRun = args.includes("--dry-run");
+  const argument = args.find((arg) => !arg.startsWith("--"));
+  release(argument, { dryRun });
 } catch (error) {
   console.error(error.message);
   process.exitCode = 1;
