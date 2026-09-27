@@ -26,7 +26,7 @@
 import styleSheet from "./caption-overlay-style.css" with { type: "css" };
 
 export class CaptionOverlay extends HTMLElement {
-  static tagName = "moya-caption";
+  static tagName = "caption-overlay";
 
   static styleSheets = [styleSheet];
 
