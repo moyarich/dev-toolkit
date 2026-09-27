@@ -1,0 +1,28 @@
+# Getting started
+
+Create `readme-screenshots.config.mjs` in the consuming repository.
+
+```js
+export default {
+  url: "http://127.0.0.1:5173",
+  outputDir: "docs/screenshots",
+  viewport: { width: 1440, height: 1000 },
+  screenshots: [
+    { name: "playground-overview.png" },
+    {
+      name: "feature-example.png",
+      selector: '[data-readme-screenshot="feature-example"]',
+      scrollIntoView: true,
+      waitForMs: 500,
+    },
+  ],
+};
+```
+
+Start the application being captured, then run:
+
+```sh
+readme-screenshots
+```
+
+The default URL is `http://127.0.0.1:5173` and the default output directory is `docs/screenshots`.
