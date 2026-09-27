@@ -1,6 +1,42 @@
 name: Reusable README screenshots
 
 on:
+  workflow_dispatch:
+    inputs:
+      start-command:
+        description: Command that starts the site to capture
+        required: true
+        type: string
+      url:
+        description: URL to wait for and capture
+        required: true
+        default: http://127.0.0.1:5173
+        type: string
+      config:
+        description: Screenshot config file
+        required: false
+        default: ""
+        type: string
+      output-directory:
+        description: Directory containing generated screenshots
+        required: true
+        default: docs/screenshots
+        type: string
+      node-version:
+        description: Node.js version
+        required: true
+        default: "24"
+        type: string
+      playwright-version:
+        description: Playwright version
+        required: true
+        default: "1.55.0"
+        type: string
+      commit-message:
+        description: Commit message for changed screenshots
+        required: true
+        default: "docs: update README screenshots"
+        type: string
   workflow_call:
     inputs:
       start-command:
