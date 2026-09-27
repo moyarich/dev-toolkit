@@ -1,7 +1,7 @@
 import { importHTMLElement } from "./import-html-element.mjs";
 
-const captionUrl = new URL("./demo-caption/demo-caption-element.mjs", import.meta.url);
-const cursorUrl = new URL("./demo-cursor-overlay/demo-cursor-overlay-element.mjs", import.meta.url);
+const captionUrl = new URL(import.meta.resolve("@moyarich/web-components/demo-caption/element"));
+const cursorUrl = new URL(import.meta.resolve("@moyarich/web-components/demo-cursor-overlay/element"));
 
 export async function installDemoCursor({ page }) {
   const tagName = "demo-cursor-overlay";
