@@ -1,1 +1,1 @@
-export { DemoCursorOverlay } from "./demo-cursor-overlay-element.mjs";
+export { DemoCursorOverlay } from "@moyarich/web-components/demo-cursor-overlay";
