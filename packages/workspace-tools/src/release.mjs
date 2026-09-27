@@ -2,6 +2,7 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { resolve } from "node:path";
 import { output, packageInfo, repositoryRoot, run } from "./workspace.mjs";
+import { assertDependencies, dependencyCheck, printDependencyCheck } from "./dependency-check.mjs";
 
 const VALID_BUMPS = new Set(["major","minor","patch","premajor","preminor","prepatch","prerelease"]);
 const RELEASE_MODES = new Set(["bump", "exact", "current"]);
@@ -115,6 +116,10 @@ export function release(argument, options = {}) {
   if (output("git", ["status", "--porcelain"], { cwd: root })) {
     throw new Error("Working tree must be clean before creating a package release.");
   }
+
+  const dependencies = dependencyCheck(root, pkg);
+  printDependencyCheck(dependencies);
+  assertDependencies(dependencies);
 
   if (options.dryRun) {
     let nextVersion = pkg.manifest.version;
