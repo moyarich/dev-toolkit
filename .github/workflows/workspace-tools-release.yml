@@ -33,7 +33,7 @@ on:
       dry-run:
         description: Preview release without changing or publishing
         required: true
-        default: false
+        default: true
         type: boolean
       auto-publish:
         description: Publish after release
