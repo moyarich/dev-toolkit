@@ -1,7 +1,7 @@
 import styleSheet from "./cursor-overlay-element-style.css" with { type: "css" };
 
 export class CursorOverlay extends HTMLElement {
-  static tagName = "cursor-overlay";
+  static tagName = "moyarich-cursor-overlay";
   static styleSheets = [styleSheet];
 
   #cursor;
