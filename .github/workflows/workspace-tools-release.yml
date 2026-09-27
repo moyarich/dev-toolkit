@@ -30,6 +30,11 @@ on:
         required: false
         default: ""
         type: string
+      dry-run:
+        description: Preview release without changing or publishing
+        required: true
+        default: false
+        type: boolean
       auto-publish:
         description: Publish after release
         required: true
@@ -58,6 +63,7 @@ jobs:
       release-mode: ${{ inputs.release-mode }}
       release-bump: ${{ inputs.release-bump }}
       exact-version: ${{ inputs.exact-version }}
+      dry-run: ${{ inputs.dry-run }}
       auto-publish: ${{ inputs.auto-publish }}
       registry: ${{ inputs.registry }}
       tag: ${{ inputs.tag }}
