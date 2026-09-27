@@ -4,6 +4,40 @@
 
 Keep changes small, explicit, and scoped to the package or concern being changed. Preserve package ownership boundaries and avoid moving implementation behind unnecessary abstractions.
 
+## Pull requests
+
+Keep pull requests focused on the change they introduce.
+
+Before creating or updating a PR:
+
+- inspect the PR-local diff and include only the intended change;
+- use a concise title that describes that change;
+- keep the PR body short and limited to information needed to understand or review the PR;
+- do not add unrelated history, commentary, troubleshooting notes, implementation narration, or information already obvious from the diff;
+- do not describe changes inherited from a parent PR as though they belong to the child PR;
+- mention stack relationships only when needed to identify the immediate parent or review order;
+- run the relevant checks before considering the PR ready.
+
+When creating a normal PR, target the intended integration branch, usually `main`.
+
+When creating a stacked PR, target the immediate parent branch:
+
+```text
+PR A: branch-a -> main
+PR B: branch-b -> branch-a
+PR C: branch-c -> branch-b
+```
+
+Before opening the PR, verify its local delta against the intended base:
+
+```sh
+git fetch origin
+git log --oneline origin/<base-branch>..HEAD
+git diff origin/<base-branch>...HEAD
+```
+
+Create the PR only after the diff contains exactly the work intended for that PR. After creation, confirm the PR base is still the intended branch and keep the title/body synchronized with the PR-local delta as the stack changes.
+
 ## Stacked pull requests
 
 This repository uses stacked pull requests. Treat the stack as an ordered dependency chain: every newer PR contains and depends on the final head of the PR directly below it.
