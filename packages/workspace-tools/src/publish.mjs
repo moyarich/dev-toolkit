@@ -1,6 +1,6 @@
-import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { basename, join, resolve } from "node:path";
+import { join, resolve } from "node:path";
 import { packageInfo, repositoryRoot, run, workspacePublishOrder } from "./workspace.mjs";
 
 function registryConfig(registry) {
@@ -11,6 +11,41 @@ function registryConfig(registry) {
       return { url: "https://registry.npmjs.org", host: "registry.npmjs.org", token: process.env._NPM_TOKEN || process.env.NODE_AUTH_TOKEN };
     default:
       throw new Error("Registry must be github, npm, or both.");
+  }
+}
+
+function destinations(registry) {
+  return registry === "both" ? ["github", "npm"] : [registry];
+}
+
+export function packageRegistryState(pkg, registry) {
+  const config = registryConfig(registry);
+  const args = ["view", `${pkg.manifest.name}@${pkg.manifest.version}`, "version", "--registry", config.url, "--json"];
+  const env = { ...process.env };
+  if (config.token) env.NODE_AUTH_TOKEN = config.token;
+
+  try {
+    run("npm", args, { env, stdio: "pipe" });
+    return "published";
+  } catch (error) {
+    const output = `${error?.stdout ?? ""}\n${error?.stderr ?? ""}\n${error?.message ?? ""}`;
+    if (/E404|404 Not Found|is not in this registry/i.test(output)) return "missing";
+    throw new Error(`Could not check ${pkg.manifest.name}@${pkg.manifest.version} on ${registry}: ${error.message}`);
+  }
+}
+
+function publishPlan(packages, registry) {
+  return packages.map((pkg) => ({
+    pkg,
+    registries: Object.fromEntries(destinations(registry).map((destination) => [destination, packageRegistryState(pkg, destination)])),
+  }));
+}
+
+function printPlan(plan) {
+  console.log("\nPublish plan:");
+  for (const { pkg, registries } of plan) {
+    console.log(`${pkg.manifest.name}@${pkg.manifest.version}`);
+    for (const [registry, state] of Object.entries(registries)) console.log(`  ${registry}  ${state}`);
   }
 }
 
@@ -68,22 +103,29 @@ export function publish({ selector, registry = "github", tag = "latest", access 
   if (!selector) throw new Error("A package selector is required for publishing.");
   const pkg = packageInfo(root, selector);
   const packages = withDependencies ? workspacePublishOrder(root, pkg) : [pkg];
+  const plan = publishPlan(packages, registry);
 
-  if (list) {
-    console.log("\nPublish plan:");
-    for (const item of packages) console.log(`${item.manifest.name}@${item.manifest.version}`);
-    if (!dryRun) return;
-  }
+  if (list) printPlan(plan);
 
-  for (const item of packages) validate(root, item);
+  const pendingPackages = plan.filter(({ registries }) => Object.values(registries).includes("missing")).map(({ pkg }) => pkg);
+  if (list && !dryRun) return;
+
+  for (const item of pendingPackages) validate(root, item);
 
   if (dryRun) {
-    console.log(`\nRelease checks passed for ${packages.map((item) => item.manifest.name).join(", ")}. Nothing was published.`);
+    const names = pendingPackages.map((item) => item.manifest.name);
+    console.log(names.length
+      ? `\nRelease checks passed for ${names.join(", ")}. Nothing was published.`
+      : "\nAll selected package versions are already published. Nothing to validate or publish.");
     return;
   }
 
-  for (const item of packages) {
-    for (const destination of registry === "both" ? ["github", "npm"] : [registry]) {
+  for (const { pkg: item, registries } of plan) {
+    for (const destination of destinations(registry)) {
+      if (registries[destination] === "published") {
+        console.log(`Skipping ${item.manifest.name}@${item.manifest.version} on ${destination}: already published.`);
+        continue;
+      }
       publishOne(root, item, destination, tag, access);
     }
   }
