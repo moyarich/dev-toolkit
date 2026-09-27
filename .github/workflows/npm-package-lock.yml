@@ -1,4 +1,4 @@
-name: Reusable package lockfile
+name: Reusable - update package lockfile
 
 on:
   workflow_dispatch:
