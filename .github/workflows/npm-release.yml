@@ -68,6 +68,7 @@ jobs:
         with:
           node-version: ${{ inputs.node-version }}
           cache: npm
+          cache-dependency-path: ${{ inputs.package-directory }}/package-lock.json
 
       - name: Resolve package
         env:
