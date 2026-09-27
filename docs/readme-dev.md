@@ -175,3 +175,53 @@ The migration deliberately separates:
 - repository-specific triggers, playground builds, browser tests, and package-specific checks → consuming repositories.
 
 Until `@moyarich/workspace-tools` has an initial published version, consumers should not depend on `npx @moyarich/workspace-tools` from reusable workflows. Publish/version the package first, then pin consumers to an appropriate released version.
+
+
+## README screenshot tooling
+
+`@moyarich/readme-screenshots` extracts the reusable README screenshot automation originally used by `pointer-bubble`.
+
+The package intentionally does not know about a specific playground, framework, heading, component, or screenshot filename. Consumers provide those details in `readme-screenshots.config.mjs`.
+
+```js
+export default {
+  url: "http://127.0.0.1:5173",
+  outputDir: "docs/screenshots",
+  screenshots: [
+    { name: "playground-overview.png" },
+    {
+      name: "feature-example.png",
+      selector: '[data-readme-screenshot="feature-example"]',
+      scrollIntoView: true,
+      waitForMs: 500,
+    },
+  ],
+};
+```
+
+Run locally with:
+
+```sh
+readme-screenshots
+readme-screenshots path/to/config.mjs
+```
+
+The reusable workflow accepts the site start command, URL, config path, output directory, Node version, Playwright version, and commit message. A consumer keeps only its trigger and repository-specific inputs:
+
+```yaml
+name: README screenshots
+
+on:
+  workflow_dispatch:
+
+jobs:
+  screenshots:
+    uses: moyarich/dev-toolkit/.github/workflows/readme-screenshots.yml@v1
+    with:
+      start-command: npm run dev --workspace @scope/playground -- --host 127.0.0.1
+      url: http://127.0.0.1:5173
+      config: readme-screenshots.config.mjs
+      output-directory: docs/screenshots
+```
+
+The workflow commits only the configured output directory when generated screenshots change.
