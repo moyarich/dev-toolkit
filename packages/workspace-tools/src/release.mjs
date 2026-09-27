@@ -52,20 +52,24 @@ export function changelogSection(version, notes) {
   return `## ${version}\n\n${sections.join("\n\n") || "### Changed\n\n- Package release."}\n`;
 }
 
-function previousReleaseTag(root, selector) {
+function previousReleaseRef(root, selector) {
   const tags = output("git", ["tag", "--list", `${selector}@*`, "--sort=-version:refname"], { cwd: root });
-  return tags.split("\n").find(Boolean) || null;
+  const tag = tags.split("\n").find(Boolean);
+  if (tag) return tag;
+
+  const commit = output("git", ["log", "-n", "1", "--format=%H", "--grep", `^release: ${selector}@[0-9]`], { cwd: root });
+  return commit || null;
 }
 
-function packageChanges(root, pkg, previousTag) {
-  const range = previousTag ? `${previousTag}..HEAD` : "HEAD";
+function packageChanges(root, pkg, previousRef) {
+  const range = previousRef ? `${previousRef}..HEAD` : "HEAD";
   const log = output("git", ["log", range, "--format=%B%x1e", "--", pkg.directory], { cwd: root });
   return log ? log.split("\x1e").map((message) => message.trim()).filter(Boolean) : [];
 }
 
 function updateChangelog(root, pkg, version, selector) {
   const changelog = resolve(root, pkg.directory, "CHANGELOG.md");
-  const previous = previousReleaseTag(root, selector);
+  const previous = previousReleaseRef(root, selector);
   const section = changelogSection(version, releaseNotes(packageChanges(root, pkg, previous)));
   const existing = existsSync(changelog) ? readFileSync(changelog, "utf8") : "# Changelog\n";
   const body = existing.replace(/^# Changelog\s*/, "");
