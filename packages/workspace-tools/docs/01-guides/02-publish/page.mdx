@@ -1,0 +1,45 @@
+# Publish packages
+
+Publish a selected workspace:
+
+```sh
+workspace-publish css-expand-collapse
+```
+
+GitHub Packages is the default registry.
+
+## Dry run
+
+Validate one package without publishing:
+
+```sh
+workspace-publish css-expand-collapse --dry-run
+```
+
+Validate every non-private package under `packages/*`:
+
+```sh
+workspace-publish --dry-run
+```
+
+Validation runs available `typecheck`, `test`, and `build` scripts and then runs `npm pack --dry-run`.
+
+## Registries
+
+```sh
+workspace-publish css-expand-collapse --registry=github
+workspace-publish css-expand-collapse --registry=npm
+workspace-publish css-expand-collapse --registry=both
+```
+
+GitHub Packages requires `_GITHUB_TOKEN` or `NODE_AUTH_TOKEN`.
+
+npm staged publishing requires `_NPM_TOKEN` or `NODE_AUTH_TOKEN`. The npm path uses `npm stage publish`, so the staged release still requires approval before it becomes public.
+
+Other options:
+
+```sh
+--tag=latest
+--access=public
+--access=restricted
+```
