@@ -1,0 +1,37 @@
+# Create a release
+
+Run `workspace-release` with the package directory and version separated by `=`:
+
+```sh
+workspace-release css-expand-collapse=patch
+workspace-release css-expand-collapse=minor
+workspace-release css-expand-collapse=1.2.0
+```
+
+Supported npm version keywords are:
+
+```text
+major
+minor
+patch
+premajor
+preminor
+prepatch
+prerelease
+```
+
+The working tree must be clean.
+
+The command uses `npm version` without npm-created Git tags, updates the workspace version, stages the package manifest and root lockfile, creates a commit such as:
+
+```text
+release: css-expand-collapse@1.2.0
+```
+
+and creates the corresponding package-qualified Git tag.
+
+Push the release commit and tag with:
+
+```sh
+git push --follow-tags
+```
