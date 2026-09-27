@@ -32,6 +32,8 @@ jobs:
         with:
           node-version: ${{ inputs.node-version }}
           cache: npm
+          registry-url: https://npm.pkg.github.com
+          scope: "@moyarich"
       - name: Resolve package
         env:
           PACKAGE_DIRECTORY: ${{ inputs.package-directory }}
@@ -47,7 +49,12 @@ jobs:
           esac
           echo "PACKAGE_KEY=$PACKAGE_KEY" >> "$GITHUB_ENV"
       - run: npm ci --include=optional
+        env:
+          NODE_AUTH_TOKEN: ${{ github.token }}
       - name: Preview release
         env:
           RELEASE_VERSION: ${{ inputs.version }}
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+          NODE_AUTH_TOKEN: ${{ github.token }}
         run: npx --yes @moyarich/workspace-tools workspace-release "$PACKAGE_KEY=$RELEASE_VERSION" --dry-run
