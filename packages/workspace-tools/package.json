@@ -1,0 +1,17 @@
+{
+  "name": "@moyarich/workspace-tools",
+  "version": "0.0.0",
+  "description": "Reusable workspace release and publishing tools.",
+  "type": "module",
+  "bin": {
+    "workspace-release": "./bin/workspace-release.mjs",
+    "workspace-publish": "./bin/workspace-publish.mjs"
+  },
+  "files": [
+    "bin",
+    "src"
+  ],
+  "engines": {
+    "node": ">=22"
+  }
+}
