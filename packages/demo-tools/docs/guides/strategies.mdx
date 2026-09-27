@@ -1,0 +1,39 @@
+# Strategies
+
+A strategy is the unit of demo ownership. It owns the story and can be run directly.
+
+```js
+import { executableDemoStrategy } from "@moyarich/demo-tools";
+
+export default executableDemoStrategy({
+  name: "basic-colors",
+  description: "Demonstrate CSS color parsing.",
+  tags: ["browser", "colors"],
+
+  async run({ strategyDirectory, artifactsDirectory }) {
+    // Explicit environment setup and demo steps.
+  },
+}, import.meta.url);
+```
+
+Run it without the CLI:
+
+```sh
+node demo/strategies/basic-colors/index.mjs
+```
+
+Or through the installed executable:
+
+```sh
+demo-strategy demo/strategies/basic-colors/index.mjs
+```
+
+## Discovery
+
+Discovery recursively recognizes `index.mjs` and `*.strategy.mjs`. The declared `name` is the stable strategy ID; directory names are organizational. Hidden directories, `node_modules`, and `artifacts` are ignored. Duplicate names are rejected.
+
+Importing a directly executable strategy for discovery does not intentionally run its demo.
+
+## Ownership
+
+Keep fixtures, strategy-specific helpers, assertions, and product-specific behavior beside the strategy. Import shared helpers only when the behavior is genuinely reusable.
