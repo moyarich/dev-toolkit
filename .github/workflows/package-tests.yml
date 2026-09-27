@@ -24,7 +24,7 @@ jobs:
       - id: packages
         name: Discover packages with tests
         shell: bash
-        run: echo "packages=$(node scripts/discover-test-packages.mjs \"${{ inputs.packages-directory }}\")" >> "$GITHUB_OUTPUT"
+        run: echo "packages=$(node scripts/discover-test-packages.mjs "${{ inputs.packages-directory }}")" >> "$GITHUB_OUTPUT"
 
   test:
     needs: discover
