@@ -10,7 +10,9 @@
     ".": "./src/index.mjs",
     "./strategy": "./src/strategy.mjs",
     "./utils": "./src/utils/index.mjs",
-    "./vscode": "./src/vscode/index.mjs"
+    "./vscode": "./src/vscode/index.mjs",
+    "./capture": "./src/capture/index.mjs",
+    "./browser": "./src/browser/index.mjs"
   },
   "files": [
     "bin",
@@ -23,10 +25,14 @@
     "node": ">=22"
   },
   "peerDependencies": {
-    "@vscode/test-electron": ">=2.5.0"
+    "@vscode/test-electron": ">=2.5.0",
+    "playwright-core": ">=1.55.0"
   },
   "peerDependenciesMeta": {
     "@vscode/test-electron": {
+      "optional": true
+    },
+    "playwright-core": {
       "optional": true
     }
   }
