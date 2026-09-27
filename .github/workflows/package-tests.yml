@@ -1,6 +1,18 @@
 name: Reusable Package Tests
 
 on:
+  workflow_dispatch:
+    inputs:
+      node-version:
+        description: Node.js version used to run package tests
+        required: true
+        default: "22"
+        type: string
+      packages-directory:
+        description: Directory containing workspace packages
+        required: true
+        default: packages
+        type: string
   workflow_call:
     inputs:
       node-version:
