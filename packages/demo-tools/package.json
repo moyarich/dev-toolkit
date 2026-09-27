@@ -15,10 +15,7 @@
     "./capture": "./src/capture/index.mjs",
     "./browser": "./src/browser/index.mjs",
     "./components": "./src/components/index.mjs",
-    "./components/demo-caption": "./src/components/demo-caption/index.mjs",
-    "./components/demo-cursor-overlay": "./src/components/demo-cursor-overlay/index.mjs",
-    "./generate": "./src/generate/index.mjs",
-    "./components/demo-magnifier-cursor-overlay": "./src/components/demo-magnifier-cursor-overlay/index.mjs"
+    "./generate": "./src/generate/index.mjs"
   },
   "files": [
     "bin",
