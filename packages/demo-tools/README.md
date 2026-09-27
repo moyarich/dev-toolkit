@@ -101,6 +101,7 @@ The extended documentation is written in MDX so documentation sites can add inte
 - [Documentation index](./docs/page.mdx)
 - [Strategies](./docs/02-guides/01-strategies/page.mdx)
 - [CLI and discovery](./docs/04-reference/01-cli/page.mdx)
+- [Stacked pull requests](./docs/04-reference/02-stacked-pull-requests/page.mdx)
 - [Browser and browser-extension demos](./docs/03-environments/01-browser/page.mdx)
 - [VS Code demos](./docs/03-environments/02-vscode/page.mdx)
 - [Recording and media](./docs/02-guides/02-recording/page.mdx)
