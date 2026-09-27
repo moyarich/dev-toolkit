@@ -114,7 +114,12 @@ jobs:
       - name: Create release commit and tag
         env:
           NODE_AUTH_TOKEN: ${{ secrets.github-token || github.token }}
-        run: npx --yes @moyarich/workspace-tools workspace-release "$PACKAGE_KEY=$RELEASE_VALUE" --mode="${{ inputs.release-mode }}" --version="$RELEASE_VALUE"
+        run: |
+          if [ -f packages/workspace-tools/bin/workspace-release.mjs ]; then
+            node packages/workspace-tools/bin/workspace-release.mjs "$PACKAGE_KEY=$RELEASE_VALUE" --mode="${{ inputs.release-mode }}" --version="$RELEASE_VALUE"
+          else
+            npx --yes @moyarich/workspace-tools workspace-release "$PACKAGE_KEY=$RELEASE_VALUE" --mode="${{ inputs.release-mode }}" --version="$RELEASE_VALUE"
+          fi
 
       - name: Push release commit and tag
         run: git push origin "HEAD:$GITHUB_REF_NAME" --follow-tags
@@ -128,4 +133,9 @@ jobs:
         env:
           _GITHUB_TOKEN: ${{ secrets.github-token }}
           _NPM_TOKEN: ${{ secrets.npm-token }}
-        run: npx --yes @moyarich/workspace-tools workspace-publish "$PACKAGE_KEY" --registry="${{ inputs.registry }}" --tag="${{ inputs.tag }}"
+        run: |
+          if [ -f packages/workspace-tools/bin/workspace-publish.mjs ]; then
+            node packages/workspace-tools/bin/workspace-publish.mjs "$PACKAGE_KEY" --registry="${{ inputs.registry }}" --tag="${{ inputs.tag }}"
+          else
+            npx --yes @moyarich/workspace-tools workspace-publish "$PACKAGE_KEY" --registry="${{ inputs.registry }}" --tag="${{ inputs.tag }}"
+          fi
