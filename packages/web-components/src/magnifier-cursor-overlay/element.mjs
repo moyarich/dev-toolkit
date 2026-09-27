@@ -8,7 +8,7 @@ import styleSheet from "./styles.css" with { type: "css" };
  * the lens reflects what the user can currently see.
  */
 export class MagnifierCursorOverlay extends HTMLElement {
-  static tagName = "moya-magnifier-cursor-overlay";
+  static tagName = "magnifier-cursor-overlay";
   static styleSheets = [styleSheet];
   static maxDepth = 12;
   static maxTargetSize = 1.5;
