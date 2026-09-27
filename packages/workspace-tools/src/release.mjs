@@ -113,6 +113,7 @@ export function release(argument, options = {}) {
   if (mode === "exact" && !SEMVER.test(versionSpec)) throw new Error(`Invalid exact SemVer: ${versionSpec}`);
   const root = repositoryRoot();
   const pkg = packageInfo(root, selector);
+  if (pkg.manifest.private) throw new Error(`${pkg.manifest.name} is private and cannot be released.`);
   if (output("git", ["status", "--porcelain"], { cwd: root })) {
     throw new Error("Working tree must be clean before creating a package release.");
   }
