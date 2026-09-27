@@ -6,7 +6,7 @@ export function defineDemoStrategy(strategy) {
   if (!strategy || typeof strategy !== "object") throw new TypeError("A demo strategy must be an object.");
   if (!strategy.name || typeof strategy.name !== "string") throw new TypeError("A demo strategy requires a name.");
   if (typeof strategy.run !== "function") throw new TypeError(`Demo strategy "${strategy.name}" requires a run() function.`);
-  return Object.freeze({ ...strategy });
+  return Object.freeze({ tags: [], ...strategy, tags: Object.freeze([...(strategy.tags ?? [])]) });
 }
 
 export function isMainModule(moduleUrl) {
