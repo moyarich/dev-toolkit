@@ -44,11 +44,12 @@ jobs:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: ${{ inputs.node-version }}
-          cache: npm
       - name: Ensure staged publishing CLI support
         if: inputs.registry == 'npm'
         run: npm install --global npm@">=11.15.0 <12"
-      - run: npm ci --include=optional
+      - name: Install dependencies
+        working-directory: ${{ inputs.package-directory }}
+        run: npm install --include=optional
       - name: Resolve package and version
         env:
           PACKAGE_DIRECTORY: ${{ inputs.package-directory }}
