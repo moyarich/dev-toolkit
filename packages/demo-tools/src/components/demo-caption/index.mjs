@@ -1,1 +1,1 @@
-export { CaptionElement } from "@moyarich/web-components/caption";
+export { CaptionOverlay } from "@moyarich/web-components/caption";
