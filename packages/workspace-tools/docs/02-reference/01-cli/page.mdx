@@ -1,0 +1,24 @@
+# CLI reference
+
+The package installs two executables:
+
+```text
+workspace-release
+workspace-publish
+```
+
+## workspace-release
+
+```sh
+workspace-release <package>=<version>
+```
+
+The package value is the directory name under `packages/`.
+
+## workspace-publish
+
+```sh
+workspace-publish [package] [--registry=github|npm|both] [--tag=<tag>] [--access=public|restricted] [--dry-run]
+```
+
+A package selector is required for a real publish. It may be omitted only for an all-package dry run.
