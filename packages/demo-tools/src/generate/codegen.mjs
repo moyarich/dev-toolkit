@@ -49,7 +49,7 @@ export async function captureDemoStrategy({
   const actions = extractPageActions(await readFile(outputFile, "utf8"));
   const strategyFile = path.join(directory, strategyName, "index.mjs");
   await mkdir(path.dirname(strategyFile), { recursive: true });
-  const source = `import { defineDemoStrategy } from "@moyarich/demo-tools";\n\nexport default defineDemoStrategy({\n  name: ${JSON.stringify(strategyName)},\n  async run({ page }) {\n${actions.split("\n").map((line)=>`    ${line}`).join("\n")}\n  },\n});\n`;
+  const source = `import { executableDemoStrategy } from "@moyarich/demo-tools";\n\nexport default executableDemoStrategy({\n  name: ${JSON.stringify(strategyName)},\n  async run({ page }) {\n${actions.split("\n").map((line)=>`    ${line}`).join("\n")}\n  },\n}, import.meta.url);\n`;
   await writeFile(strategyFile, source, "utf8");
   return strategyFile;
 }
