@@ -106,7 +106,10 @@ export function publish({ selector, registry = "github", tag = "latest", access 
 
   if (!selector) throw new Error("A package selector is required for publishing.");
   const pkg = packageInfo(root, selector);
+  if (pkg.manifest.private) throw new Error(`${pkg.manifest.name} is private and cannot be published.`);
   const packages = withDependencies ? workspacePublishOrder(root, pkg) : [pkg];
+  const privateDependency = packages.find((item) => item.manifest.private);
+  if (privateDependency) throw new Error(`${privateDependency.manifest.name} is private and cannot be published as a dependency.`);
   const plan = publishPlan(packages, registry);
 
   if (list) printPlan(plan);
@@ -142,6 +145,7 @@ export function packageFromTag(tagName) {
   const version = tagName.slice(at + 1);
   const root = repositoryRoot();
   const pkg = packageInfo(root, selector);
+  if (pkg.manifest.private) throw new Error(`${pkg.manifest.name} is private and cannot be published.`);
   if (pkg.manifest.version !== version) {
     throw new Error(`Package version ${pkg.manifest.version} does not match tag ${tagName}.`);
   }
