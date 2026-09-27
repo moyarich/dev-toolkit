@@ -8,6 +8,10 @@ on:
         required: false
         type: string
         default: "22"
+    secrets:
+      package-token:
+        description: Token used to install packages from GitHub Packages
+        required: false
 
 jobs:
   test:
@@ -18,7 +22,11 @@ jobs:
         with:
           node-version: ${{ inputs.node-version }}
           cache: npm
+          registry-url: https://npm.pkg.github.com
+          scope: "@moyarich"
       - run: npm ci
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.package-token || github.token }}
       - run: npm test
       - run: npm run lint --if-present
       - run: npm run typecheck --if-present
