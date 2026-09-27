@@ -1,6 +1,6 @@
 {
   "name": "@moyarich/workspace-tools",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Reusable workspace release and publishing tools.",
   "type": "module",
   "bin": {
@@ -9,12 +9,23 @@
   },
   "files": [
     "bin",
-    "src"
+    "src",
+    "README.md",
+    "CHANGELOG.md"
   ],
   "engines": {
     "node": ">=22"
   },
   "scripts": {
     "test": "node --test tests/*.test.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/moyarich/dev-toolkit.git",
+    "directory": "packages/workspace-tools"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
+    "access": "public"
   }
 }
