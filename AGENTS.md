@@ -233,3 +233,18 @@ Do not treat an update to an earlier PR as complete until all of the following a
 - tests/checks are rerun where the inherited change can affect the descendant.
 
 This propagation is part of the original change, not optional cleanup.
+
+### Completion gate
+
+Any write to a branch that has open descendant PRs **must be treated as a stack-wide write**. The same task is not complete after the parent commit lands.
+
+Immediately after the parent write:
+
+1. discover every open descendant PR in stack order;
+2. replay each descendant's PR-local commits onto its parent's new head;
+3. update each descendant branch before making any unrelated change;
+4. verify every adjacent parent -> child pair is 0 commits behind;
+5. verify each descendant diff contains only its own intended delta;
+6. rerun affected checks on the updated heads.
+
+Do not wait for GitHub to report a conflict or mergeability failure. Do not report the parent fix as complete while any descendant still points to the old parent head. If a descendant cannot be synchronized, stop and report the stack as incomplete.
