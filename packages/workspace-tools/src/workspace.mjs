@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { execFileSync } from "node:child_process";
 
@@ -10,16 +10,30 @@ export function output(command, args, options = {}) {
   return execFileSync(command, args, { encoding: "utf8", ...options }).trim();
 }
 
+export function workspacePackages(root) {
+  const packagesDir = resolve(root, "packages");
+  if (!existsSync(packagesDir)) return [];
+  return readdirSync(packagesDir, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && existsSync(resolve(packagesDir, entry.name, "package.json")))
+    .map((entry) => {
+      const directory = `packages/${entry.name}`;
+      const file = resolve(root, directory, "package.json");
+      const manifest = JSON.parse(readFileSync(file, "utf8"));
+      return { directory, file, manifest };
+    })
+    .filter((pkg) => pkg.manifest.name);
+}
+
 export function packageInfo(root, selector) {
-  if (!/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(selector)) {
-    throw new Error("Package selector must be a package directory name under packages/.");
-  }
-  const directory = `packages/${selector}`;
-  const file = resolve(root, directory, "package.json");
-  if (!existsSync(file)) throw new Error(`Package not found: ${directory}`);
-  const manifest = JSON.parse(readFileSync(file, "utf8"));
-  if (!manifest.name) throw new Error(`${directory}/package.json is missing a package name.`);
-  return { directory, file, manifest };
+  const packages = workspacePackages(root);
+  const normalized = selector?.replace(/^\.\//, "");
+  const pkg = packages.find(({ directory, manifest }) =>
+    normalized === directory ||
+    normalized === directory.slice("packages/".length) ||
+    normalized === manifest.name
+  );
+  if (!pkg) throw new Error(`Package not found: ${selector}`);
+  return pkg;
 }
 
 export function repositoryRoot() {
