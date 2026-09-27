@@ -3,6 +3,11 @@ name: Reusable Node CI
 on:
   workflow_call:
     inputs:
+      package-directory:
+        description: Package directory containing package.json and package-lock.json
+        required: false
+        type: string
+        default: "."
       node-version:
         description: Node.js version used by CI
         required: false
@@ -22,11 +27,16 @@ jobs:
         with:
           node-version: ${{ inputs.node-version }}
           cache: npm
+          cache-dependency-path: ${{ inputs.package-directory }}/package-lock.json
           registry-url: https://npm.pkg.github.com
           scope: "@moyarich"
       - run: npm ci
+        working-directory: ${{ inputs.package-directory }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.package-token || github.token }}
       - run: npm test
+        working-directory: ${{ inputs.package-directory }}
       - run: npm run lint --if-present
+        working-directory: ${{ inputs.package-directory }}
       - run: npm run typecheck --if-present
+        working-directory: ${{ inputs.package-directory }}
