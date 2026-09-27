@@ -1,7 +1,8 @@
-import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { basename, join, resolve } from "node:path";
-import { packageInfo, repositoryRoot, run } from "./workspace.mjs";
+import { join, resolve } from "node:path";
+import { packageInfo, repositoryRoot, run, workspacePublishOrder } from "./workspace.mjs";
+import { assertDependencies, dependencyCheck, printDependencyCheck } from "./dependency-check.mjs";
 
 function registryConfig(registry) {
   switch (registry) {
@@ -14,8 +15,46 @@ function registryConfig(registry) {
   }
 }
 
+function destinations(registry) {
+  return registry === "both" ? ["github", "npm"] : [registry];
+}
+
+export function packageRegistryState(pkg, registry) {
+  const config = registryConfig(registry);
+  const args = ["view", `${pkg.manifest.name}@${pkg.manifest.version}`, "version", "--registry", config.url, "--json"];
+  const env = { ...process.env };
+  if (config.token) env.NODE_AUTH_TOKEN = config.token;
+
+  try {
+    run("npm", args, { env, stdio: "pipe" });
+    return "published";
+  } catch (error) {
+    const output = `${error?.stdout ?? ""}\n${error?.stderr ?? ""}\n${error?.message ?? ""}`;
+    if (/E404|404 Not Found|is not in this registry/i.test(output)) return "missing";
+    throw new Error(`Could not check ${pkg.manifest.name}@${pkg.manifest.version} on ${registry}: ${error.message}`);
+  }
+}
+
+function publishPlan(packages, registry) {
+  return packages.map((pkg) => ({
+    pkg,
+    registries: Object.fromEntries(destinations(registry).map((destination) => [destination, packageRegistryState(pkg, destination)])),
+  }));
+}
+
+function printPlan(plan) {
+  console.log("\nPublish plan:");
+  for (const { pkg, registries } of plan) {
+    console.log(`${pkg.manifest.name}@${pkg.manifest.version}`);
+    for (const [registry, state] of Object.entries(registries)) console.log(`  ${registry}  ${state}`);
+  }
+}
+
 function validate(root, pkg) {
   console.log(`\nValidating ${pkg.manifest.name}@${pkg.manifest.version} (${pkg.directory})`);
+  const dependencies = dependencyCheck(root, pkg);
+  printDependencyCheck(dependencies);
+  assertDependencies(dependencies);
   for (const script of ["typecheck", "test", "build"]) {
     run("npm", ["run", script, "--workspace", pkg.manifest.name, "--if-present"], { cwd: root });
   }
@@ -43,7 +82,7 @@ function publishOne(root, pkg, registry, tag, access) {
   }
 }
 
-export function publish({ selector, registry = "github", tag = "latest", access = "public", dryRun = false }) {
+export function publish({ selector, registry = "github", tag = "latest", access = "public", dryRun = false, list = false, withDependencies = false }) {
   if (!/^[A-Za-z][A-Za-z0-9._-]*$/.test(tag)) throw new Error("Invalid npm distribution tag.");
   if (!["public", "restricted"].includes(access)) throw new Error("Access must be public or restricted.");
   if (!["github", "npm", "both"].includes(registry)) throw new Error("Registry must be github, npm, or both.");
@@ -67,15 +106,35 @@ export function publish({ selector, registry = "github", tag = "latest", access 
 
   if (!selector) throw new Error("A package selector is required for publishing.");
   const pkg = packageInfo(root, selector);
-  validate(root, pkg);
+  if (pkg.manifest.private) throw new Error(`${pkg.manifest.name} is private and cannot be published.`);
+  const packages = withDependencies ? workspacePublishOrder(root, pkg) : [pkg];
+  const privateDependency = packages.find((item) => item.manifest.private);
+  if (privateDependency) throw new Error(`${privateDependency.manifest.name} is private and cannot be published as a dependency.`);
+  const plan = publishPlan(packages, registry);
+
+  if (list) printPlan(plan);
+
+  const pendingPackages = plan.filter(({ registries }) => Object.values(registries).includes("missing")).map(({ pkg }) => pkg);
+  if (list && !dryRun) return;
+
+  for (const item of pendingPackages) validate(root, item);
 
   if (dryRun) {
-    console.log(`\nRelease checks passed for ${pkg.manifest.name}. Nothing was published.`);
+    const names = pendingPackages.map((item) => item.manifest.name);
+    console.log(names.length
+      ? `\nRelease checks passed for ${names.join(", ")}. Nothing was published.`
+      : "\nAll selected package versions are already published. Nothing to validate or publish.");
     return;
   }
 
-  for (const destination of registry === "both" ? ["github", "npm"] : [registry]) {
-    publishOne(root, pkg, destination, tag, access);
+  for (const { pkg: item, registries } of plan) {
+    for (const destination of destinations(registry)) {
+      if (registries[destination] === "published") {
+        console.log(`Skipping ${item.manifest.name}@${item.manifest.version} on ${destination}: already published.`);
+        continue;
+      }
+      publishOne(root, item, destination, tag, access);
+    }
   }
 }
 
@@ -86,6 +145,7 @@ export function packageFromTag(tagName) {
   const version = tagName.slice(at + 1);
   const root = repositoryRoot();
   const pkg = packageInfo(root, selector);
+  if (pkg.manifest.private) throw new Error(`${pkg.manifest.name} is private and cannot be published.`);
   if (pkg.manifest.version !== version) {
     throw new Error(`Package version ${pkg.manifest.version} does not match tag ${tagName}.`);
   }

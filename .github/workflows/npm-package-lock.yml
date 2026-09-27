@@ -1,20 +1,8 @@
-name: Reusable - update package lockfile
+name: Reusable - update workspace lockfile
 
 on:
   workflow_dispatch:
     inputs:
-      package-directory:
-        description: Package location
-        required: true
-        default: "*"
-        type: choice
-        options:
-          - "*"
-          - "."
-          - packages/demo-tools
-          - packages/readme-screenshots
-          - packages/web-components
-          - packages/workspace-tools
       commit:
         description: Commit package-lock.json changes
         required: true
@@ -27,11 +15,6 @@ on:
         type: string
   workflow_call:
     inputs:
-      package-directory:
-        description: Package location, "." for root, or "*" for all packages
-        required: false
-        default: "*"
-        type: string
       commit:
         description: Commit package-lock.json changes
         required: false
@@ -54,88 +37,26 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: ${{ inputs.node-version }}
           registry-url: https://npm.pkg.github.com
           scope: "@moyarich"
-
-      - name: Validate package selection
+      - name: Update workspace lockfile
         env:
-          PACKAGE_DIRECTORY: ${{ inputs.package-directory }}
-        run: |
-          case "$PACKAGE_DIRECTORY" in
-            "*"|".") ;;
-            packages/*) test -f "$PACKAGE_DIRECTORY/package.json" ;;
-            *) echo "Package location must be ., *, or under packages/: $PACKAGE_DIRECTORY"; exit 1 ;;
-          esac
-
-      - name: Generate lockfiles
-        env:
-          PACKAGE_DIRECTORY: ${{ inputs.package-directory }}
           NODE_AUTH_TOKEN: ${{ secrets.package-token || github.token }}
-        run: |
-          generate_root() {
-            npm install --package-lock-only
-          }
-
-          generate_package() {
-            package="$1"
-            echo "Generating $package/package-lock.json"
-            (
-              cd "$package"
-              npm install --package-lock-only --workspaces=false
-            )
-          }
-
-          case "$PACKAGE_DIRECTORY" in
-            ".")
-              generate_root
-              ;;
-            "*")
-              generate_root
-              for package_json in packages/*/package.json; do
-                generate_package "${package_json%/package.json}"
-              done
-              ;;
-            packages/*)
-              generate_package "$PACKAGE_DIRECTORY"
-              ;;
-          esac
-
-      - name: Verify lockfiles
-        env:
-          PACKAGE_DIRECTORY: ${{ inputs.package-directory }}
-        run: |
-          case "$PACKAGE_DIRECTORY" in
-            ".") test -f package-lock.json ;;
-            "*")
-              test -f package-lock.json
-              for package_json in packages/*/package.json; do
-                test -f "${package_json%/package.json}/package-lock.json"
-              done
-              ;;
-            packages/*) test -f "$PACKAGE_DIRECTORY/package-lock.json" ;;
-          esac
-
-      - name: Commit lockfiles
+        run: npm install --package-lock-only
+      - name: Verify workspace lockfile
+        run: test -f package-lock.json
+      - name: Commit workspace lockfile
         if: ${{ inputs.commit }}
-        env:
-          PACKAGE_DIRECTORY: ${{ inputs.package-directory }}
         run: |
-          case "$PACKAGE_DIRECTORY" in
-            ".") git add package-lock.json ;;
-            "*") git add package-lock.json packages/*/package-lock.json ;;
-            packages/*) git add "$PACKAGE_DIRECTORY/package-lock.json" ;;
-          esac
-
+          git add package-lock.json
           if git diff --cached --quiet; then
             echo "No lockfile changes."
             exit 0
           fi
-
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "chore(packages): update package lockfiles"
+          git commit -m "chore(workspaces): update package lockfile"
           git push origin "HEAD:$GITHUB_REF_NAME"

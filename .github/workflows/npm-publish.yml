@@ -47,8 +47,7 @@ jobs:
       - name: Ensure staged publishing CLI support
         if: inputs.registry == 'npm'
         run: npm install --global npm@">=11.15.0 <12"
-      - name: Install dependencies
-        working-directory: ${{ inputs.package-directory }}
+      - name: Install workspace dependencies
         run: npm ci --include=optional
       - name: Resolve package and version
         env:
@@ -79,7 +78,7 @@ jobs:
           _NPM_TOKEN: ${{ secrets.npm-token }}
         run: |
           if [ -f packages/workspace-tools/bin/workspace-publish.mjs ]; then
-            node packages/workspace-tools/bin/workspace-publish.mjs "$PACKAGE_KEY" --registry="${{ inputs.registry }}" --tag="${{ inputs.tag }}"
+            node packages/workspace-tools/bin/workspace-publish.mjs "$PACKAGE_DIRECTORY" --registry="${{ inputs.registry }}" --tag="${{ inputs.tag }}"
           else
-            npx --yes @moyarich/workspace-tools workspace-publish "$PACKAGE_KEY" --registry="${{ inputs.registry }}" --tag="${{ inputs.tag }}"
+            npx --yes @moyarich/workspace-tools workspace-publish "$PACKAGE_DIRECTORY" --registry="${{ inputs.registry }}" --tag="${{ inputs.tag }}"
           fi

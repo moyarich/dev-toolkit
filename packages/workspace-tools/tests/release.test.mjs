@@ -22,9 +22,9 @@ test("parseReleaseArgument rejects malformed input and versions", () => {
   assert.throws(() => parseReleaseArgument("demo-tools=banana"), /Invalid version/);
 });
 
-test("packageInfo rejects selectors that can escape packages", () => {
+test("packageInfo rejects selectors that can escape configured workspaces", () => {
   assert.throws(() => packageInfo(process.cwd(), "../demo-tools"), /Package selector/);
-  assert.throws(() => packageInfo(process.cwd(), "demo/tools"), /Package selector/);
+  assert.throws(() => packageInfo(process.cwd(), "packages/../demo-tools"), /Package selector/);
 });
 
 test("releaseNotes groups package changes for consumers", () => {
