@@ -4,6 +4,7 @@ import { resolve } from "node:path";
 import { output, packageInfo, repositoryRoot, run } from "./workspace.mjs";
 
 const VALID_BUMPS = new Set(["major","minor","patch","premajor","preminor","prepatch","prerelease"]);
+const RELEASE_MODES = new Set(["bump", "exact", "current"]);
 const SEMVER = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/;
 
 export function parseReleaseArgument(argument) {
@@ -103,7 +104,12 @@ function updateChangelog(root, pkg, version, selector) {
 }
 
 export function release(argument, options = {}) {
-  const { selector, versionSpec } = parseReleaseArgument(argument);
+  const { selector, versionSpec: argumentVersionSpec } = parseReleaseArgument(argument);
+  const mode = options.mode || "bump";
+  if (!RELEASE_MODES.has(mode)) throw new Error(`Invalid release mode: ${mode}`);
+  const versionSpec = mode === "current" ? null : (options.version || argumentVersionSpec);
+  if (mode === "bump" && !VALID_BUMPS.has(versionSpec)) throw new Error(`Invalid release bump: ${versionSpec}`);
+  if (mode === "exact" && !SEMVER.test(versionSpec)) throw new Error(`Invalid exact SemVer: ${versionSpec}`);
   const root = repositoryRoot();
   const pkg = packageInfo(root, selector);
   if (output("git", ["status", "--porcelain"], { cwd: root })) {
@@ -111,13 +117,15 @@ export function release(argument, options = {}) {
   }
 
   if (options.dryRun) {
-    const version = output("npm", ["version", versionSpec, "--workspace", pkg.manifest.name, "--git-tag-version=false", "--dry-run", "--json"], { cwd: root });
-    let nextVersion;
-    try {
-      const result = JSON.parse(version);
-      nextVersion = result[pkg.manifest.name] || Object.values(result)[0];
-    } catch {
-      throw new Error("Unable to resolve the dry-run release version.");
+    let nextVersion = pkg.manifest.version;
+    if (mode !== "current") {
+      const version = output("npm", ["version", versionSpec, "--workspace", pkg.manifest.name, "--git-tag-version=false", "--dry-run", "--json"], { cwd: root });
+      try {
+        const result = JSON.parse(version);
+        nextVersion = result[pkg.manifest.name] || Object.values(result)[0];
+      } catch {
+        throw new Error("Unable to resolve the dry-run release version.");
+      }
     }
     const registry = registryFor(pkg);
     const published = registryVersion(root, pkg);
@@ -126,11 +134,13 @@ export function release(argument, options = {}) {
     const alreadyPublished = proposed.status === "published";
     const previous = previousReleaseRef(root, selector);
     const section = changelogSection(nextVersion, releaseNotes(packageChanges(root, pkg, previous)));
-    console.log(`\nRelease dry run\nPackage: ${pkg.manifest.name}\nRegistry: ${registry}\nPublished: ${latestPublished || "none"}\nCurrent: ${pkg.manifest.version}\nRequested: ${versionSpec}\nNext: ${nextVersion}\nAlready published: ${alreadyPublished ? "yes" : "no"}\nPrevious release ref: ${previous || "none"}\n\nProposed changelog:\n\n${section}`);
+    console.log(`\nRelease dry run\nPackage: ${pkg.manifest.name}\nRegistry: ${registry}\nPublished: ${latestPublished || "none"}\nCurrent: ${pkg.manifest.version}\nMode: ${mode}\nRequested: ${versionSpec || "current"}\nNext: ${nextVersion}\nAlready published: ${alreadyPublished ? "yes" : "no"}\nPrevious release ref: ${previous || "none"}\n\nProposed changelog:\n\n${section}`);
     return { registry, latestPublished, currentVersion: pkg.manifest.version, nextVersion, alreadyPublished, previousRelease: previous, changelog: section };
   }
 
-  run("npm", ["version", versionSpec, "--workspace", pkg.manifest.name, "--git-tag-version=false"], { cwd: root });
+  if (mode !== "current") {
+    run("npm", ["version", versionSpec, "--workspace", pkg.manifest.name, "--git-tag-version=false"], { cwd: root });
+  }
 
   const version = JSON.parse(readFileSync(pkg.file, "utf8")).version;
   if (registryVersion(root, pkg, version).status === "published") {

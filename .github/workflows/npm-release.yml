@@ -7,10 +7,20 @@ on:
         description: Package location under packages/
         required: true
         type: string
-      version:
-        description: Release bump or exact SemVer
+      release-mode:
+        description: bump, exact, or current
+        required: false
+        default: bump
+        type: string
+      release-bump:
+        description: SemVer bump when release-mode is bump
         required: false
         default: patch
+        type: string
+      exact-version:
+        description: Exact SemVer when release-mode is exact
+        required: false
+        default: ""
         type: string
       auto-publish:
         description: Publish the released version after pushing the release
@@ -86,10 +96,25 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
+      - name: Resolve release version
+        env:
+          RELEASE_MODE: ${{ inputs.release-mode }}
+          RELEASE_BUMP: ${{ inputs.release-bump }}
+          EXACT_VERSION: ${{ inputs.exact-version }}
+          PACKAGE_DIRECTORY: ${{ inputs.package-directory }}
+        run: |
+          case "$RELEASE_MODE" in
+            bump) RELEASE_VALUE="$RELEASE_BUMP" ;;
+            exact) test -n "$EXACT_VERSION" || { echo "exact-version is required for exact mode"; exit 1; }; RELEASE_VALUE="$EXACT_VERSION" ;;
+            current) RELEASE_VALUE="$(node -p "require('./$PACKAGE_DIRECTORY/package.json').version")" ;;
+            *) echo "release-mode must be bump, exact, or current"; exit 1 ;;
+          esac
+          echo "RELEASE_VALUE=$RELEASE_VALUE" >> "$GITHUB_ENV"
+
       - name: Create release commit and tag
         env:
-          RELEASE_VERSION: ${{ inputs.version }}
-        run: npx --yes @moyarich/workspace-tools workspace-release "$PACKAGE_KEY=$RELEASE_VERSION"
+          NODE_AUTH_TOKEN: ${{ secrets.github-token || github.token }}
+        run: npx --yes @moyarich/workspace-tools workspace-release "$PACKAGE_KEY=$RELEASE_VALUE" --mode="${{ inputs.release-mode }}" --version="$RELEASE_VALUE"
 
       - name: Push release commit and tag
         run: git push origin "HEAD:$GITHUB_REF_NAME" --follow-tags
