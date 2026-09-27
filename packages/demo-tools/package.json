@@ -28,10 +28,14 @@
     "node": ">=22"
   },
   "peerDependencies": {
-    "@vscode/test-electron": ">=2.5.0"
+    "@vscode/test-electron": ">=2.5.0",
+    "playwright-core": ">=1.55.0"
   },
   "peerDependenciesMeta": {
     "@vscode/test-electron": {
+      "optional": true
+    },
+    "playwright-core": {
       "optional": true
     }
   }
