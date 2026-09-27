@@ -9,6 +9,7 @@ on:
         default: packages/workspace-tools
         type: choice
         options:
+          - "."
           - packages/demo-tools
           - packages/readme-screenshots
           - packages/web-components
@@ -63,28 +64,44 @@ jobs:
           PACKAGE_DIRECTORY: ${{ inputs.package-directory }}
         run: |
           case "$PACKAGE_DIRECTORY" in
-            packages/*) ;;
-            *) echo "Package location must be under packages/: $PACKAGE_DIRECTORY"; exit 1 ;;
+            .|packages/*) ;;
+            *) echo "Package location must be . or under packages/: $PACKAGE_DIRECTORY"; exit 1 ;;
           esac
           test -f "$PACKAGE_DIRECTORY/package.json"
 
       - name: Generate package lockfile
         working-directory: ${{ inputs.package-directory }}
-        run: npm install --package-lock-only --workspaces=false
         env:
+          PACKAGE_DIRECTORY: ${{ inputs.package-directory }}
           NODE_AUTH_TOKEN: ${{ secrets.package-token || github.token }}
+        run: |
+          if [ "$PACKAGE_DIRECTORY" = "." ]; then
+            npm install --package-lock-only
+          else
+            npm install --package-lock-only --workspaces=false
+          fi
+
 
       - name: Verify package lockfile
         env:
           PACKAGE_DIRECTORY: ${{ inputs.package-directory }}
-        run: test -f "$PACKAGE_DIRECTORY/package-lock.json"
+        run: |
+          if [ "$PACKAGE_DIRECTORY" = "." ]; then
+            test -f package-lock.json
+          else
+            test -f "$PACKAGE_DIRECTORY/package-lock.json"
+          fi
 
       - name: Commit package lockfile
         if: ${{ inputs.commit }}
         env:
           PACKAGE_DIRECTORY: ${{ inputs.package-directory }}
         run: |
-          git add "$PACKAGE_DIRECTORY/package-lock.json"
+          if [ "$PACKAGE_DIRECTORY" = "." ]; then
+            git add package-lock.json
+          else
+            git add "$PACKAGE_DIRECTORY/package-lock.json"
+          fi
           if git diff --cached --quiet; then
             echo "No lockfile changes."
             exit 0
