@@ -15,6 +15,7 @@ try {
     tag: value("tag", "latest"),
     access: value("access", "public"),
     dryRun: args.includes("--dry-run"),
+    withDependencies: args.includes("--with-dependencies"),
   });
 } catch (error) {
   console.error(error.message);
