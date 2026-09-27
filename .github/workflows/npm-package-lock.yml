@@ -70,9 +70,14 @@ jobs:
 
       - name: Generate package lockfile
         working-directory: ${{ inputs.package-directory }}
-        run: npm install --package-lock-only
+        run: npm install --package-lock-only --workspaces=false
         env:
           NODE_AUTH_TOKEN: ${{ secrets.package-token || github.token }}
+
+      - name: Verify package lockfile
+        env:
+          PACKAGE_DIRECTORY: ${{ inputs.package-directory }}
+        run: test -f "$PACKAGE_DIRECTORY/package-lock.json"
 
       - name: Commit package lockfile
         if: ${{ inputs.commit }}
