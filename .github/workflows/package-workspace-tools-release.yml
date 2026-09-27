@@ -30,16 +30,15 @@ on:
         required: false
         default: ""
         type: string
-      dry-run:
-        description: Preview release without changing or publishing
+      action:
+        description: Release action
         required: true
-        default: true
-        type: boolean
-      auto-publish:
-        description: Publish after release
-        required: true
-        default: true
-        type: boolean
+        default: preview
+        type: choice
+        options:
+          - preview
+          - release
+          - release-publish
       registry:
         description: Package registry
         required: true
@@ -63,8 +62,8 @@ jobs:
       release-mode: ${{ inputs.release-mode }}
       release-bump: ${{ inputs.release-bump }}
       exact-version: ${{ inputs.exact-version }}
-      dry-run: ${{ inputs.dry-run }}
-      auto-publish: ${{ inputs.auto-publish }}
+      dry-run: ${{ inputs.action == 'preview' }}
+      auto-publish: ${{ inputs.action == 'release-publish' }}
       registry: ${{ inputs.registry }}
       tag: ${{ inputs.tag }}
       node-version: "22"
