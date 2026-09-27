@@ -40,16 +40,57 @@ on:
         type: string
 
 jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    outputs:
+      release-mode: ${{ steps.resolve.outputs.release-mode }}
+      release-bump: ${{ steps.resolve.outputs.release-bump }}
+      exact-version: ${{ steps.resolve.outputs.exact-version }}
+      dry-run: ${{ steps.resolve.outputs.dry-run }}
+      auto-publish: ${{ steps.resolve.outputs.auto-publish }}
+      registry: ${{ steps.resolve.outputs.registry }}
+    steps:
+      - id: resolve
+        env:
+          VERSION: ${{ inputs.version }}
+          CUSTOM_VERSION: ${{ inputs.custom-version }}
+          ACTION: ${{ inputs.action }}
+        run: |
+          if [ -n "$CUSTOM_VERSION" ]; then
+            RELEASE_MODE=exact
+          elif [ "$VERSION" = current ]; then
+            RELEASE_MODE=current
+          else
+            RELEASE_MODE=bump
+          fi
+          case "$ACTION" in
+            preview) DRY_RUN=true; AUTO_PUBLISH=false; REGISTRY=github ;;
+            release) DRY_RUN=false; AUTO_PUBLISH=false; REGISTRY=github ;;
+            release-publish-github) DRY_RUN=false; AUTO_PUBLISH=true; REGISTRY=github ;;
+            release-publish-npm) DRY_RUN=false; AUTO_PUBLISH=true; REGISTRY=npm ;;
+            release-publish-both) DRY_RUN=false; AUTO_PUBLISH=true; REGISTRY=both ;;
+            *) echo "Invalid action: $ACTION"; exit 1 ;;
+          esac
+          {
+            echo "release-mode=$RELEASE_MODE"
+            echo "release-bump=$VERSION"
+            echo "exact-version=$CUSTOM_VERSION"
+            echo "dry-run=$DRY_RUN"
+            echo "auto-publish=$AUTO_PUBLISH"
+            echo "registry=$REGISTRY"
+          } >> "$GITHUB_OUTPUT"
+
   release:
+    needs: resolve
     uses: ./.github/workflows/npm-release.yml
     with:
       package-directory: packages/workspace-tools
-      release-mode: ${{ inputs.custom-version != '' && 'exact' || (inputs.version == 'current' && 'current' || 'bump') }}
-      release-bump: ${{ inputs.version }}
-      exact-version: ${{ inputs.custom-version }}
-      dry-run: ${{ inputs.action == 'preview' }}
-      auto-publish: ${{ startsWith(inputs.action, 'release-publish-') }}
-      registry: ${{ inputs.action == 'release-publish-npm' && 'npm' || (inputs.action == 'release-publish-both' && 'both' || 'github') }}
+      release-mode: ${{ needs.resolve.outputs.release-mode }}
+      release-bump: ${{ needs.resolve.outputs.release-bump }}
+      exact-version: ${{ needs.resolve.outputs.exact-version }}
+      dry-run: ${{ needs.resolve.outputs.dry-run == 'true' }}
+      auto-publish: ${{ needs.resolve.outputs.auto-publish == 'true' }}
+      registry: ${{ needs.resolve.outputs.registry }}
       tag: ${{ inputs.tag }}
       node-version: "22"
     secrets:
