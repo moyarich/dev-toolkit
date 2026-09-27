@@ -1,0 +1,62 @@
+name: Reusable npm publish
+
+on:
+  workflow_call:
+    inputs:
+      package:
+        description: Package directory name under packages/
+        required: true
+        type: string
+      registry:
+        description: github or npm
+        required: false
+        default: github
+        type: string
+      tag:
+        description: npm distribution tag
+        required: false
+        default: latest
+        type: string
+      node-version:
+        required: false
+        default: "24"
+        type: string
+    secrets:
+      github-token:
+        required: false
+      npm-token:
+        required: false
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: npm
+      - name: Ensure staged publishing CLI support
+        if: inputs.registry == 'npm'
+        run: npm install --global npm@">=11.15.0 <12"
+      - run: npm ci --include=optional
+      - name: Validate package selector
+        env:
+          PACKAGE_KEY: ${{ inputs.package }}
+        run: |
+          case "$PACKAGE_KEY" in
+            ""|*[!A-Za-z0-9._-]*)
+              echo "Invalid package directory name: $PACKAGE_KEY"
+              exit 1
+              ;;
+          esac
+          test -f "packages/$PACKAGE_KEY/package.json"
+      - name: Publish package
+        env:
+          _GITHUB_TOKEN: ${{ secrets.github-token }}
+          _NPM_TOKEN: ${{ secrets.npm-token }}
+        run: npx --yes @moyarich/workspace-tools workspace-publish "${{ inputs.package }}" --registry="${{ inputs.registry }}" --tag="${{ inputs.tag }}"
