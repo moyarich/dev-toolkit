@@ -39,6 +39,10 @@ on:
         default: latest
         type: string
 
+permissions:
+  contents: write
+  packages: write
+
 jobs:
   resolve:
     runs-on: ubuntu-latest
