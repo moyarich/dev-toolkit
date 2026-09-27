@@ -3,9 +3,14 @@ name: Reusable npm publish
 on:
   workflow_call:
     inputs:
-      package:
-        description: Package directory name under packages/
+      package-directory:
+        description: Package location under packages/
         required: true
+        type: string
+      version:
+        description: Exact version to publish; empty uses the current package.json version
+        required: false
+        default: ""
         type: string
       registry:
         description: github or npm
@@ -44,19 +49,31 @@ jobs:
         if: inputs.registry == 'npm'
         run: npm install --global npm@">=11.15.0 <12"
       - run: npm ci --include=optional
-      - name: Validate package selector
+      - name: Resolve package and version
         env:
-          PACKAGE_KEY: ${{ inputs.package }}
+          PACKAGE_DIRECTORY: ${{ inputs.package-directory }}
+          REQUESTED_VERSION: ${{ inputs.version }}
         run: |
-          case "$PACKAGE_KEY" in
-            ""|*[!A-Za-z0-9._-]*)
-              echo "Invalid package directory name: $PACKAGE_KEY"
-              exit 1
-              ;;
+          case "$PACKAGE_DIRECTORY" in
+            packages/*) ;;
+            *) echo "Package location must be under packages/: $PACKAGE_DIRECTORY"; exit 1 ;;
           esac
-          test -f "packages/$PACKAGE_KEY/package.json"
+          test -f "$PACKAGE_DIRECTORY/package.json"
+          PACKAGE_KEY="${PACKAGE_DIRECTORY#packages/}"
+          case "$PACKAGE_KEY" in
+            ""|*/*|*[!A-Za-z0-9._-]*) echo "Invalid package directory: $PACKAGE_DIRECTORY"; exit 1 ;;
+          esac
+          CURRENT_VERSION="$(node -p "require('./$PACKAGE_DIRECTORY/package.json').version")"
+          PUBLISH_VERSION="${REQUESTED_VERSION:-$CURRENT_VERSION}"
+          if [ "$PUBLISH_VERSION" != "$CURRENT_VERSION" ]; then
+            echo "Requested publish version $PUBLISH_VERSION does not match package.json version $CURRENT_VERSION."
+            exit 1
+          fi
+          echo "PACKAGE_KEY=$PACKAGE_KEY" >> "$GITHUB_ENV"
+          echo "PUBLISH_VERSION=$PUBLISH_VERSION" >> "$GITHUB_ENV"
+          echo "Publishing $PACKAGE_KEY@$PUBLISH_VERSION"
       - name: Publish package
         env:
           _GITHUB_TOKEN: ${{ secrets.github-token }}
           _NPM_TOKEN: ${{ secrets.npm-token }}
-        run: npx --yes @moyarich/workspace-tools workspace-publish "${{ inputs.package }}" --registry="${{ inputs.registry }}" --tag="${{ inputs.tag }}"
+        run: npx --yes @moyarich/workspace-tools workspace-publish "$PACKAGE_KEY" --registry="${{ inputs.registry }}" --tag="${{ inputs.tag }}"
