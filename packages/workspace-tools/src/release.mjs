@@ -52,6 +52,20 @@ export function changelogSection(version, notes) {
   return `## ${version}\n\n${sections.join("\n\n") || "### Changed\n\n- Package release."}\n`;
 }
 
+function registryFor(pkg) {
+  return pkg.manifest.publishConfig?.registry || "https://registry.npmjs.org";
+}
+
+function publishedVersion(root, pkg, version) {
+  const registry = registryFor(pkg);
+  const spec = version ? `${pkg.manifest.name}@${version}` : pkg.manifest.name;
+  try {
+    return output("npm", ["view", spec, "version", "--registry", registry], { cwd: root });
+  } catch {
+    return "";
+  }
+}
+
 function previousReleaseRef(root, selector) {
   const tags = output("git", ["tag", "--list", `${selector}@*`, "--sort=-version:refname"], { cwd: root });
   const tag = tags.split("\n").find(Boolean);
@@ -94,15 +108,22 @@ export function release(argument, options = {}) {
     } catch {
       throw new Error("Unable to resolve the dry-run release version.");
     }
+    const registry = registryFor(pkg);
+    const latestPublished = publishedVersion(root, pkg);
+    const alreadyPublished = publishedVersion(root, pkg, nextVersion) === nextVersion;
     const previous = previousReleaseRef(root, selector);
     const section = changelogSection(nextVersion, releaseNotes(packageChanges(root, pkg, previous)));
-    console.log(`\nRelease dry run\nPackage: ${pkg.manifest.name}\nCurrent: ${pkg.manifest.version}\nNext: ${nextVersion}\nPrevious release: ${previous || "none"}\n\nProposed changelog:\n\n${section}`);
-    return { currentVersion: pkg.manifest.version, nextVersion, previousRelease: previous, changelog: section };
+    console.log(`\nRelease dry run\nPackage: ${pkg.manifest.name}\nRegistry: ${registry}\nPublished: ${latestPublished || "none"}\nCurrent: ${pkg.manifest.version}\nRequested: ${versionSpec}\nNext: ${nextVersion}\nAlready published: ${alreadyPublished ? "yes" : "no"}\nPrevious release ref: ${previous || "none"}\n\nProposed changelog:\n\n${section}`);
+    return { registry, latestPublished, currentVersion: pkg.manifest.version, nextVersion, alreadyPublished, previousRelease: previous, changelog: section };
   }
 
   run("npm", ["version", versionSpec, "--workspace", pkg.manifest.name, "--git-tag-version=false"], { cwd: root });
 
   const version = JSON.parse(readFileSync(pkg.file, "utf8")).version;
+  if (publishedVersion(root, pkg, version) === version) {
+    run("git", ["checkout", "--", pkg.file, "package-lock.json"], { cwd: root });
+    throw new Error(`${pkg.manifest.name}@${version} is already published to ${registryFor(pkg)}.`);
+  }
   const tag = `${selector}@${version}`;
   const changelog = updateChangelog(root, pkg, version, selector);
   run("git", ["add", pkg.file, "package-lock.json", changelog], { cwd: root });
