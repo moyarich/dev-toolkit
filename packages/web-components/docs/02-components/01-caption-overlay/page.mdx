@@ -1,0 +1,33 @@
+# Caption overlay
+
+`CaptionOverlay` renders a caption with a title, description, pointer style, placement, and visibility state.
+
+## Import
+
+```js
+import { CaptionOverlay } from "@moyarich/web-components/caption";
+```
+
+Importing the module registers `<moyarich-caption-overlay>`.
+
+## Usage
+
+```html
+<moyarich-caption-overlay></moyarich-caption-overlay>
+```
+
+```js
+const caption = document.querySelector("moyarich-caption-overlay");
+
+caption.caption = {
+  title: "Open the color picker",
+  description: "Select the CSS color to inspect it.",
+  placement: "bottom-right",
+  pointer: "bubble",
+  visible: true,
+};
+```
+
+Built-in placement names are `top-left`, `top-right`, `bottom-left`, and `bottom-right`. The component also accepts an inset string, explicit inset sides, or an `{ x, y, side, offset }` placement object.
+
+The supported pointer styles are `bubble` and `arrow`.
