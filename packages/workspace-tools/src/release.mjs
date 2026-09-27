@@ -20,9 +20,36 @@ export function parseReleaseArgument(argument) {
   return { selector, versionSpec };
 }
 
-export function changelogSection(version, commits) {
-  const entries = commits.length ? commits.map((commit) => `- ${commit}`).join("\n") : "- No package changes recorded.";
-  return `## ${version}\n\n${entries}\n`;
+export function releaseNotes(messages) {
+  const groups = { Added: [], Changed: [], Fixed: [], Removed: [] };
+  const seen = new Set();
+
+  for (const message of messages) {
+    const firstLine = message.split("\n").find((line) => line.trim())?.trim();
+    if (!firstLine || /^release(?:\([^)]*\))?:/i.test(firstLine)) continue;
+
+    const match = firstLine.match(/^(feat|fix|refactor|perf|docs|style|test|build|ci|chore)(?:\([^)]*\))?(!)?:\s*(.+)$/i);
+    const type = match?.[1]?.toLowerCase();
+    const breaking = Boolean(match?.[2]) || /BREAKING CHANGE:/i.test(message);
+    const text = (match?.[3] || firstLine).replace(/\s*\(#\d+\)$/, "").trim();
+    if (!text || seen.has(text)) continue;
+    seen.add(text);
+
+    if (breaking || /\bremove[ds]?\b/i.test(text)) groups.Removed.push(text);
+    else if (type === "feat") groups.Added.push(text);
+    else if (type === "fix") groups.Fixed.push(text);
+    else groups.Changed.push(text);
+  }
+
+  return groups;
+}
+
+export function changelogSection(version, notes) {
+  const sections = Object.entries(notes)
+    .filter(([, entries]) => entries.length)
+    .map(([heading, entries]) => `### ${heading}\n\n${entries.map((entry) => `- ${entry}`).join("\n")}`);
+
+  return `## ${version}\n\n${sections.join("\n\n") || "### Changed\n\n- Package release."}\n`;
 }
 
 function previousReleaseTag(root, selector) {
@@ -32,14 +59,14 @@ function previousReleaseTag(root, selector) {
 
 function packageChanges(root, pkg, previousTag) {
   const range = previousTag ? `${previousTag}..HEAD` : "HEAD";
-  const log = output("git", ["log", range, "--format=%s", "--", pkg.directory], { cwd: root });
-  return log ? log.split("\n").filter(Boolean) : [];
+  const log = output("git", ["log", range, "--format=%B%x1e", "--", pkg.directory], { cwd: root });
+  return log ? log.split("\x1e").map((message) => message.trim()).filter(Boolean) : [];
 }
 
 function updateChangelog(root, pkg, version, selector) {
   const changelog = resolve(root, pkg.directory, "CHANGELOG.md");
   const previous = previousReleaseTag(root, selector);
-  const section = changelogSection(version, packageChanges(root, pkg, previous));
+  const section = changelogSection(version, releaseNotes(packageChanges(root, pkg, previous)));
   const existing = existsSync(changelog) ? readFileSync(changelog, "utf8") : "# Changelog\n";
   const body = existing.replace(/^# Changelog\s*/, "");
   writeFileSync(changelog, `# Changelog\n\n${section}\n${body}`.trimEnd() + "\n");
