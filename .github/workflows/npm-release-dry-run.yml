@@ -1,0 +1,60 @@
+name: Reusable package release dry run
+
+on:
+  workflow_call:
+    inputs:
+      package-directory:
+        description: Package location under packages/
+        required: true
+        type: string
+      version:
+        description: Release bump or exact SemVer
+        required: false
+        default: patch
+        type: string
+      node-version:
+        required: false
+        default: "24"
+        type: string
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  release-dry-run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: npm
+          registry-url: https://npm.pkg.github.com
+          scope: "@moyarich"
+      - name: Resolve package
+        env:
+          PACKAGE_DIRECTORY: ${{ inputs.package-directory }}
+        run: |
+          case "$PACKAGE_DIRECTORY" in
+            packages/*) ;;
+            *) echo "Package location must be under packages/: $PACKAGE_DIRECTORY"; exit 1 ;;
+          esac
+          test -f "$PACKAGE_DIRECTORY/package.json"
+          PACKAGE_KEY="${PACKAGE_DIRECTORY#packages/}"
+          case "$PACKAGE_KEY" in
+            ""|*/*|*[!A-Za-z0-9._-]*) echo "Invalid package directory: $PACKAGE_DIRECTORY"; exit 1 ;;
+          esac
+          echo "PACKAGE_KEY=$PACKAGE_KEY" >> "$GITHUB_ENV"
+      - run: npm ci --include=optional
+        env:
+          NODE_AUTH_TOKEN: ${{ github.token }}
+      - name: Preview release
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+          NODE_AUTH_TOKEN: ${{ github.token }}
+        run: npx --yes @moyarich/workspace-tools workspace-release "$PACKAGE_KEY=$RELEASE_VERSION" --dry-run
