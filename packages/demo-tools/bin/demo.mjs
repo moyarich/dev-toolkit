@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 import { Command } from "commander";
 import { discoverDemoStrategies, runDemoStrategies, selectDemoStrategies } from "../src/index.mjs";
+import { captureDemoStrategy } from "../src/generate/index.mjs";
+import { encodeGif } from "../src/capture/index.mjs";
 
 const program = new Command()
   .name("demo")
@@ -56,6 +58,29 @@ program
       selected,
       ...(root.artifacts ? { artifactsDirectory: root.artifacts } : {}),
     });
+  });
+
+program
+  .command("create")
+  .description("Record Playwright actions and write a directly executable strategy.")
+  .argument("[name]", "strategy name")
+  .option("-u, --url <url>", "page URL to record")
+  .action(async (name, options) => {
+    await captureDemoStrategy({ name, url: options.url });
+  });
+
+program
+  .command("gif")
+  .description("Encode an existing demo WebM as a GIF.")
+  .argument("<input>", "input WebM path")
+  .argument("[output]", "output GIF path")
+  .option("--fps <number>", "GIF frames per second", Number, 12)
+  .option("--width <number>", "maximum GIF width", Number, 960)
+  .option("--trim-start <seconds>", "seconds to trim from the start", Number, 0)
+  .action(async (input, output, options) => {
+    const destination = output ?? input.replace(/\\.webm$/i, ".gif");
+    await encodeGif({ input, output: destination, fps: options.fps, width: options.width, trimStart: options.trimStart });
+    console.log(destination);
   });
 
 if (process.argv.length === 2 && !(process.stdin.isTTY && process.stdout.isTTY)) {
