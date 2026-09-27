@@ -1,0 +1,19 @@
+# CLI reference
+
+```sh
+readme-screenshots [config-file]
+```
+
+With no argument, the command uses `README_SCREENSHOT_CONFIG` when set, otherwise `readme-screenshots.config.mjs`.
+
+If the config file does not exist, built-in defaults are used.
+
+The executable is provided through the package `bin` entry:
+
+```json
+{
+  "bin": {
+    "readme-screenshots": "./bin/readme-screenshots.mjs"
+  }
+}
+```
