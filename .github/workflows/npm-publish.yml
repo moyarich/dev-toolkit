@@ -1,6 +1,36 @@
 name: Reusable npm publish
 
 on:
+  workflow_dispatch:
+    inputs:
+      package-directory:
+        description: Workspace path, directory name, or package name
+        required: true
+        default: packages/workspace-tools
+        type: string
+      version:
+        description: Exact version to publish; empty uses package.json
+        required: false
+        default: ""
+        type: string
+      registry:
+        description: Package registry
+        required: true
+        default: github
+        type: choice
+        options:
+          - github
+          - npm
+      tag:
+        description: Distribution tag
+        required: true
+        default: latest
+        type: string
+      node-version:
+        description: Node.js version
+        required: true
+        default: "24"
+        type: string
   workflow_call:
     inputs:
       package-directory:
