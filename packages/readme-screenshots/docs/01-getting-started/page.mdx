@@ -1,0 +1,32 @@
+# Getting started
+
+Install the package and Playwright, then make sure the site you want to capture is already running.
+
+```sh
+npm install --save-dev @moyarich/readme-screenshots playwright
+npx playwright install chromium
+```
+
+With the default settings, run:
+
+```sh
+readme-screenshots
+```
+
+The command captures:
+
+```text
+http://127.0.0.1:5173
+```
+
+and writes:
+
+```text
+docs/screenshots/playground-overview.png
+```
+
+You can also pass a configuration file:
+
+```sh
+readme-screenshots readme-screenshots.config.mjs
+```
