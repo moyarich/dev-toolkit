@@ -12,6 +12,8 @@
     "./strategy": "./src/strategy.mjs",
     "./utils": "./src/utils/index.mjs",
     "./vscode": "./src/vscode/index.mjs",
+    "./capture": "./src/capture/index.mjs",
+    "./browser": "./src/browser/index.mjs",
     "./components": "./src/components/index.mjs",
     "./components/demo-caption": "./src/components/demo-caption/index.mjs",
     "./components/demo-cursor-overlay": "./src/components/demo-cursor-overlay/index.mjs",
