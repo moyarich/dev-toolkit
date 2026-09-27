@@ -1,1 +1,1 @@
-export { CaptionElement } from "./caption-element.mjs";
+export { CaptionOverlay } from "./caption-overlay.mjs";
