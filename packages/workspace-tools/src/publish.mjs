@@ -2,6 +2,7 @@ import { existsSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from "nod
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { packageInfo, repositoryRoot, run, workspacePublishOrder } from "./workspace.mjs";
+import { assertDependencies, dependencyCheck, printDependencyCheck } from "./dependency-check.mjs";
 
 function registryConfig(registry) {
   switch (registry) {
@@ -51,6 +52,9 @@ function printPlan(plan) {
 
 function validate(root, pkg) {
   console.log(`\nValidating ${pkg.manifest.name}@${pkg.manifest.version} (${pkg.directory})`);
+  const dependencies = dependencyCheck(root, pkg);
+  printDependencyCheck(dependencies);
+  assertDependencies(dependencies);
   for (const script of ["typecheck", "test", "build"]) {
     run("npm", ["run", script, "--workspace", pkg.manifest.name, "--if-present"], { cwd: root });
   }
