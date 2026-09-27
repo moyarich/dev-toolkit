@@ -1,0 +1,78 @@
+name: Reusable Package Tests
+
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        description: Node.js version used to run package tests
+        required: false
+        type: string
+        default: "22"
+      packages-directory:
+        description: Directory containing workspace packages
+        required: false
+        type: string
+        default: "packages"
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    outputs:
+      packages: ${{ steps.packages.outputs.packages }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: packages
+        name: Discover packages with tests
+        shell: bash
+        run: |
+          packages="$(
+            node --input-type=module <<'NODE'
+            import { readdir, readFile } from "node:fs/promises";
+            import path from "node:path";
+
+            const root = process.env.PACKAGES_DIRECTORY;
+            const entries = await readdir(root, { withFileTypes: true });
+            const packages = [];
+
+            for (const entry of entries) {
+              if (!entry.isDirectory()) continue;
+
+              const packageFile = path.join(root, entry.name, "package.json");
+              try {
+                const manifest = JSON.parse(await readFile(packageFile, "utf8"));
+                if (manifest.scripts?.test) {
+                  packages.push({
+                    directory: path.join(root, entry.name),
+                    name: manifest.name ?? entry.name,
+                  });
+                }
+              } catch (error) {
+                if (error?.code !== "ENOENT") throw error;
+              }
+            }
+
+            process.stdout.write(JSON.stringify(packages));
+            NODE
+          )"
+          echo "packages=$packages" >> "$GITHUB_OUTPUT"
+        env:
+          PACKAGES_DIRECTORY: ${{ inputs.packages-directory }}
+
+  test:
+    needs: discover
+    if: needs.discover.outputs.packages != '[]'
+    strategy:
+      fail-fast: false
+      matrix:
+        package: ${{ fromJSON(needs.discover.outputs.packages) }}
+    name: Test ${{ matrix.package.name }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: npm
+      - run: npm ci
+      - name: Run package tests
+        run: npm test --workspace "${{ matrix.package.name }}"
