@@ -11,3 +11,24 @@ workspace-release css-expand-collapse=1.0.0
 Supported npm version increments are `major`, `minor`, `patch`, `premajor`, `preminor`, `prepatch`, and `prerelease`. Explicit semantic versions are also accepted.
 
 The command requires a clean Git working tree. It runs `npm version` for the selected workspace without npm creating the Git tag, stages the package manifest and lockfile, creates a release commit, and creates a `<selector>@<version>` Git tag. It prints the explicit `git push --follow-tags` command rather than pushing automatically.
+
+
+## Reusable GitHub Actions workflow
+
+Repositories can delegate the release implementation to `.github/workflows/npm-release.yml`. The caller supplies the package location and release value; the reusable workflow validates the package, creates and pushes the release commit and tag, and can optionally publish the resulting version.
+
+```yaml
+jobs:
+  release:
+    uses: moyarich/dev-toolkit/.github/workflows/npm-release.yml@main
+    with:
+      package-directory: packages/css-expand-collapse
+      version: patch
+      auto-publish: true
+      registry: github
+      tag: latest
+    secrets:
+      github-token: ${{ secrets['_GITHUB_TOKEN'] }}
+```
+
+`version` accepts the same bump keywords as `workspace-release` or an exact semantic version such as `1.0.0`. Consumer workflows can expose a choice input that defaults to `patch` and an optional manual-version input, then pass the resolved value to this workflow.
