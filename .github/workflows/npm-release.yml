@@ -67,8 +67,6 @@ jobs:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: ${{ inputs.node-version }}
-          cache: npm
-          cache-dependency-path: ${{ inputs.package-directory }}/package-lock.json
 
       - name: Resolve package
         env:
@@ -95,7 +93,8 @@ jobs:
           echo "PACKAGE_KEY=$PACKAGE_KEY" >> "$GITHUB_ENV"
 
       - name: Install dependencies
-        run: npm ci --include=optional
+        working-directory: ${{ inputs.package-directory }}
+        run: npm install --include=optional
 
       - name: Configure release author
         run: |
