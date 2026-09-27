@@ -1,1 +1,1 @@
-export { DemoCaptionElement } from "@moyarich/web-components/demo-caption";
+export { CaptionElement } from "@moyarich/web-components/caption";
