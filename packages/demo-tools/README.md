@@ -24,10 +24,10 @@ assertions, screenshots, recordings, and cleanup. It may explicitly import
 shared utilities when behavior is genuinely reusable.
 
 ```js
-import { defineDemoStrategy } from "@moyarich/demo-tools";
+import { executableDemoStrategy } from "@moyarich/demo-tools";
 import { pause } from "@moyarich/demo-tools/utils";
 
-export default defineDemoStrategy({
+export default executableDemoStrategy({
   name: "overview",
   description: "Show the primary product workflow.",
 
@@ -39,6 +39,20 @@ export default defineDemoStrategy({
   },
 });
 ```
+
+Run a strategy directly — this is the primary execution model:
+
+```sh
+node demo/strategies/overview/index.mjs
+```
+
+Importing that same strategy for discovery does not execute it. Its default artifact directory is local to the strategy:
+
+```text
+demo/strategies/overview/artifacts/
+```
+
+The CLI remains an optional convenience for batch execution.
 
 Run all strategies:
 
