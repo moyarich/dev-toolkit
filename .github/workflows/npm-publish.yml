@@ -49,7 +49,7 @@ jobs:
         run: npm install --global npm@">=11.15.0 <12"
       - name: Install dependencies
         working-directory: ${{ inputs.package-directory }}
-        run: npm install --include=optional
+        run: npm ci --include=optional
       - name: Resolve package and version
         env:
           PACKAGE_DIRECTORY: ${{ inputs.package-directory }}
