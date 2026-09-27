@@ -4,6 +4,7 @@ The reusable browser elements live in `@moyarich/web-components`.
 
 ```text
 packages/web-components/
+├── docs/
 ├── src/
 │   ├── caption/
 │   ├── cursor-overlay/
@@ -11,7 +12,18 @@ packages/web-components/
 └── package.json
 ```
 
-`@moyarich/demo-tools` keeps the automation adapters that install these elements into Playwright and VS Code pages. Its existing component entry points re-export the extracted elements for compatibility.
+The package owns the custom elements, styles, registration, and browser-facing component API. `@moyarich/demo-tools` owns automation adapters that install and control these elements from demos.
+
+## Documentation
+
+The extended documentation is written in MDX and organized for folder-based documentation ordering.
+
+- [Documentation index](./docs/page.mdx)
+- [Getting started](./docs/01-getting-started/page.mdx)
+- [Caption overlay](./docs/02-components/01-caption-overlay/page.mdx)
+- [Cursor overlay](./docs/02-components/02-cursor-overlay/page.mdx)
+- [Magnifier cursor overlay](./docs/02-components/03-magnifier-cursor-overlay/page.mdx)
+- [Package exports](./docs/03-reference/01-exports/page.mdx)
 
 ## Magnifier
 
