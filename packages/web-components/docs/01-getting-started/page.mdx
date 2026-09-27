@@ -1,0 +1,25 @@
+# Getting started
+
+Install the package in a workspace or application that will render the custom elements.
+
+```sh
+npm install @moyarich/web-components
+```
+
+Importing a component entry point registers its namespaced custom element.
+
+```js
+import "@moyarich/web-components/caption";
+import "@moyarich/web-components/cursor-overlay";
+import "@moyarich/web-components/magnifier-cursor-overlay";
+```
+
+The registered tags are:
+
+```html
+<moyarich-caption-overlay></moyarich-caption-overlay>
+<moyarich-cursor-overlay></moyarich-cursor-overlay>
+<moyarich-magnifier-cursor-overlay></moyarich-magnifier-cursor-overlay>
+```
+
+The JavaScript classes remain unprefixed: `CaptionOverlay`, `CursorOverlay`, and `MagnifierCursorOverlay`.
