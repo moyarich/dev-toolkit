@@ -1,7 +1,7 @@
 import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, join, resolve } from "node:path";
-import { packageInfo, repositoryRoot, run } from "./workspace.mjs";
+import { packageInfo, repositoryRoot, run, workspacePublishOrder } from "./workspace.mjs";
 
 function registryConfig(registry) {
   switch (registry) {
@@ -43,7 +43,7 @@ function publishOne(root, pkg, registry, tag, access) {
   }
 }
 
-export function publish({ selector, registry = "github", tag = "latest", access = "public", dryRun = false }) {
+export function publish({ selector, registry = "github", tag = "latest", access = "public", dryRun = false, withDependencies = false }) {
   if (!/^[A-Za-z][A-Za-z0-9._-]*$/.test(tag)) throw new Error("Invalid npm distribution tag.");
   if (!["public", "restricted"].includes(access)) throw new Error("Access must be public or restricted.");
   if (!["github", "npm", "both"].includes(registry)) throw new Error("Registry must be github, npm, or both.");
@@ -67,15 +67,19 @@ export function publish({ selector, registry = "github", tag = "latest", access 
 
   if (!selector) throw new Error("A package selector is required for publishing.");
   const pkg = packageInfo(root, selector);
-  validate(root, pkg);
+  const packages = withDependencies ? workspacePublishOrder(root, pkg) : [pkg];
+
+  for (const item of packages) validate(root, item);
 
   if (dryRun) {
-    console.log(`\nRelease checks passed for ${pkg.manifest.name}. Nothing was published.`);
+    console.log(`\nRelease checks passed for ${packages.map((item) => item.manifest.name).join(", ")}. Nothing was published.`);
     return;
   }
 
-  for (const destination of registry === "both" ? ["github", "npm"] : [registry]) {
-    publishOne(root, pkg, destination, tag, access);
+  for (const item of packages) {
+    for (const destination of registry === "both" ? ["github", "npm"] : [registry]) {
+      publishOne(root, item, destination, tag, access);
+    }
   }
 }
 
