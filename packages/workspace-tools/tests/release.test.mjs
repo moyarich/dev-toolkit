@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { parseReleaseArgument } from "../src/release.mjs";
+import { changelogSection, parseReleaseArgument } from "../src/release.mjs";
 import { packageInfo } from "../src/workspace.mjs";
 
 test("parseReleaseArgument accepts bump names", () => {
@@ -25,4 +25,11 @@ test("parseReleaseArgument rejects malformed input and versions", () => {
 test("packageInfo rejects selectors that can escape packages", () => {
   assert.throws(() => packageInfo(process.cwd(), "../demo-tools"), /Package selector/);
   assert.throws(() => packageInfo(process.cwd(), "demo/tools"), /Package selector/);
+});
+
+test("changelogSection labels the upcoming release and lists package changes", () => {
+  assert.equal(
+    changelogSection("1.2.3", ["fix parser output", "add color syntax"]),
+    "## 1.2.3\n\n- fix parser output\n- add color syntax\n",
+  );
 });
