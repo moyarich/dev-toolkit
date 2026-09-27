@@ -12,6 +12,14 @@
     "./demo-magnifier-cursor-overlay": "./src/demo-magnifier-cursor-overlay/index.mjs",
     "./demo-magnifier-cursor-overlay/element": "./src/demo-magnifier-cursor-overlay/element.mjs"
   },
-  "files": ["src", "README.md"],
-  "engines": {"node": ">=22"}
+  "files": [
+    "src",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node --check src/index.mjs && node --check src/demo-caption/demo-caption-element.mjs && node --check src/demo-cursor-overlay/demo-cursor-overlay-element.mjs && node --check src/demo-magnifier-cursor-overlay/element.mjs"
+  }
 }
