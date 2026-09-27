@@ -41,6 +41,78 @@ verify ancestry + PR-local diffs
 continue development
 ```
 
+### CLI: repair an out-of-sync child PR
+
+For the common case where a child branch is behind or diverged from its direct parent, rebase the child onto the latest parent:
+
+```sh
+git fetch origin
+
+git switch <child-branch>
+git rebase origin/<parent-branch>
+git push --force-with-lease
+```
+
+If the rebase reports conflicts:
+
+```sh
+git status
+
+# Fix the conflicted files.
+git add <fixed-files>
+git rebase --continue
+```
+
+Repeat the conflict-resolution step until the rebase completes, then push with `--force-with-lease`.
+
+Verify that the current parent is now an ancestor of the child:
+
+```sh
+git fetch origin
+
+git merge-base --is-ancestor \
+  origin/<parent-branch> \
+  origin/<child-branch>
+
+echo $?
+```
+
+An exit code of `0` means the parent → child ancestry is correct.
+
+Then inspect only the child PR's delta:
+
+```sh
+git log --oneline \
+  origin/<parent-branch>..origin/<child-branch>
+
+git diff \
+  origin/<parent-branch>...origin/<child-branch>
+```
+
+For a longer stack, repair branches from oldest to newest:
+
+```text
+PR A changes
+   ↓
+rebase PR B onto A
+   ↓
+push --force-with-lease B
+   ↓
+rebase PR C onto updated B
+   ↓
+push --force-with-lease C
+   ↓
+verify ancestry + PR-local diffs
+```
+
+When histories are more complicated and the old parent head is known, explicitly replay only the child's delta:
+
+```sh
+git rebase --onto <new-parent> <old-parent> <child-branch>
+```
+
+This form makes the stack operation explicit: take commits after `<old-parent>` that belong to `<child-branch>` and replay them onto `<new-parent>`.
+
 ### Preferred sync method
 
 Keep stacked history linear. Prefer rebuilding the descendant branch from its updated parent and replaying **only that descendant PR's own delta**.
