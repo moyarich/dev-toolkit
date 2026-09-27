@@ -1,11 +1,27 @@
-# @moyarich/web-components
+# Web components
 
-Reusable browser-native custom elements used by the development toolkit.
+The reusable browser elements live in `@moyarich/web-components`.
 
-## Components
+```text
+packages/web-components/
+├── src/
+│   ├── demo-caption/
+│   ├── demo-cursor-overlay/
+│   └── demo-magnifier-cursor-overlay/
+└── package.json
+```
 
-- `demo-caption`
-- `demo-cursor-overlay`
-- `demo-magnifier-cursor-overlay`
+`@moyarich/demo-tools` keeps the automation adapters that install these elements into Playwright and VS Code pages. Its existing component entry points re-export the extracted elements for compatibility.
 
-The components own their browser behavior and styles. Demo automation and Playwright/CDP installation helpers remain in `@moyarich/demo-tools`.
+## Magnifier
+
+The magnifier is a visual clone of the rendered content beneath the pointer. It preserves:
+
+- computed styles, including Monaco and VS Code presentation
+- live input, textarea, checkbox, and select state
+- nested scroll positions
+- 2D canvas pixels when they can be copied
+- native text-selection highlighting
+- visual updates caused by DOM mutations
+
+Pointer, selection, mutation, scroll, and resize work is coalesced with animation frames so visual synchronization does not perform redundant work between browser frames.
