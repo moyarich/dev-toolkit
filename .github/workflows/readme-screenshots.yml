@@ -15,7 +15,7 @@ on:
       config:
         description: Screenshot config file
         required: false
-        default: readme-screenshots.config.mjs
+        default: ""
         type: string
       output-directory:
         description: Directory containing generated screenshots
@@ -70,7 +70,11 @@ jobs:
         env:
           PLAYGROUND_URL: ${{ inputs.url }}
           DEMO_OUTPUT_DIR: ${{ inputs.output-directory }}
-        run: npx readme-screenshots "${{ inputs.config }}"
+        run: |
+          case "${{ inputs.config }}" in
+            "") npx readme-screenshots ;;
+            *) npx readme-screenshots "${{ inputs.config }}" ;;
+          esac
       - name: Commit screenshots when changed
         env:
           OUTPUT_DIRECTORY: ${{ inputs.output-directory }}
