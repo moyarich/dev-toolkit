@@ -25,7 +25,7 @@ on:
       dry-run:
         description: Preview the release without changing, tagging, pushing, or publishing
         required: false
-        default: false
+        default: true
         type: boolean
       auto-publish:
         description: Publish the released version after pushing the release
