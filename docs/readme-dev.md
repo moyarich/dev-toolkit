@@ -123,3 +123,53 @@ For npm packages, use normal semantic versioning.
 ## Migration
 
 Reusable scripts and workflows should be migrated from existing repositories only after identifying which behavior is truly generic. Repository-specific behavior should remain in the consuming repository or be exposed as explicit configuration.
+
+
+## Workspace tools
+
+The reusable CLI package currently provides:
+
+```sh
+workspace-release <package>=<version-spec>
+workspace-publish <package> [--registry=github|npm] [--tag=latest] [--access=public|restricted] [--dry-run]
+```
+
+Examples:
+
+```sh
+workspace-release css-expand-collapse=patch
+workspace-publish css-expand-collapse --dry-run
+workspace-publish css-expand-collapse --registry=github
+workspace-publish css-expand-collapse --registry=npm --tag=next
+```
+
+`workspace-release` preserves the package-qualified tag convention:
+
+```text
+<package-directory>@<version>
+```
+
+It requires a clean working tree, delegates version calculation to `npm version`, commits the package manifest and lockfile, and creates the tag.
+
+`workspace-publish` validates the selected workspace before publishing. GitHub Packages uses `npm publish`; npmjs.org uses staged publishing so human approval with 2FA remains a separate step.
+
+Credential environment variables are intentionally registry-specific:
+
+```text
+_GITHUB_TOKEN
+_NPM_TOKEN
+```
+
+They are mapped to `NODE_AUTH_TOKEN` only for the npm subprocess.
+
+## Migration from repository-local tooling
+
+The initial implementation was extracted from `moyarich/css-expand-collapse`.
+
+The migration deliberately separates:
+
+- generic package selection, validation, versioning, tagging, and registry publishing → `@moyarich/workspace-tools`;
+- reusable GitHub job implementation → `.github/workflows/`;
+- repository-specific triggers, playground builds, browser tests, and package-specific checks → consuming repositories.
+
+Until `@moyarich/workspace-tools` has an initial published version, consumers should not depend on `npx @moyarich/workspace-tools` from reusable workflows. Publish/version the package first, then pin consumers to an appropriate released version.
