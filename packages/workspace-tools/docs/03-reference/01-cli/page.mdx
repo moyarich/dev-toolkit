@@ -1,0 +1,15 @@
+# CLI reference
+
+## workspace-release
+
+```sh
+workspace-release <package>=<version|major|minor|patch|premajor|preminor|prepatch|prerelease>
+```
+
+## workspace-publish
+
+```sh
+workspace-publish [package] [--registry=github|npm|both] [--tag=latest] [--access=public|restricted] [--dry-run]
+```
+
+With `--dry-run` and no package selector, every publishable package beneath `packages/*` is validated. Without `--dry-run`, a package selector is required.

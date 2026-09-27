@@ -1,0 +1,46 @@
+name: Reusable Package Tests
+
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        description: Node.js version used to run package tests
+        required: false
+        type: string
+        default: "22"
+      packages-directory:
+        description: Directory containing workspace packages
+        required: false
+        type: string
+        default: "packages"
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    outputs:
+      packages: ${{ steps.packages.outputs.packages }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: packages
+        name: Discover packages with tests
+        shell: bash
+        run: echo "packages=$(node scripts/discover-test-packages.mjs "${{ inputs.packages-directory }}")" >> "$GITHUB_OUTPUT"
+
+  test:
+    needs: discover
+    if: needs.discover.outputs.packages != '[]'
+    strategy:
+      fail-fast: false
+      matrix:
+        package: ${{ fromJSON(needs.discover.outputs.packages) }}
+    name: Test ${{ matrix.package.name }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: npm
+      - run: npm ci
+      - name: Run package tests
+        run: npm test --workspace "${{ matrix.package.name }}"

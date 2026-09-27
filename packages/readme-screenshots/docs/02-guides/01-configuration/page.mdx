@@ -1,0 +1,17 @@
+# Configuration
+
+The CLI loads `readme-screenshots.config.mjs` by default. A different config path can be passed as the first positional argument or through `README_SCREENSHOT_CONFIG`.
+
+Supported top-level values include `url`, `outputDir`, `viewport`, `deviceScaleFactor`, `reducedMotion`, `waitUntil`, and `screenshots`.
+
+Each screenshot requires `name`. A screenshot can also provide `selector`, `scrollIntoView`, `waitForMs`, and `fullPage`.
+
+When `selector` is present, the first matching locator is waited for and captured instead of the whole page.
+
+Environment overrides:
+
+```sh
+PLAYGROUND_URL=http://127.0.0.1:4173 readme-screenshots
+DEMO_OUTPUT_DIR=docs/media readme-screenshots
+README_SCREENSHOT_NAME=overview.png readme-screenshots
+```
