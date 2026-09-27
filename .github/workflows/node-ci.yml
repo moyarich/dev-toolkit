@@ -43,10 +43,17 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ inputs.node-version }}
-          cache: npm
-          cache-dependency-path: ${{ inputs.package-directory }}/package-lock.json
           registry-url: https://npm.pkg.github.com
           scope: "@moyarich"
+      - name: Ensure package lockfile
+        working-directory: ${{ inputs.package-directory }}
+        run: |
+          if [ ! -f package-lock.json ]; then
+            npm install --package-lock-only
+          fi
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.package-token || github.token }}
+
       - run: npm ci
         working-directory: ${{ inputs.package-directory }}
         env:
