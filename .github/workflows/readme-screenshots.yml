@@ -1,0 +1,88 @@
+name: Reusable README screenshots
+
+on:
+  workflow_call:
+    inputs:
+      start-command:
+        description: Command that starts the site to capture
+        required: true
+        type: string
+      url:
+        description: URL to wait for and capture
+        required: false
+        default: http://127.0.0.1:5173
+        type: string
+      config:
+        description: Screenshot config file
+        required: false
+        default: ""
+        type: string
+      output-directory:
+        description: Directory containing generated screenshots
+        required: false
+        default: docs/screenshots
+        type: string
+      node-version:
+        required: false
+        default: "24"
+        type: string
+      playwright-version:
+        required: false
+        default: "1.55.0"
+        type: string
+      commit-message:
+        required: false
+        default: "docs: update README screenshots"
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  screenshots:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.ref_name }}
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: npm
+      - run: npm ci --include=optional
+      - name: Install screenshot tooling
+        run: |
+          npm install --no-save --package-lock=false playwright@${{ inputs.playwright-version }} @moyarich/readme-screenshots
+          npx playwright install --with-deps chromium
+      - name: Start site
+        env:
+          START_COMMAND: ${{ inputs.start-command }}
+          PLAYGROUND_URL: ${{ inputs.url }}
+        run: |
+          bash -lc "$START_COMMAND" > /tmp/readme-screenshots.log 2>&1 &
+          for i in {1..60}; do
+            if curl --fail --silent "$PLAYGROUND_URL" >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/readme-screenshots.log
+          exit 1
+      - name: Generate screenshots
+        env:
+          PLAYGROUND_URL: ${{ inputs.url }}
+          DEMO_OUTPUT_DIR: ${{ inputs.output-directory }}
+        run: |
+          case "${{ inputs.config }}" in
+            "") npx readme-screenshots ;;
+            *) npx readme-screenshots "${{ inputs.config }}" ;;
+          esac
+      - name: Commit screenshots when changed
+        env:
+          OUTPUT_DIRECTORY: ${{ inputs.output-directory }}
+          COMMIT_MESSAGE: ${{ inputs.commit-message }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- "$OUTPUT_DIRECTORY"
+          git diff --cached --quiet && exit 0
+          git commit -m "$COMMIT_MESSAGE"
+          git push origin "HEAD:${{ github.ref_name }}"
