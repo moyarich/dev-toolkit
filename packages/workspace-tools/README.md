@@ -24,10 +24,10 @@ Release modes:
 Validate and publish a workspace package.
 
 ```sh
-workspace-publish <package> [--registry=github|npm|both] [--tag=latest] [--access=public|restricted] [--with-dependencies] [--dry-run]
+workspace-publish <package> [--registry=github|npm|both] [--tag=latest] [--access=public|restricted] [--ls] [--with-dependencies[=true|false]] [--dry-run[=true|false]]
 ```
 
-Use `--with-dependencies` to publish internal workspace dependencies first in dependency order. Without it, only the selected package is published.\n\nGitHub Packages uses `_GITHUB_TOKEN`. npm publishing uses `_NPM_TOKEN`.
+Use `--ls` to print the resolved publish plan without validating or publishing. Combine `--ls --dry-run` to print that plan and then validate/test/pack it without publishing. Use `--with-dependencies` (or `--with-dependencies=true`) to include internal workspace dependencies first in dependency order; `--with-dependencies=false` selects only the requested package.\n\nGitHub Packages uses `_GITHUB_TOKEN`. npm publishing uses `_NPM_TOKEN`.
 
 ## Reusable workflows
 
