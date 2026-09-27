@@ -3,9 +3,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const DEMO_CURSOR_TAG_NAME = "demo-magnifier-cursor-overlay";
-const componentPath = path.join(
-  path.dirname(fileURLToPath(import.meta.url)),
-  "element.mjs",
+const componentPath = fileURLToPath(
+  import.meta.resolve("@moyarich/web-components/demo-magnifier-cursor-overlay/element"),
 );
 const stylesheetPath = path.join(path.dirname(componentPath), "styles.css");
 const componentSource = readFile(componentPath, "utf8");
