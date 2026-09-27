@@ -225,3 +225,26 @@ jobs:
 ```
 
 The workflow commits only the configured output directory when generated screenshots change.
+
+
+### Automatic screenshot generation
+
+A screenshot config is optional. With no config, the runner automatically captures the configured site URL at a 1440×1000 viewport and writes:
+
+```text
+docs/screenshots/playground-overview.png
+```
+
+This is the recommended default for new repositories. A consumer workflow only needs to provide the command that starts its preview/dev server:
+
+```yaml
+jobs:
+  screenshots:
+    uses: moyarich/dev-toolkit/.github/workflows/readme-screenshots.yml@v1
+    with:
+      start-command: npm run dev -- --host 127.0.0.1
+```
+
+Repositories that need additional or sectional screenshots can add `readme-screenshots.config.mjs`. For example, `pointer-bubble` can preserve its overview plus MapLibre capture by configuring the second screenshot with a stable selector. Prefer a dedicated `data-readme-screenshot` attribute over visible heading text so documentation automation does not break when copy changes.
+
+The generated screenshot files remain owned by the consuming repository. The reusable workflow starts the site, waits for its URL, invokes the shared capture package, and commits changed files from the configured output directory.
