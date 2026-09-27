@@ -1,0 +1,39 @@
+# Getting started
+
+Install `@moyarich/demo-tools` and create a strategy beneath `demo/strategies`.
+
+```text
+demo/
+└── strategies/
+    └── overview/
+        └── index.mjs
+```
+
+```js
+import { executableDemoStrategy } from "@moyarich/demo-tools";
+
+export default executableDemoStrategy({
+  name: "overview",
+  description: "Show the primary workflow.",
+
+  async run({ artifactsDirectory }) {
+    // Launch the environment explicitly, perform the demo, and write
+    // screenshots or recordings to artifactsDirectory.
+  },
+}, import.meta.url);
+```
+
+Run the strategy directly:
+
+```sh
+node demo/strategies/overview/index.mjs
+```
+
+Or use the installed CLI:
+
+```sh
+demo list
+demo run overview
+```
+
+Continue with [Strategies](../guides/strategies.mdx) to understand the ownership model.
