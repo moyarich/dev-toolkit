@@ -1,6 +1,23 @@
 name: Reusable Node CI
 
 on:
+  workflow_dispatch:
+    inputs:
+      package-directory:
+        description: Package directory
+        required: true
+        default: packages/workspace-tools
+        type: choice
+        options:
+          - packages/demo-tools
+          - packages/readme-screenshots
+          - packages/web-components
+          - packages/workspace-tools
+      node-version:
+        description: Node.js version used by CI
+        required: true
+        default: "22"
+        type: string
   workflow_call:
     inputs:
       package-directory:
