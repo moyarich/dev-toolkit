@@ -77,12 +77,27 @@ function updateChangelog(root, pkg, version, selector) {
   return changelog;
 }
 
-export function release(argument) {
+export function release(argument, options = {}) {
   const { selector, versionSpec } = parseReleaseArgument(argument);
   const root = repositoryRoot();
   const pkg = packageInfo(root, selector);
   if (output("git", ["status", "--porcelain"], { cwd: root })) {
     throw new Error("Working tree must be clean before creating a package release.");
+  }
+
+  if (options.dryRun) {
+    const version = output("npm", ["version", versionSpec, "--workspace", pkg.manifest.name, "--git-tag-version=false", "--dry-run", "--json"], { cwd: root });
+    let nextVersion;
+    try {
+      const result = JSON.parse(version);
+      nextVersion = result[pkg.manifest.name] || Object.values(result)[0];
+    } catch {
+      throw new Error("Unable to resolve the dry-run release version.");
+    }
+    const previous = previousReleaseRef(root, selector);
+    const section = changelogSection(nextVersion, releaseNotes(packageChanges(root, pkg, previous)));
+    console.log(`\nRelease dry run\nPackage: ${pkg.manifest.name}\nCurrent: ${pkg.manifest.version}\nNext: ${nextVersion}\nPrevious release: ${previous || "none"}\n\nProposed changelog:\n\n${section}`);
+    return { currentVersion: pkg.manifest.version, nextVersion, previousRelease: previous, changelog: section };
   }
 
   run("npm", ["version", versionSpec, "--workspace", pkg.manifest.name, "--git-tag-version=false"], { cwd: root });
