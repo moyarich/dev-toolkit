@@ -1,0 +1,106 @@
+name: Reusable package release
+
+on:
+  workflow_call:
+    inputs:
+      package-directory:
+        description: Package location under packages/
+        required: true
+        type: string
+      version:
+        description: Release bump or exact SemVer
+        required: false
+        default: patch
+        type: string
+      auto-publish:
+        description: Publish the released version after pushing the release
+        required: false
+        default: false
+        type: boolean
+      registry:
+        description: github, npm, or both
+        required: false
+        default: github
+        type: string
+      tag:
+        description: npm distribution tag
+        required: false
+        default: latest
+        type: string
+      node-version:
+        required: false
+        default: "24"
+        type: string
+    secrets:
+      github-token:
+        required: false
+      npm-token:
+        required: false
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: npm
+
+      - name: Resolve package
+        env:
+          PACKAGE_DIRECTORY: ${{ inputs.package-directory }}
+        run: |
+          case "$PACKAGE_DIRECTORY" in
+            packages/*) ;;
+            *)
+              echo "Package location must be under packages/: $PACKAGE_DIRECTORY"
+              exit 1
+              ;;
+          esac
+
+          test -f "$PACKAGE_DIRECTORY/package.json"
+          PACKAGE_KEY="${PACKAGE_DIRECTORY#packages/}"
+
+          case "$PACKAGE_KEY" in
+            ""|*/*|*[!A-Za-z0-9._-]*)
+              echo "Invalid package directory: $PACKAGE_DIRECTORY"
+              exit 1
+              ;;
+          esac
+
+          echo "PACKAGE_KEY=$PACKAGE_KEY" >> "$GITHUB_ENV"
+
+      - name: Install dependencies
+        run: npm ci --include=optional
+
+      - name: Configure release author
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Create release commit and tag
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: npx --yes @moyarich/workspace-tools workspace-release "$PACKAGE_KEY=$RELEASE_VERSION"
+
+      - name: Push release commit and tag
+        run: git push origin "HEAD:$GITHUB_REF_NAME" --follow-tags
+
+      - name: Ensure staged publishing CLI support
+        if: inputs.auto-publish && inputs.registry != 'github'
+        run: npm install --global npm@">=11.15.0 <12"
+
+      - name: Publish released version
+        if: inputs.auto-publish
+        env:
+          _GITHUB_TOKEN: ${{ secrets.github-token }}
+          _NPM_TOKEN: ${{ secrets.npm-token }}
+        run: npx --yes @moyarich/workspace-tools workspace-publish "$PACKAGE_KEY" --registry="${{ inputs.registry }}" --tag="${{ inputs.tag }}"
