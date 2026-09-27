@@ -1,10 +1,10 @@
 import { importHTMLElement } from "./import-html-element.mjs";
 
-const captionUrl = new URL(import.meta.resolve("@moyarich/web-components/demo-caption/element"));
-const cursorUrl = new URL(import.meta.resolve("@moyarich/web-components/demo-cursor-overlay/element"));
+const captionUrl = new URL(import.meta.resolve("@moyarich/web-components/caption/element"));
+const cursorUrl = new URL(import.meta.resolve("@moyarich/web-components/cursor-overlay/element"));
 
 export async function installDemoCursor({ page }) {
-  const tagName = "demo-cursor-overlay";
+  const tagName = "moya-cursor-overlay";
   await importHTMLElement({ page, tagName, componentUrl: cursorUrl });
   await page.evaluate((name) => {
     document.querySelector(name)?.remove();
@@ -13,7 +13,7 @@ export async function installDemoCursor({ page }) {
 }
 
 export async function showDemoCaption({ page, caption }) {
-  const tagName = "demo-caption";
+  const tagName = "moya-caption";
   await importHTMLElement({ page, tagName, componentUrl: captionUrl });
   await page.evaluate(({ tagName, caption }) => {
     let element = document.querySelector(tagName);
@@ -31,5 +31,5 @@ export async function hideDemoCaption({ page }) {
   await page.evaluate((tagName) => {
     const element = document.querySelector(tagName);
     if (element) element.caption = { ...element.caption, visible: false };
-  }, "demo-caption");
+  }, "moya-caption");
 }
