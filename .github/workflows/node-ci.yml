@@ -9,7 +9,7 @@ on:
         type: string
         default: "22"
     secrets:
-      package-token:
+      _GITHUB_TOKEN:
         description: Token used to install packages from GitHub Packages
         required: false
 
@@ -26,7 +26,7 @@ jobs:
           scope: "@moyarich"
       - run: npm ci
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.package-token || github.token }}
+          NODE_AUTH_TOKEN: ${{ secrets._GITHUB_TOKEN || github.token }}
       - run: npm test
       - run: npm run lint --if-present
       - run: npm run typecheck --if-present
