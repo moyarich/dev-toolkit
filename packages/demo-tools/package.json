@@ -10,7 +10,8 @@
     ".": "./src/index.mjs",
     "./strategy": "./src/strategy.mjs",
     "./utils": "./src/utils/index.mjs",
-    "./browser": "./src/browser/index.mjs"
+    "./browser": "./src/browser/index.mjs",
+    "./capture": "./src/capture/index.mjs"
   },
   "files": [
     "bin",
