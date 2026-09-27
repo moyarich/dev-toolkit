@@ -16,6 +16,71 @@ verify ancestry + PR-local diffs
 continue development
 ```
 
+## Stash local work before syncing
+
+If the working tree contains unfinished changes, stash them before rebasing the stacked branch.
+
+Create a named stash:
+
+```sh
+git stash push -m "work in progress"
+```
+
+Include new or untracked files:
+
+```sh
+git stash push -u -m "work in progress"
+```
+
+Stash only selected files:
+
+```sh
+git stash push -m "demo-tools changes" -- path/to/file1 path/to/file2
+```
+
+List saved stashes:
+
+```sh
+git stash list
+```
+
+Restore the latest stash and remove it from the stash list:
+
+```sh
+git stash pop
+```
+
+Restore a stash without removing it:
+
+```sh
+git stash apply
+```
+
+Restore a specific stash:
+
+```sh
+git stash apply stash@{1}
+```
+
+Delete a specific stash after it is no longer needed:
+
+```sh
+git stash drop stash@{1}
+```
+
+A typical stash + stacked-PR repair flow is:
+
+```sh
+git stash push -u -m "before stack rebase"
+
+git fetch origin
+git rebase origin/<parent-branch>
+
+git stash pop
+```
+
+Resolve any rebase conflicts before restoring the stash. If `git stash pop` itself produces conflicts, resolve them in the working tree before continuing development.
+
 ## Repair an out-of-sync child
 
 For the common case where a child branch is behind or diverged from its direct parent:
