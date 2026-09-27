@@ -4,7 +4,8 @@
   "description": "Strategy-first tooling for creating automated demos, screenshots, and recordings.",
   "type": "module",
   "bin": {
-    "demo": "./bin/demo.mjs"
+    "demo": "./bin/demo.mjs",
+    "demo-strategy": "./bin/demo-strategy.mjs"
   },
   "exports": {
     ".": "./src/index.mjs",
