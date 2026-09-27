@@ -22,6 +22,11 @@ on:
         required: false
         default: ""
         type: string
+      dry-run:
+        description: Preview the release without changing, tagging, pushing, or publishing
+        required: false
+        default: true
+        type: boolean
       auto-publish:
         description: Publish the released version after pushing the release
         required: false
@@ -111,25 +116,29 @@ jobs:
           esac
           echo "RELEASE_VALUE=$RELEASE_VALUE" >> "$GITHUB_ENV"
 
-      - name: Create release commit and tag
+      - name: Release or preview package
         env:
           NODE_AUTH_TOKEN: ${{ secrets.github-token || github.token }}
+          DRY_RUN: ${{ inputs.dry-run }}
         run: |
+          DRY_RUN_FLAG=""
+          if [ "$DRY_RUN" = "true" ]; then DRY_RUN_FLAG="--dry-run"; fi
           if [ -f packages/workspace-tools/bin/workspace-release.mjs ]; then
-            node packages/workspace-tools/bin/workspace-release.mjs "$PACKAGE_KEY=$RELEASE_VALUE" --mode="${{ inputs.release-mode }}" --version="$RELEASE_VALUE"
+            node packages/workspace-tools/bin/workspace-release.mjs "$PACKAGE_KEY=$RELEASE_VALUE" --mode="${{ inputs.release-mode }}" --version="$RELEASE_VALUE" $DRY_RUN_FLAG
           else
-            npx --yes @moyarich/workspace-tools workspace-release "$PACKAGE_KEY=$RELEASE_VALUE" --mode="${{ inputs.release-mode }}" --version="$RELEASE_VALUE"
+            npx --yes @moyarich/workspace-tools workspace-release "$PACKAGE_KEY=$RELEASE_VALUE" --mode="${{ inputs.release-mode }}" --version="$RELEASE_VALUE" $DRY_RUN_FLAG
           fi
 
       - name: Push release commit and tag
+        if: ${{ !inputs.dry-run }}
         run: git push origin "HEAD:$GITHUB_REF_NAME" --follow-tags
 
       - name: Ensure staged publishing CLI support
-        if: inputs.auto-publish && inputs.registry != 'github'
+        if: ${{ !inputs.dry-run && inputs.auto-publish && inputs.registry != 'github' }}
         run: npm install --global npm@">=11.15.0 <12"
 
       - name: Publish released version
-        if: inputs.auto-publish
+        if: ${{ !inputs.dry-run && inputs.auto-publish }}
         env:
           _GITHUB_TOKEN: ${{ secrets.github-token }}
           _NPM_TOKEN: ${{ secrets.npm-token }}
