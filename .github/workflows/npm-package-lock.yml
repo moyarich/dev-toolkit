@@ -70,7 +70,6 @@ jobs:
           test -f "$PACKAGE_DIRECTORY/package.json"
 
       - name: Generate package lockfile
-        working-directory: ${{ inputs.package-directory }}
         env:
           PACKAGE_DIRECTORY: ${{ inputs.package-directory }}
           NODE_AUTH_TOKEN: ${{ secrets.package-token || github.token }}
@@ -78,30 +77,19 @@ jobs:
           if [ "$PACKAGE_DIRECTORY" = "." ]; then
             npm install --package-lock-only
           else
-            npm install --package-lock-only --workspaces=false
+            npm install --package-lock-only --workspace="$PACKAGE_DIRECTORY"
           fi
 
 
-      - name: Verify package lockfile
-        env:
-          PACKAGE_DIRECTORY: ${{ inputs.package-directory }}
-        run: |
-          if [ "$PACKAGE_DIRECTORY" = "." ]; then
-            test -f package-lock.json
-          else
-            test -f "$PACKAGE_DIRECTORY/package-lock.json"
-          fi
+      - name: Verify lockfile
+        run: test -f package-lock.json
 
       - name: Commit package lockfile
         if: ${{ inputs.commit }}
         env:
           PACKAGE_DIRECTORY: ${{ inputs.package-directory }}
         run: |
-          if [ "$PACKAGE_DIRECTORY" = "." ]; then
-            git add package-lock.json
-          else
-            git add "$PACKAGE_DIRECTORY/package-lock.json"
-          fi
+          git add package-lock.json
           if git diff --cached --quiet; then
             echo "No lockfile changes."
             exit 0
