@@ -43,7 +43,7 @@ function publishOne(root, pkg, registry, tag, access) {
   }
 }
 
-export function publish({ selector, registry = "github", tag = "latest", access = "public", dryRun = false, withDependencies = false }) {
+export function publish({ selector, registry = "github", tag = "latest", access = "public", dryRun = false, list = false, withDependencies = false }) {
   if (!/^[A-Za-z][A-Za-z0-9._-]*$/.test(tag)) throw new Error("Invalid npm distribution tag.");
   if (!["public", "restricted"].includes(access)) throw new Error("Access must be public or restricted.");
   if (!["github", "npm", "both"].includes(registry)) throw new Error("Registry must be github, npm, or both.");
@@ -68,6 +68,12 @@ export function publish({ selector, registry = "github", tag = "latest", access 
   if (!selector) throw new Error("A package selector is required for publishing.");
   const pkg = packageInfo(root, selector);
   const packages = withDependencies ? workspacePublishOrder(root, pkg) : [pkg];
+
+  if (list) {
+    console.log("\nPublish plan:");
+    for (const item of packages) console.log(`${item.manifest.name}@${item.manifest.version}`);
+    if (!dryRun) return;
+  }
 
   for (const item of packages) validate(root, item);
 
