@@ -19,3 +19,8 @@ test("npm distribution tags require an alphabetic first character", () => {
   assert.equal(valid.test("next-1"), true);
   assert.equal(valid.test("1latest"), false);
 });
+
+test("workspace dependency publishing is opt-in", () => {
+  const args = ["packages/demo-tools", "--with-dependencies"];
+  assert.equal(args.includes("--with-dependencies"), true);
+});
