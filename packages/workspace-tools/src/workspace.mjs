@@ -27,6 +27,9 @@ export function workspacePackages(root) {
 export function packageInfo(root, selector) {
   const packages = workspacePackages(root);
   const normalized = selector?.replace(/^\.\//, "");
+  if (!normalized || normalized === ".." || normalized.startsWith("../") || normalized.includes("/../") || normalized.endsWith("/..")) {
+    throw new Error(`Package selector must identify a workspace package: ${selector}`);
+  }
   const pkg = packages.find(({ directory, manifest }) =>
     normalized === directory ||
     normalized === directory.slice("packages/".length) ||
