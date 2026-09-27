@@ -1,4 +1,9 @@
 #!/usr/bin/env node
+import { release } from "../src/release.mjs";
 
-console.error("workspace-release has not been migrated yet.");
-process.exitCode = 1;
+try {
+  release(process.argv[2]);
+} catch (error) {
+  console.error(error.message);
+  process.exitCode = 1;
+}
