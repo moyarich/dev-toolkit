@@ -10,18 +10,32 @@ export function output(command, args, options = {}) {
   return execFileSync(command, args, { encoding: "utf8", ...options }).trim();
 }
 
+export function workspacePatterns(root) {
+  const manifest = JSON.parse(readFileSync(resolve(root, "package.json"), "utf8"));
+  const workspaces = Array.isArray(manifest.workspaces) ? manifest.workspaces : manifest.workspaces?.packages;
+  if (!Array.isArray(workspaces)) return [];
+  return workspaces;
+}
+
 export function workspacePackages(root) {
-  const packagesDir = resolve(root, "packages");
-  if (!existsSync(packagesDir)) return [];
-  return readdirSync(packagesDir, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory() && existsSync(resolve(packagesDir, entry.name, "package.json")))
-    .map((entry) => {
-      const directory = `packages/${entry.name}`;
-      const file = resolve(root, directory, "package.json");
-      const manifest = JSON.parse(readFileSync(file, "utf8"));
-      return { directory, file, manifest };
-    })
-    .filter((pkg) => pkg.manifest.name);
+  const directories = workspacePatterns(root).flatMap((pattern) => {
+    const normalized = pattern.replace(/^\.\//, "").replace(/\/$/, "");
+    if (!normalized.endsWith("/*")) {
+      return existsSync(resolve(root, normalized, "package.json")) ? [normalized] : [];
+    }
+    const parent = normalized.slice(0, -2);
+    const parentDir = resolve(root, parent);
+    if (!existsSync(parentDir)) return [];
+    return readdirSync(parentDir, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory() && existsSync(resolve(parentDir, entry.name, "package.json")))
+      .map((entry) => `${parent}/${entry.name}`);
+  });
+
+  return [...new Set(directories)].map((directory) => {
+    const file = resolve(root, directory, "package.json");
+    const manifest = JSON.parse(readFileSync(file, "utf8"));
+    return { directory, file, manifest };
+  }).filter((pkg) => pkg.manifest.name);
 }
 
 export function packageInfo(root, selector) {
@@ -32,7 +46,7 @@ export function packageInfo(root, selector) {
   }
   const pkg = packages.find(({ directory, manifest }) =>
     normalized === directory ||
-    normalized === directory.slice("packages/".length) ||
+    normalized === directory.split("/").at(-1) ||
     normalized === manifest.name
   );
   if (!pkg) throw new Error(`Package not found: ${selector}`);
