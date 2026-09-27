@@ -7,10 +7,20 @@ on:
         description: Package location under packages/
         required: true
         type: string
-      version:
-        description: Release bump or exact SemVer
+      release-mode:
+        description: bump, exact, or current
+        required: false
+        default: bump
+        type: string
+      release-bump:
+        description: SemVer bump when release-mode is bump
         required: false
         default: patch
+        type: string
+      exact-version:
+        description: Exact SemVer when release-mode is exact
+        required: false
+        default: ""
         type: string
       node-version:
         required: false
@@ -34,27 +44,29 @@ jobs:
           cache: npm
           registry-url: https://npm.pkg.github.com
           scope: "@moyarich"
-      - name: Resolve package
+      - name: Resolve package and release version
         env:
           PACKAGE_DIRECTORY: ${{ inputs.package-directory }}
+          RELEASE_MODE: ${{ inputs.release-mode }}
+          RELEASE_BUMP: ${{ inputs.release-bump }}
+          EXACT_VERSION: ${{ inputs.exact-version }}
         run: |
-          case "$PACKAGE_DIRECTORY" in
-            packages/*) ;;
-            *) echo "Package location must be under packages/: $PACKAGE_DIRECTORY"; exit 1 ;;
-          esac
+          case "$PACKAGE_DIRECTORY" in packages/*) ;; *) echo "Package location must be under packages/: $PACKAGE_DIRECTORY"; exit 1 ;; esac
           test -f "$PACKAGE_DIRECTORY/package.json"
           PACKAGE_KEY="${PACKAGE_DIRECTORY#packages/}"
-          case "$PACKAGE_KEY" in
-            ""|*/*|*[!A-Za-z0-9._-]*) echo "Invalid package directory: $PACKAGE_DIRECTORY"; exit 1 ;;
+          case "$PACKAGE_KEY" in ""|*/*|*[!A-Za-z0-9._-]*) echo "Invalid package directory: $PACKAGE_DIRECTORY"; exit 1 ;; esac
+          case "$RELEASE_MODE" in
+            bump) RELEASE_VALUE="$RELEASE_BUMP" ;;
+            exact) test -n "$EXACT_VERSION" || { echo "exact-version is required for exact mode"; exit 1; }; RELEASE_VALUE="$EXACT_VERSION" ;;
+            current) RELEASE_VALUE="$(node -p "require('./$PACKAGE_DIRECTORY/package.json').version")" ;;
+            *) echo "release-mode must be bump, exact, or current"; exit 1 ;;
           esac
           echo "PACKAGE_KEY=$PACKAGE_KEY" >> "$GITHUB_ENV"
+          echo "RELEASE_VALUE=$RELEASE_VALUE" >> "$GITHUB_ENV"
       - run: npm ci --include=optional
         env:
           NODE_AUTH_TOKEN: ${{ github.token }}
       - name: Preview release
         env:
-          RELEASE_VERSION: ${{ inputs.version }}
-        env:
-          RELEASE_VERSION: ${{ inputs.version }}
           NODE_AUTH_TOKEN: ${{ github.token }}
-        run: npx --yes @moyarich/workspace-tools workspace-release "$PACKAGE_KEY=$RELEASE_VERSION" --dry-run
+        run: npx --yes @moyarich/workspace-tools workspace-release "$PACKAGE_KEY=$RELEASE_VALUE" --mode="${{ inputs.release-mode }}" --version="$RELEASE_VALUE" --dry-run
