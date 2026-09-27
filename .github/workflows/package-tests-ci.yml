@@ -1,0 +1,14 @@
+name: Package Tests
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  packages:
+    uses: ./.github/workflows/package-tests.yml
+    with:
+      node-version: "22"
+      packages-directory: packages

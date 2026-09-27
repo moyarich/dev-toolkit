@@ -1,0 +1,9 @@
+# CLI reference
+
+```sh
+readme-screenshots [config-path]
+```
+
+If no path is supplied, the command checks `README_SCREENSHOT_CONFIG` and then defaults to `readme-screenshots.config.mjs`.
+
+The executable launches Playwright Chromium, applies the configured viewport and reduced-motion preference, visits the target URL, captures each requested page or locator screenshot, and closes the browser.

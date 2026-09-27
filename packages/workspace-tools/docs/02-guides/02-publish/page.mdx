@@ -1,0 +1,27 @@
+# Publishing packages
+
+Validate without publishing:
+
+```sh
+workspace-publish css-expand-collapse --dry-run
+```
+
+A dry run with no selector validates every non-private package under `packages/*`.
+
+Publish to GitHub Packages:
+
+```sh
+workspace-publish css-expand-collapse --registry=github
+```
+
+Stage a release for npm:
+
+```sh
+workspace-publish css-expand-collapse --registry=npm
+```
+
+Use `--registry=both` for both destinations. `--tag=<tag>` controls the npm distribution tag and `--access=public|restricted` controls access.
+
+Before publishing, the tool runs each package's `typecheck`, `test`, and `build` scripts when present, followed by `npm pack --dry-run`.
+
+GitHub Packages uses `_GITHUB_TOKEN` or `NODE_AUTH_TOKEN`. npm staging uses `_NPM_TOKEN` or `NODE_AUTH_TOKEN`. npm releases are staged and require approval before becoming public.

@@ -24,10 +24,10 @@ assertions, screenshots, recordings, and cleanup. It may explicitly import
 shared utilities when behavior is genuinely reusable.
 
 ```js
-import { defineDemoStrategy } from "@moyarich/demo-tools";
+import { executableDemoStrategy } from "@moyarich/demo-tools";
 import { pause } from "@moyarich/demo-tools/utils";
 
-export default defineDemoStrategy({
+export default executableDemoStrategy({
   name: "overview",
   description: "Show the primary product workflow.",
 
@@ -39,6 +39,20 @@ export default defineDemoStrategy({
   },
 });
 ```
+
+Run a strategy directly — this is the primary execution model:
+
+```sh
+node demo/strategies/overview/index.mjs
+```
+
+Importing that same strategy for discovery does not execute it. Its default artifact directory is local to the strategy:
+
+```text
+demo/strategies/overview/artifacts/
+```
+
+The CLI remains an optional convenience for batch execution.
 
 Run all strategies:
 
@@ -78,3 +92,16 @@ remain the owner of the demo story.
 This structure is intended to absorb the reusable infrastructure proven in
 `pointer-bubble`, `element-inspector`, and `JotebookSync` without coupling
 their product-specific behavior.
+
+
+## Documentation
+
+The extended documentation is written in MDX so documentation sites can add interactive examples and components without changing the package documentation source.
+
+- [Documentation index](./docs/page.mdx)
+- [Strategies](./docs/02-guides/01-strategies/page.mdx)
+- [CLI and discovery](./docs/04-reference/01-cli/page.mdx)
+- [Browser and browser-extension demos](./docs/03-environments/01-browser/page.mdx)
+- [VS Code demos](./docs/03-environments/02-vscode/page.mdx)
+- [Recording and media](./docs/02-guides/02-recording/page.mdx)
+- [Demo components](./docs/02-guides/03-components/page.mdx)

@@ -1,22 +1,104 @@
 #!/usr/bin/env node
-import { discoverDemoStrategies, runDemoStrategies } from "../src/index.mjs";
+import { Command } from "commander";
+import { discoverDemoStrategies, runDemoStrategies, selectDemoStrategies } from "../src/index.mjs";
+import { captureDemoStrategy } from "../src/generate/index.mjs";
+import { launchBrowserDemo } from "../src/browser/index.mjs";
+import { encodeGif } from "../src/capture/index.mjs";
 
-const args = process.argv.slice(2);
-const command = args[0] ?? "run";
-const option = (name) => args.find((value) => value.startsWith(`--${name}=`))?.slice(name.length + 3);
-const directory = option("strategies") ?? "demo/strategies";
+const program = new Command()
+  .name("demo")
+  .description("Discover, select, and run self-contained demo strategies.")
+  .version("0.0.0")
+  .option("-d, --strategies <directory>", "strategy root directory", "demo/strategies")
+  .option("-a, --artifacts <directory>", "override the artifacts output directory")
+  .showHelpAfterError();
 
-if (command === "list") {
-  const strategies = await discoverDemoStrategies({ directory });
-  for (const { id, strategy } of strategies) {
-    console.log(strategy.description ? `${id} - ${strategy.description}` : id);
-  }
-} else if (command === "run") {
-  await runDemoStrategies({
-    directory,
-    selected: option("strategy") ?? "all",
-    artifactsDirectory: option("artifacts") ?? "demo/artifacts",
+program
+  .command("list")
+  .description("List discovered demo strategies.")
+  .option("--json", "print discovered strategies as JSON")
+  .action(async (options) => {
+    const root = program.opts();
+    const strategies = await discoverDemoStrategies({ directory: root.strategies });
+    if (options.json) {
+      console.log(JSON.stringify(strategies.map(({ id, description, relativePath, modulePath }) => ({
+        id, description, relativePath, modulePath,
+      })), null, 2));
+      return;
+    }
+    for (const { id, description, relativePath } of strategies) {
+      console.log([id, description, relativePath].filter(Boolean).join("\t"));
+    }
   });
-} else {
-  throw new Error(`Unknown demo command: ${command}`);
+
+program
+  .command("run")
+  .description("Run discovered demo strategies.")
+  .argument("[strategies...]", "strategy names; omit to run all")
+  .option("-s, --strategy <name...>", "strategy names (repeat or provide multiple)")
+  .action(async (arguments_, options) => {
+    const root = program.opts();
+    const selected = [...(arguments_ ?? []), ...(options.strategy ?? [])];
+    await runDemoStrategies({
+      directory: root.strategies,
+      selected: selected.length ? selected : "all",
+      ...(root.artifacts ? { artifactsDirectory: root.artifacts } : {}),
+    });
+  });
+
+program
+  .command("select", { isDefault: process.stdin.isTTY && process.stdout.isTTY })
+  .alias("interactive")
+  .description("Select one or more discovered strategies with fzf.")
+  .action(async () => {
+    const root = program.opts();
+    const selected = await selectDemoStrategies({ directory: root.strategies });
+    if (!selected.length) return;
+    await runDemoStrategies({
+      directory: root.strategies,
+      selected,
+      ...(root.artifacts ? { artifactsDirectory: root.artifacts } : {}),
+    });
+  });
+
+program
+  .command("create")
+  .description("Record Playwright actions and write a directly executable strategy.")
+  .argument("[name]", "strategy name")
+  .option("-u, --url <url>", "page URL to record")
+  .action(async (name, options) => {
+    if (!name) throw new Error("demo create requires a strategy name.");
+    if (!options.url) throw new Error("demo create requires --url <url>.");
+    const { chromium } = await import("playwright-core");
+    const demo = await launchBrowserDemo({
+      chromium,
+      url: options.url,
+      launchOptions: { headless: false },
+    });
+    try {
+      const strategyFile = await captureDemoStrategy({ page: demo.page, name });
+      console.log(strategyFile);
+    } finally {
+      await demo.close();
+    }
+  });
+
+program
+  .command("gif")
+  .description("Encode an existing demo WebM as a GIF.")
+  .argument("<input>", "input WebM path")
+  .argument("[output]", "output GIF path")
+  .option("--fps <number>", "GIF frames per second", Number, 12)
+  .option("--width <number>", "maximum GIF width", Number, 960)
+  .option("--trim-start <seconds>", "seconds to trim from the start", Number, 0)
+  .action(async (input, output, options) => {
+    const destination = output ?? input.replace(/\\.webm$/i, ".gif");
+    await encodeGif({ input, output: destination, fps: options.fps, width: options.width, trimStart: options.trimStart });
+    console.log(destination);
+  });
+
+if (process.argv.length === 2 && !(process.stdin.isTTY && process.stdout.isTTY)) {
+  process.argv.push("run");
 }
+
+await program.parseAsync(process.argv);
