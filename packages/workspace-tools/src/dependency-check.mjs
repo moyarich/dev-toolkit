@@ -1,12 +1,26 @@
 import { output, workspacePackages } from "./workspace.mjs";
 
-function parseOutdated(raw) {
+export function parseOutdated(raw) {
   if (!raw) return {};
   try {
     return JSON.parse(raw);
   } catch {
     throw new Error("Unable to parse npm outdated results.");
   }
+}
+
+export function classifyOutdated(outdated) {
+  return Object.entries(outdated).map(([name, info]) => {
+    const current = info.current ?? null;
+    const wanted = info.wanted ?? null;
+    const latest = info.latest ?? null;
+    const fail = Boolean(current && wanted && current !== wanted);
+    return {
+      name, current, wanted, latest,
+      level: fail ? "fail" : "warn",
+      reason: fail ? "installed dependency is behind wanted" : "newer version exists outside declared range",
+    };
+  });
 }
 
 export function dependencyCheck(root, pkg) {
@@ -21,22 +35,7 @@ export function dependencyCheck(root, pkg) {
   }
 
   const internal = new Map(workspacePackages(root).map((item) => [item.manifest.name, item]));
-  const results = [];
-
-  for (const [name, info] of Object.entries(outdated)) {
-    const current = info.current ?? null;
-    const wanted = info.wanted ?? null;
-    const latest = info.latest ?? null;
-    const fail = Boolean(current && wanted && current !== wanted);
-    results.push({
-      name,
-      current,
-      wanted,
-      latest,
-      level: fail ? "fail" : "warn",
-      reason: fail ? "installed dependency is behind wanted" : "newer version exists outside declared range",
-    });
-  }
+  const results = classifyOutdated(outdated);
 
   const declared = {
     ...(pkg.manifest.dependencies ?? {}),
