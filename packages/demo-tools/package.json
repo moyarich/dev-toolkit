@@ -1,0 +1,21 @@
+{
+  "name": "@moyarich/demo-tools",
+  "version": "0.0.0",
+  "description": "Strategy-first tooling for creating automated demos, screenshots, and recordings.",
+  "type": "module",
+  "bin": {
+    "demo": "./bin/demo.mjs"
+  },
+  "exports": {
+    ".": "./src/index.mjs",
+    "./strategy": "./src/strategy.mjs",
+    "./utils": "./src/utils/index.mjs"
+  },
+  "files": ["bin", "src"],
+  "scripts": {
+    "test": "node --test tests/*.test.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
