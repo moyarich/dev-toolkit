@@ -1,0 +1,17 @@
+{
+  "name": "@moyarich/dev-toolkit",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Shared development tooling and reusable GitHub workflows.",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "test": "npm test --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
