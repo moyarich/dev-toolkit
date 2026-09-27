@@ -92,3 +92,16 @@ remain the owner of the demo story.
 This structure is intended to absorb the reusable infrastructure proven in
 `pointer-bubble`, `element-inspector`, and `JotebookSync` without coupling
 their product-specific behavior.
+
+
+## Documentation
+
+The extended documentation is written in MDX so documentation sites can add interactive examples and components without changing the package documentation source.
+
+- [Documentation index](./docs/index.mdx)
+- [Strategies](./docs/strategies.mdx)
+- [CLI and discovery](./docs/cli.mdx)
+- [Browser and browser-extension demos](./docs/browser.mdx)
+- [VS Code demos](./docs/vscode.mdx)
+- [Recording and media](./docs/recording.mdx)
+- [Demo components](./docs/components.mdx)
