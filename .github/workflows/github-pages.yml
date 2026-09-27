@@ -1,6 +1,31 @@
 name: Reusable GitHub Pages
 
 on:
+  workflow_dispatch:
+    inputs:
+      build-command:
+        description: Command that builds the Pages site
+        required: true
+        type: string
+      output-directory:
+        description: Directory produced by the build command
+        required: true
+        type: string
+      node-version:
+        description: Node.js version used to build the site
+        required: true
+        default: "24"
+        type: string
+      install-command:
+        description: Dependency installation command
+        required: true
+        default: npm ci --include=optional
+        type: string
+      working-directory:
+        description: Directory in which install and build commands run
+        required: true
+        default: "."
+        type: string
   workflow_call:
     inputs:
       build-command:
