@@ -4,7 +4,7 @@ const captionUrl = new URL(import.meta.resolve("@moyarich/web-components/caption
 const cursorUrl = new URL(import.meta.resolve("@moyarich/web-components/cursor-overlay/element"));
 
 export async function installDemoCursor({ page }) {
-  const tagName = "cursor-overlay";
+  const tagName = "moyarich-cursor-overlay";
   await importHTMLElement({ page, tagName, componentUrl: cursorUrl });
   await page.evaluate((name) => {
     document.querySelector(name)?.remove();
@@ -13,7 +13,7 @@ export async function installDemoCursor({ page }) {
 }
 
 export async function showDemoCaption({ page, caption }) {
-  const tagName = "caption-overlay";
+  const tagName = "moyarich-caption-overlay";
   await importHTMLElement({ page, tagName, componentUrl: captionUrl });
   await page.evaluate(({ tagName, caption }) => {
     let element = document.querySelector(tagName);
@@ -31,5 +31,5 @@ export async function hideDemoCaption({ page }) {
   await page.evaluate((tagName) => {
     const element = document.querySelector(tagName);
     if (element) element.caption = { ...element.caption, visible: false };
-  }, "caption-overlay");
+  }, "moyarich-caption-overlay");
 }
