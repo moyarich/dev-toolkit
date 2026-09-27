@@ -1,6 +1,69 @@
 name: Reusable package release
 
 on:
+  workflow_dispatch:
+    inputs:
+      package-directory:
+        description: Workspace path, directory name, or package name
+        required: true
+        default: packages/workspace-tools
+        type: string
+      release-mode:
+        description: Version selection mode
+        required: true
+        default: bump
+        type: choice
+        options:
+          - bump
+          - current
+          - exact
+      release-bump:
+        description: SemVer bump when mode is bump
+        required: true
+        default: patch
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+          - prepatch
+          - preminor
+          - premajor
+          - prerelease
+      exact-version:
+        description: Exact SemVer when mode is exact
+        required: false
+        default: ""
+        type: string
+      dry-run:
+        description: Preview without changing, tagging, pushing, or publishing
+        required: true
+        default: true
+        type: boolean
+      auto-publish:
+        description: Publish after releasing
+        required: true
+        default: false
+        type: boolean
+      registry:
+        description: Package registry
+        required: true
+        default: github
+        type: choice
+        options:
+          - github
+          - npm
+          - both
+      tag:
+        description: Distribution tag
+        required: true
+        default: latest
+        type: string
+      node-version:
+        description: Node.js version
+        required: true
+        default: "24"
+        type: string
   workflow_call:
     inputs:
       package-directory:
