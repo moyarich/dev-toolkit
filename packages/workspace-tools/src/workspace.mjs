@@ -39,3 +39,33 @@ export function packageInfo(root, selector) {
 export function repositoryRoot() {
   return output("git", ["rev-parse", "--show-toplevel"]);
 }
+
+export function workspaceDependencies(root, pkg) {
+  const byName = new Map(workspacePackages(root).map((item) => [item.manifest.name, item]));
+  const dependencyNames = new Set([
+    ...Object.keys(pkg.manifest.dependencies ?? {}),
+    ...Object.keys(pkg.manifest.optionalDependencies ?? {}),
+  ]);
+  return [...dependencyNames].map((name) => byName.get(name)).filter(Boolean);
+}
+
+export function workspacePublishOrder(root, pkg) {
+  const order = [];
+  const visiting = new Set();
+  const visited = new Set();
+
+  function visit(current) {
+    if (visited.has(current.manifest.name)) return;
+    if (visiting.has(current.manifest.name)) {
+      throw new Error(`Circular workspace dependency involving ${current.manifest.name}.`);
+    }
+    visiting.add(current.manifest.name);
+    for (const dependency of workspaceDependencies(root, current)) visit(dependency);
+    visiting.delete(current.manifest.name);
+    visited.add(current.manifest.name);
+    order.push(current);
+  }
+
+  visit(pkg);
+  return order;
+}
