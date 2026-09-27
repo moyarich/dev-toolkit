@@ -22,7 +22,9 @@
   },
   "files": [
     "bin",
-    "src"
+    "src",
+    "docs",
+    "README.md"
   ],
   "scripts": {
     "test": "node --test tests/*.test.mjs"
