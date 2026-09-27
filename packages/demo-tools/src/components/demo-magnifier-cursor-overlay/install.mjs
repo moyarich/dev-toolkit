@@ -2,19 +2,19 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-const DEMO_CURSOR_TAG_NAME = "demo-magnifier-cursor-overlay";
+const MAGNIFIER_CURSOR_TAG_NAME = "moya-magnifier-cursor-overlay";
 const componentPath = fileURLToPath(
-  import.meta.resolve("@moyarich/web-components/demo-magnifier-cursor-overlay/element"),
+  import.meta.resolve("@moyarich/web-components/magnifier-cursor-overlay/element"),
 );
 const stylesheetPath = path.join(path.dirname(componentPath), "styles.css");
 const componentSource = readFile(componentPath, "utf8");
 const stylesheetSource = readFile(stylesheetPath, "utf8");
 
 /** Installs the visible cursor halo over the VS Code workbench. */
-export async function installDemoMagnifierCursorOverlay({ page }) {
+export async function installMagnifierCursorOverlay({ page }) {
   const isRegistered = await page.evaluate(
     (tagName) => Boolean(customElements.get(tagName)),
-    DEMO_CURSOR_TAG_NAME,
+    MAGNIFIER_CURSOR_TAG_NAME,
   );
 
   if (!isRegistered) {
@@ -27,8 +27,8 @@ export async function installDemoMagnifierCursorOverlay({ page }) {
             `const styleSheet = new CSSStyleSheet();\nstyleSheet.replaceSync(${JSON.stringify(await stylesheetSource)});`,
           )
           .replace(
-            "export class DemoMagnifierCursorOverlay",
-            "class DemoMagnifierCursorOverlay",
+            "export class MagnifierCursorOverlay",
+            "class MagnifierCursorOverlay",
           )}\n}
 //# sourceURL=${componentPath}`,
         awaitPromise: true,
@@ -38,7 +38,7 @@ export async function installDemoMagnifierCursorOverlay({ page }) {
         throw new Error(
           result.exceptionDetails.exception?.description ??
             result.exceptionDetails.text ??
-            "Could not register DemoMagnifierCursorOverlay.",
+            "Could not register MagnifierCursorOverlay.",
         );
       }
     } finally {
@@ -49,7 +49,7 @@ export async function installDemoMagnifierCursorOverlay({ page }) {
   await page.evaluate((tagName) => {
     document.querySelector(tagName)?.remove();
     document.documentElement.append(document.createElement(tagName));
-  }, DEMO_CURSOR_TAG_NAME);
+  }, MAGNIFIER_CURSOR_TAG_NAME);
 }
 
 /**
@@ -74,8 +74,8 @@ export async function pointDemoMagnifierCursorAt({
 }
 
 /** Removes the cursor halo before keyboard input or unobstructed result shots. */
-export async function removeDemoMagnifierCursorOverlay({ page }) {
+export async function removeMagnifierCursorOverlay({ page }) {
   await page.evaluate((tagName) => {
     document.querySelector(tagName)?.remove();
-  }, DEMO_CURSOR_TAG_NAME);
+  }, MAGNIFIER_CURSOR_TAG_NAME);
 }
