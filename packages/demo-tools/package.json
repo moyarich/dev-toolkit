@@ -9,13 +9,25 @@
   "exports": {
     ".": "./src/index.mjs",
     "./strategy": "./src/strategy.mjs",
-    "./utils": "./src/utils/index.mjs"
+    "./utils": "./src/utils/index.mjs",
+    "./vscode": "./src/vscode/index.mjs"
   },
-  "files": ["bin", "src"],
+  "files": [
+    "bin",
+    "src"
+  ],
   "scripts": {
     "test": "node --test tests/*.test.mjs"
   },
   "engines": {
     "node": ">=22"
+  },
+  "peerDependencies": {
+    "@vscode/test-electron": ">=2.5.0"
+  },
+  "peerDependenciesMeta": {
+    "@vscode/test-electron": {
+      "optional": true
+    }
   }
 }
