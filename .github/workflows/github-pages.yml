@@ -1,0 +1,77 @@
+name: Reusable GitHub Pages
+
+on:
+  workflow_call:
+    inputs:
+      build-command:
+        description: Command that builds the Pages site
+        required: true
+        type: string
+      output-directory:
+        description: Directory produced by the build command
+        required: true
+        type: string
+      node-version:
+        description: Node.js version used to build the site
+        required: false
+        default: "24"
+        type: string
+      install-command:
+        description: Dependency installation command
+        required: false
+        default: npm ci --include=optional
+        type: string
+      working-directory:
+        description: Directory in which install and build commands run
+        required: false
+        default: "."
+        type: string
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: npm
+      - uses: actions/configure-pages@v5
+        id: pages
+      - name: Install dependencies
+        working-directory: ${{ inputs.working-directory }}
+        env:
+          INSTALL_COMMAND: ${{ inputs.install-command }}
+        run: bash -lc "$INSTALL_COMMAND"
+      - name: Build site
+        working-directory: ${{ inputs.working-directory }}
+        env:
+          BUILD_COMMAND: ${{ inputs.build-command }}
+          PAGES_BASE_PATH: ${{ steps.pages.outputs.base_path }}
+          PAGES_BASE_URL: ${{ steps.pages.outputs.base_url }}
+          PAGES_ORIGIN: ${{ steps.pages.outputs.origin }}
+        run: bash -lc "$BUILD_COMMAND"
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: ${{ inputs.working-directory }}/${{ inputs.output-directory }}
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
