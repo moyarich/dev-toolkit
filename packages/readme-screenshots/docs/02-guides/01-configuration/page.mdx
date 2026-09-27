@@ -1,0 +1,36 @@
+# Configuration
+
+Create `readme-screenshots.config.mjs` in the consuming repository:
+
+```js
+export default {
+  url: "http://127.0.0.1:5173",
+  outputDir: "docs/screenshots",
+  viewport: { width: 1440, height: 1000 },
+
+  screenshots: [
+    {
+      name: "playground-overview.png",
+    },
+    {
+      name: "feature-example.png",
+      selector: '[data-readme-screenshot="feature-example"]',
+      scrollIntoView: true,
+      waitForMs: 500,
+    },
+  ],
+};
+```
+
+Supported top-level options include `url`, `outputDir`, `viewport`, `deviceScaleFactor`, `reducedMotion`, `waitUntil`, and `screenshots`.
+
+Each screenshot requires `name`. Use `selector` to capture one element instead of the page. A screenshot can also request `scrollIntoView`, `waitForMs`, or `fullPage`.
+
+Environment variables override the matching defaults:
+
+```text
+PLAYGROUND_URL
+DEMO_OUTPUT_DIR
+README_SCREENSHOT_NAME
+README_SCREENSHOT_CONFIG
+```
