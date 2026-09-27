@@ -1,0 +1,13 @@
+# Releasing packages
+
+Use the `package=version` form:
+
+```sh
+workspace-release css-expand-collapse=patch
+workspace-release css-expand-collapse=minor
+workspace-release css-expand-collapse=1.0.0
+```
+
+Supported npm version increments are `major`, `minor`, `patch`, `premajor`, `preminor`, `prepatch`, and `prerelease`. Explicit semantic versions are also accepted.
+
+The command requires a clean Git working tree. It runs `npm version` for the selected workspace without npm creating the Git tag, stages the package manifest and lockfile, creates a release commit, and creates a `<selector>@<version>` Git tag. It prints the explicit `git push --follow-tags` command rather than pushing automatically.
