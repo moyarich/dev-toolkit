@@ -11,6 +11,8 @@
     "./strategy": "./src/strategy.mjs",
     "./utils": "./src/utils/index.mjs",
     "./vscode": "./src/vscode/index.mjs",
+    "./capture": "./src/capture/index.mjs",
+    "./browser": "./src/browser/index.mjs",
     "./components": "./src/components/index.mjs",
     "./components/demo-caption": "./src/components/demo-caption/index.mjs",
     "./components/demo-cursor-overlay": "./src/components/demo-cursor-overlay/index.mjs"
@@ -26,10 +28,14 @@
     "node": ">=22"
   },
   "peerDependencies": {
-    "@vscode/test-electron": ">=2.5.0"
+    "@vscode/test-electron": ">=2.5.0",
+    "playwright-core": ">=1.55.0"
   },
   "peerDependenciesMeta": {
     "@vscode/test-electron": {
+      "optional": true
+    },
+    "playwright-core": {
       "optional": true
     }
   }
