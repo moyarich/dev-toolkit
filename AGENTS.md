@@ -13,7 +13,8 @@ Before creating or updating a PR:
 - inspect the PR-local diff and include only the intended change;
 - use a concise title that describes that change;
 - keep the PR body short and limited to information needed to understand or review the PR;
-- do not add unrelated history, commentary, troubleshooting notes, implementation narration, or information already obvious from the diff;
+- include implementation details when they materially help reviewers understand architecture, non-obvious behavior, tradeoffs, compatibility or migration concerns, or why a particular approach was chosen;
+- omit implementation narration that merely restates the diff, along with unrelated history, troubleshooting notes, or other review-irrelevant noise;
 - do not describe changes inherited from a parent PR as though they belong to the child PR;
 - mention stack relationships only when needed to identify the immediate parent or review order;
 - run the relevant checks before considering the PR ready.
