@@ -5,9 +5,9 @@ The reusable browser elements live in `@moyarich/web-components`.
 ```text
 packages/web-components/
 ├── src/
-│   ├── demo-caption/
-│   ├── demo-cursor-overlay/
-│   └── demo-magnifier-cursor-overlay/
+│   ├── caption/
+│   ├── cursor-overlay/
+│   └── magnifier-cursor-overlay/
 └── package.json
 ```
 
