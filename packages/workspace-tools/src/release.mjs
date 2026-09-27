@@ -1,4 +1,5 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
 import { resolve } from "node:path";
 import { output, packageInfo, repositoryRoot, run } from "./workspace.mjs";
 
@@ -56,13 +57,23 @@ function registryFor(pkg) {
   return pkg.manifest.publishConfig?.registry || "https://registry.npmjs.org";
 }
 
-function publishedVersion(root, pkg, version) {
+function registryVersion(root, pkg, version) {
   const registry = registryFor(pkg);
   const spec = version ? `${pkg.manifest.name}@${version}` : pkg.manifest.name;
+
   try {
-    return output("npm", ["view", spec, "version", "--registry", registry], { cwd: root });
-  } catch {
-    return "";
+    const publishedVersion = output("npm", ["view", spec, "version", "--registry", registry], { cwd: root });
+    return { status: "published", version: publishedVersion };
+  } catch (error) {
+    const stderr = String(error?.stderr || "");
+    const stdout = String(error?.stdout || "");
+    const details = `${stderr}\n${stdout}\n${error?.message || ""}`;
+
+    if (/E404|404 Not Found|is not in this registry|No match found for version/i.test(details)) {
+      return { status: "not-published", version: null };
+    }
+
+    throw new Error(`Unable to verify ${spec} in ${registry}: ${stderr.trim() || error?.message || "registry lookup failed"}`);
   }
 }
 
@@ -109,8 +120,10 @@ export function release(argument, options = {}) {
       throw new Error("Unable to resolve the dry-run release version.");
     }
     const registry = registryFor(pkg);
-    const latestPublished = publishedVersion(root, pkg);
-    const alreadyPublished = publishedVersion(root, pkg, nextVersion) === nextVersion;
+    const published = registryVersion(root, pkg);
+    const proposed = registryVersion(root, pkg, nextVersion);
+    const latestPublished = published.status === "published" ? published.version : "";
+    const alreadyPublished = proposed.status === "published";
     const previous = previousReleaseRef(root, selector);
     const section = changelogSection(nextVersion, releaseNotes(packageChanges(root, pkg, previous)));
     console.log(`\nRelease dry run\nPackage: ${pkg.manifest.name}\nRegistry: ${registry}\nPublished: ${latestPublished || "none"}\nCurrent: ${pkg.manifest.version}\nRequested: ${versionSpec}\nNext: ${nextVersion}\nAlready published: ${alreadyPublished ? "yes" : "no"}\nPrevious release ref: ${previous || "none"}\n\nProposed changelog:\n\n${section}`);
@@ -120,7 +133,7 @@ export function release(argument, options = {}) {
   run("npm", ["version", versionSpec, "--workspace", pkg.manifest.name, "--git-tag-version=false"], { cwd: root });
 
   const version = JSON.parse(readFileSync(pkg.file, "utf8")).version;
-  if (publishedVersion(root, pkg, version) === version) {
+  if (registryVersion(root, pkg, version).status === "published") {
     run("git", ["checkout", "--", pkg.file, "package-lock.json"], { cwd: root });
     throw new Error(`${pkg.manifest.name}@${version} is already published to ${registryFor(pkg)}.`);
   }
