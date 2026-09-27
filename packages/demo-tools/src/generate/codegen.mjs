@@ -15,7 +15,7 @@ export function extractPageActions(source) {
   const ends = ["// ---------------------", "await context.close()", "await browser.close()"]
     .map((marker) => source.indexOf(marker, start)).filter((index) => index !== -1);
   const actions = source.slice(start, ends.length ? Math.min(...ends) : source.length);
-  return actions.split("\\n").map((line) => line.trim()).filter(Boolean).join("\\n");
+  return actions.split("\n").map((line) => line.trim()).filter(Boolean).join("\n");
 }
 
 export async function captureDemoStrategy({
