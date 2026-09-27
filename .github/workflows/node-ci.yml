@@ -21,7 +21,7 @@ on:
   workflow_call:
     inputs:
       package-directory:
-        description: Package directory containing package.json and package-lock.json
+        description: Workspace path, directory name, or package name
         required: false
         type: string
         default: "."
@@ -45,22 +45,22 @@ jobs:
           node-version: ${{ inputs.node-version }}
           registry-url: https://npm.pkg.github.com
           scope: "@moyarich"
-      - name: Ensure package lockfile
-        working-directory: ${{ inputs.package-directory }}
+      - name: Install workspace dependencies
+        run: npm ci
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.package-token || github.token }}
+      - name: Test
+        env:
+          WORKSPACE: ${{ inputs.package-directory }}
         run: |
-          if [ ! -f package-lock.json ]; then
-            npm install --package-lock-only
-          fi
+          if [ "$WORKSPACE" = "." ]; then npm test; else npm test --workspace "$WORKSPACE"; fi
+      - name: Lint
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.package-token || github.token }}
-
-      - run: npm ci
-        working-directory: ${{ inputs.package-directory }}
+          WORKSPACE: ${{ inputs.package-directory }}
+        run: |
+          if [ "$WORKSPACE" = "." ]; then npm run lint --if-present; else npm run lint --workspace "$WORKSPACE" --if-present; fi
+      - name: Typecheck
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.package-token || github.token }}
-      - run: npm test
-        working-directory: ${{ inputs.package-directory }}
-      - run: npm run lint --if-present
-        working-directory: ${{ inputs.package-directory }}
-      - run: npm run typecheck --if-present
-        working-directory: ${{ inputs.package-directory }}
+          WORKSPACE: ${{ inputs.package-directory }}
+        run: |
+          if [ "$WORKSPACE" = "." ]; then npm run typecheck --if-present; else npm run typecheck --workspace "$WORKSPACE" --if-present; fi

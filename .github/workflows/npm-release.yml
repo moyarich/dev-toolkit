@@ -4,7 +4,7 @@ on:
   workflow_call:
     inputs:
       package-directory:
-        description: Package location under packages/
+        description: Workspace path, directory name, or package name
         required: true
         type: string
       release-mode:
@@ -68,32 +68,7 @@ jobs:
         with:
           node-version: ${{ inputs.node-version }}
 
-      - name: Resolve package
-        env:
-          PACKAGE_DIRECTORY: ${{ inputs.package-directory }}
-        run: |
-          case "$PACKAGE_DIRECTORY" in
-            packages/*) ;;
-            *)
-              echo "Package location must be under packages/: $PACKAGE_DIRECTORY"
-              exit 1
-              ;;
-          esac
-
-          test -f "$PACKAGE_DIRECTORY/package.json"
-          PACKAGE_KEY="${PACKAGE_DIRECTORY#packages/}"
-
-          case "$PACKAGE_KEY" in
-            ""|*/*|*[!A-Za-z0-9._-]*)
-              echo "Invalid package directory: $PACKAGE_DIRECTORY"
-              exit 1
-              ;;
-          esac
-
-          echo "PACKAGE_KEY=$PACKAGE_KEY" >> "$GITHUB_ENV"
-
-      - name: Install dependencies
-        working-directory: ${{ inputs.package-directory }}
+      - name: Install workspace dependencies
         run: npm ci --include=optional
 
       - name: Configure release author
@@ -106,15 +81,16 @@ jobs:
           RELEASE_MODE: ${{ inputs.release-mode }}
           RELEASE_BUMP: ${{ inputs.release-bump }}
           EXACT_VERSION: ${{ inputs.exact-version }}
-          PACKAGE_DIRECTORY: ${{ inputs.package-directory }}
+          PACKAGE_SELECTOR: ${{ inputs.package-directory }}
         run: |
           case "$RELEASE_MODE" in
             bump) RELEASE_VALUE="$RELEASE_BUMP" ;;
             exact) test -n "$EXACT_VERSION" || { echo "exact-version is required for exact mode"; exit 1; }; RELEASE_VALUE="$EXACT_VERSION" ;;
-            current) RELEASE_VALUE="$(node -p "require('./$PACKAGE_DIRECTORY/package.json').version")" ;;
+            current) RELEASE_VALUE="$(npm pkg get version --workspace "$PACKAGE_SELECTOR" | tr -d '"')" ;;
             *) echo "release-mode must be bump, exact, or current"; exit 1 ;;
           esac
           echo "RELEASE_VALUE=$RELEASE_VALUE" >> "$GITHUB_ENV"
+          echo "PACKAGE_SELECTOR=$PACKAGE_SELECTOR" >> "$GITHUB_ENV"
 
       - name: Release or preview package
         env:
@@ -124,9 +100,9 @@ jobs:
           DRY_RUN_FLAG=""
           if [ "$DRY_RUN" = "true" ]; then DRY_RUN_FLAG="--dry-run"; fi
           if [ -f packages/workspace-tools/bin/workspace-release.mjs ]; then
-            node packages/workspace-tools/bin/workspace-release.mjs "$PACKAGE_KEY=$RELEASE_VALUE" --mode="${{ inputs.release-mode }}" --version="$RELEASE_VALUE" $DRY_RUN_FLAG
+            node packages/workspace-tools/bin/workspace-release.mjs "$PACKAGE_SELECTOR=$RELEASE_VALUE" --mode="${{ inputs.release-mode }}" --version="$RELEASE_VALUE" $DRY_RUN_FLAG
           else
-            npx --yes @moyarich/workspace-tools workspace-release "$PACKAGE_KEY=$RELEASE_VALUE" --mode="${{ inputs.release-mode }}" --version="$RELEASE_VALUE" $DRY_RUN_FLAG
+            npx --yes @moyarich/workspace-tools workspace-release "$PACKAGE_SELECTOR=$RELEASE_VALUE" --mode="${{ inputs.release-mode }}" --version="$RELEASE_VALUE" $DRY_RUN_FLAG
           fi
 
       - name: Push release commit and tag
@@ -144,7 +120,7 @@ jobs:
           _NPM_TOKEN: ${{ secrets.npm-token }}
         run: |
           if [ -f packages/workspace-tools/bin/workspace-publish.mjs ]; then
-            node packages/workspace-tools/bin/workspace-publish.mjs "$PACKAGE_KEY" --registry="${{ inputs.registry }}" --tag="${{ inputs.tag }}"
+            node packages/workspace-tools/bin/workspace-publish.mjs "$PACKAGE_SELECTOR" --registry="${{ inputs.registry }}" --tag="${{ inputs.tag }}"
           else
-            npx --yes @moyarich/workspace-tools workspace-publish "$PACKAGE_KEY" --registry="${{ inputs.registry }}" --tag="${{ inputs.tag }}"
+            npx --yes @moyarich/workspace-tools workspace-publish "$PACKAGE_SELECTOR" --registry="${{ inputs.registry }}" --tag="${{ inputs.tag }}"
           fi
