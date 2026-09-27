@@ -1,0 +1,16 @@
+# Demo Tools
+
+`@moyarich/demo-tools` provides explicit building blocks for demos. Strategies remain ordinary executable Node modules and own their setup, actions, presentation, capture, and cleanup.
+
+## Guides
+
+- [Strategies](./strategies.mdx) — executable strategy contract, discovery, metadata, and artifacts.
+- [CLI and discovery](./cli.mdx) — Commander commands, recursive discovery, and fzf selection.
+- [Browser demos](./browser.mdx) — Playwright browser and browser-extension setup.
+- [VS Code demos](./vscode.mdx) — extension development-host demos and CDP access.
+- [Recording and media](./recording.mdx) — screenshots, frame recording, WebM, GIF, and ffmpeg.
+- [Demo components](./components.mdx) — captions, cursor overlays, magnifier, and strategy-controlled placement.
+
+## Design rule
+
+Helpers remove repeated plumbing without hiding the implementation. A strategy should make it obvious which runtime is launched, when recording starts and stops, what UI is shown, and when resources are disposed.
