@@ -99,9 +99,9 @@ their product-specific behavior.
 The extended documentation is written in MDX so documentation sites can add interactive examples and components without changing the package documentation source.
 
 - [Documentation index](./docs/index.mdx)
-- [Strategies](./docs/strategies.mdx)
-- [CLI and discovery](./docs/cli.mdx)
-- [Browser and browser-extension demos](./docs/browser.mdx)
-- [VS Code demos](./docs/vscode.mdx)
-- [Recording and media](./docs/recording.mdx)
-- [Demo components](./docs/components.mdx)
+- [Strategies](./docs/guides/strategies.mdx)
+- [CLI and discovery](./docs/reference/cli.mdx)
+- [Browser and browser-extension demos](./docs/environments/browser.mdx)
+- [VS Code demos](./docs/environments/vscode.mdx)
+- [Recording and media](./docs/guides/recording.mdx)
+- [Demo components](./docs/guides/components.mdx)
