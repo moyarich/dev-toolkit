@@ -61,11 +61,8 @@ export function dependencyCheck(root, pkg) {
 }
 
 export function printDependencyCheck(results) {
-  console.log("\nDependencies:");
-  if (!results.length) {
-    console.log("  current");
-    return;
-  }
+  if (!results.length) return;
+  console.log("\nDependencies needing attention:");
   for (const item of results) {
     const versions = item.workspace
       ? `declared ${item.declared}, workspace ${item.workspace}`
