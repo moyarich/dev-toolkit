@@ -6,6 +6,17 @@ import { assertDependencies, dependencyCheck, printDependencyCheck } from "./dep
 
 const VALID_BUMPS = new Set(["major","minor","patch","premajor","preminor","prepatch","prerelease"]);
 const RELEASE_MODES = new Set(["bump", "exact", "current"]);
+const COLOR = Boolean(process.stdout.isTTY && !process.env.NO_COLOR);
+const ansi = (code, value) => COLOR ? `\x1b[${code}m${value}\x1b[0m` : value;
+const style = {
+  bold: (value) => ansi("1", value),
+  cyan: (value) => ansi("36", value),
+  green: (value) => ansi("32", value),
+  yellow: (value) => ansi("33", value),
+  red: (value) => ansi("31", value),
+  dim: (value) => ansi("2", value),
+};
+
 const SEMVER = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/;
 
 export function parseReleaseArgument(argument) {
@@ -152,26 +163,31 @@ export function release(argument, options = {}) {
       : `${pkg.manifest.name}@${nextVersion} is not published.\n  This version is available to publish.`;
     const previousRelease = previous || "No previous release was found.";
 
-    console.log(`\nRelease preview
+    const publishedDisplay = latestPublished ? style.cyan(latestPublished) : style.yellow("Not published");
+    const releaseDisplay = style.bold(style.green(nextVersion));
+    const statusDisplay = alreadyPublished ? style.red(registryStatus) : style.green(registryStatus);
+    const previousDisplay = previous ? style.cyan(previousRelease) : style.yellow(previousRelease);
+
+    console.log(`\n${style.bold(style.cyan("Release preview"))}
 
 Package:          ${pkg.manifest.name}
 Registry:         ${registryName}
-Published:        ${latestPublished || "Not published"}
-Current version:  ${pkg.manifest.version}
+Published:        ${publishedDisplay}
+Current version:  ${style.cyan(pkg.manifest.version)}
 
-Release selection
+${style.bold("Release selection")}
   ${selection}${versionChange}
-  Version to release: ${nextVersion}
+  Version to release: ${releaseDisplay}
 
-Registry status
-  ${registryStatus}
+${style.bold("Registry status")}
+  ${statusDisplay}
 
-Previous release
-  ${previousRelease}
+${style.bold("Previous release")}
+  ${previousDisplay}
 
-Dry run only — no files, commits, tags, or packages will be changed.
+${style.dim("Dry run only — no files, commits, tags, or packages will be changed.")}
 
-Proposed changelog
+${style.bold(style.cyan("Proposed changelog"))}
 
 ${section}`);
     return { registry, latestPublished, currentVersion: pkg.manifest.version, nextVersion, alreadyPublished, previousRelease: previous, changelog: section };
