@@ -140,7 +140,40 @@ export function release(argument, options = {}) {
     const alreadyPublished = proposed.status === "published";
     const previous = previousReleaseRef(root, selector);
     const section = changelogSection(nextVersion, releaseNotes(packageChanges(root, pkg, previous)));
-    console.log(`\nRelease dry run\nPackage: ${pkg.manifest.name}\nRegistry: ${registry}\nPublished: ${latestPublished || "none"}\nCurrent: ${pkg.manifest.version}\nMode: ${mode}\nRequested: ${versionSpec || "current"}\nNext: ${nextVersion}\nAlready published: ${alreadyPublished ? "yes" : "no"}\nPrevious release ref: ${previous || "none"}\n\nProposed changelog:\n\n${section}`);
+    const registryName = registry === "https://npm.pkg.github.com" ? "GitHub Packages" : registry === "https://registry.npmjs.org" ? "npm" : registry;
+    const selection = mode === "current"
+      ? "Use the current package version without changing it."
+      : mode === "exact"
+        ? "Release the explicitly requested version."
+        : `Increment the ${versionSpec} version.`;
+    const versionChange = mode === "current" ? "" : `\n  ${pkg.manifest.version} → ${nextVersion}`;
+    const registryStatus = alreadyPublished
+      ? `${pkg.manifest.name}@${nextVersion} is already published.`
+      : `${pkg.manifest.name}@${nextVersion} is not published.\n  This version is available to publish.`;
+    const previousRelease = previous || "No previous release was found.";
+
+    console.log(`\nRelease preview
+
+Package:          ${pkg.manifest.name}
+Registry:         ${registryName}
+Published:        ${latestPublished || "Not published"}
+Current version:  ${pkg.manifest.version}
+
+Release selection
+  ${selection}${versionChange}
+  Version to release: ${nextVersion}
+
+Registry status
+  ${registryStatus}
+
+Previous release
+  ${previousRelease}
+
+Dry run only — no files, commits, tags, or packages will be changed.
+
+Proposed changelog
+
+${section}`);
     return { registry, latestPublished, currentVersion: pkg.manifest.version, nextVersion, alreadyPublished, previousRelease: previous, changelog: section };
   }
 
