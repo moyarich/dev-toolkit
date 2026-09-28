@@ -85,6 +85,8 @@ jobs:
           scope: "@moyarich"
       - name: Install workspace dependencies
         run: npm ci --include=optional
+      - name: Restore tracked files after install
+        run: git restore --worktree -- .
         env:
           NODE_AUTH_TOKEN: ${{ github.token }}
       - name: Resolve release version
