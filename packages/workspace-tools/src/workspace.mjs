@@ -7,7 +7,7 @@ export function run(command, args, options = {}) {
 }
 
 export function output(command, args, options = {}) {
-  return execFileSync(command, args, { encoding: "utf8", ...options }).trim();
+  return execFileSync(command, args, { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], ...options }).trim();
 }
 
 export function workspacePatterns(root) {
