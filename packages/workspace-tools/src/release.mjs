@@ -140,7 +140,7 @@ export function release(argument, options = {}) {
     const alreadyPublished = proposed.status === "published";
     const previous = previousReleaseRef(root, selector);
     const section = changelogSection(nextVersion, releaseNotes(packageChanges(root, pkg, previous)));
-    console.log(`\nRelease dry run\nPackage: ${pkg.manifest.name}\nRegistry: ${registry}\nPublished: ${latestPublished || "none"}\nCurrent: ${pkg.manifest.version}\nMode: ${mode}\nRequested: ${versionSpec || "current"}\nNext: ${nextVersion}\nAlready published: ${alreadyPublished ? "yes" : "no"}\nPrevious release ref: ${previous || "none"}\n\nProposed changelog:\n\n${section}`);
+    const requested = mode === "current" ? "" : `\nRequested: ${versionSpec}`;\n    console.log(`\nRelease dry run\nPackage: ${pkg.manifest.name}\nRegistry: ${registry}\nPublished: ${latestPublished || "none"}\nCurrent: ${pkg.manifest.version}\nMode: ${mode}${requested}\nRelease version: ${nextVersion}\nAlready published: ${alreadyPublished ? "yes" : "no"}\nPrevious release ref: ${previous || "none"}\n\nProposed changelog:\n\n${section}`);
     return { registry, latestPublished, currentVersion: pkg.manifest.version, nextVersion, alreadyPublished, previousRelease: previous, changelog: section };
   }
 
