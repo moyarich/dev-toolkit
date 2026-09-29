@@ -16,13 +16,13 @@ on:
         type: string
 
       version-mode:
-        description: Version — bump, use existing, or enter an exact version
+        description: Version — bump, use package.json, or enter an exact version
         required: true
         default: bump
         type: choice
         options:
           - bump
-          - existing
+          - package-json
           - exact
 
       version-bump:
@@ -87,7 +87,7 @@ on:
         type: string
 
       version-mode:
-        description: Version — bump, use existing, or enter an exact version
+        description: Version — bump, use package.json, or enter an exact version
         required: false
         default: bump
         type: string
@@ -281,10 +281,10 @@ jobs:
           set -euo pipefail
 
           case "$VERSION_MODE" in
-            bump|existing|exact)
+            bump|package-json|exact)
               ;;
             *)
-              echo "::error::Version selection must be bump, existing, or exact."
+              echo "::error::Version selection must be bump, package-json, or exact."
               exit 1
               ;;
           esac
@@ -375,7 +375,7 @@ jobs:
               VERSION_REQUEST="$VERSION_BUMP"
               ;;
 
-            existing)
+            package-json)
               VERSION_REQUEST=""
               ;;
 
@@ -449,7 +449,7 @@ jobs:
             "--json"
           )
 
-          if [ "$VERSION_MODE" != "existing" ]; then
+          if [ "$VERSION_MODE" != "package-json" ]; then
             RELEASE_ARGS[0]="${{ inputs.package }}=$VERSION_REQUEST"
             RELEASE_ARGS+=("--version=$VERSION_REQUEST")
           fi
@@ -498,7 +498,7 @@ jobs:
             echo "| Setting | Value |"
             echo "| --- | --- |"
             echo "| Version selection | \`$VERSION_MODE\` |"
-            echo "| Version request | \`${VERSION_REQUEST:-existing package version}\` |"
+            echo "| Version request | \`${VERSION_REQUEST:-package.json version}\` |"
             echo "| Dry run | **$DRY_RUN** |"
             echo "| Publish after release | **$PUBLISH** |"
 
