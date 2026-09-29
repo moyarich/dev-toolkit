@@ -17,7 +17,7 @@ on:
   workflow_call:
     inputs:
       commit:
-        description: Commit package-lock.json changes
+        description: Commit recreated package-lock.json
         required: false
         default: false
         type: boolean
@@ -84,9 +84,9 @@ jobs:
           echo "branch=$REF_NAME" >> "$GITHUB_OUTPUT"
 
           if [ "$COMMIT" = "true" ]; then
-            echo "Execution mode: update and commit package-lock.json."
+            echo "Execution mode: recreate and commit package-lock.json."
           else
-            echo "Execution mode: preview package-lock.json changes only."
+            echo "Execution mode: recreate package-lock.json for preview only."
           fi
 
       - name: Checkout repository
@@ -119,7 +119,7 @@ jobs:
           fi
 
           if [ -n "$(git status --porcelain=v1 --untracked-files=all)" ]; then
-            echo "::error::Working tree is not clean before lockfile generation."
+            echo "::error::Working tree is not clean before recreating package-lock.json."
             git status --short
             exit 1
           fi
@@ -134,8 +134,8 @@ jobs:
         run: |
           set -euo pipefail
 
-          # A lockfile refresh must never execute package lifecycle scripts.
-          npm install             --package-lock-only             --ignore-scripts             --no-audit             --no-fund
+          # Recreating package-lock.json must never execute package lifecycle scripts.
+          npm install \\\n            --package-lock-only \\\n            --ignore-scripts \\\n            --no-audit \\\n            --no-fund
 
       - name: Validate recreated package-lock.json
         id: changes
@@ -144,7 +144,7 @@ jobs:
           set -euo pipefail
 
           if [ ! -f package-lock.json ]; then
-            echo "::error::package-lock.json was removed during generation."
+            echo "::error::package-lock.json was removed while being recreated."
             exit 1
           fi
 
@@ -253,7 +253,7 @@ jobs:
             echo
 
             if [ "${{ job.status }}" != "success" ]; then
-              echo "### ❌ Lockfile update failed"
+              echo "### ❌ package-lock.json recreation failed"
               echo
               echo "Review the failing step above. No unexpected files are permitted in the lockfile commit."
             elif [ "${COMMIT_MODE:-false}" = "true" ] && [ "${LOCKFILE_CHANGED:-false}" = "true" ]; then
