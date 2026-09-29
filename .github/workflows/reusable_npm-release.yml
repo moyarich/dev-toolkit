@@ -160,23 +160,41 @@ jobs:
         env:
           INPUT_DRY_RUN: ${{ inputs.dry-run }}
           EVENT_DRY_RUN: ${{ github.event.inputs.dry-run }}
-          EVENT_NAME: ${{ github.event_name }}
+          ACT: ${{ env.ACT }}
         shell: bash
         run: |
           set -euo pipefail
 
-          # Fail safe for local runners such as act: when workflow_dispatch does
-          # not provide the boolean input at all, treat the run as a dry run.
-          if [ "$EVENT_NAME" = "workflow_dispatch" ] && [ -z "$EVENT_DRY_RUN" ]; then
-            DRY_RUN=true
-          elif [ "$INPUT_DRY_RUN" = "true" ]; then
-            DRY_RUN=true
-          else
+          # act can resolve an omitted boolean input as false. Fail safe locally:
+          # only an explicitly supplied workflow_dispatch value of false may
+          # enable a real release under act.
+          if [ "$ACT" = "true" ]; then
+            case "$EVENT_DRY_RUN" in
+              false)
+                DRY_RUN=false
+                ;;
+              true|"")
+                DRY_RUN=true
+                ;;
+              *)
+                echo "::error::Invalid dry-run value: $EVENT_DRY_RUN"
+                exit 1
+                ;;
+            esac
+          elif [ "$INPUT_DRY_RUN" = "false" ]; then
             DRY_RUN=false
+          else
+            DRY_RUN=true
           fi
 
           echo "dry-run=$DRY_RUN" >> "$GITHUB_OUTPUT"
           echo "Dry run: $DRY_RUN"
+
+          if [ "$DRY_RUN" = "true" ]; then
+            echo "Execution mode: preview only; repository mutation is disabled."
+          else
+            echo "Execution mode: real release."
+          fi
 
       - name: Configure GitHub remote
         if: ${{ steps.execution.outputs.dry-run == 'false' }}
@@ -594,6 +612,6 @@ jobs:
             else
               echo "### ✅ Release completed"
               echo
-              echo "Release mode was applied successfully. Package publishing was not requested."
+              echo "Package release completed. Publishing was not requested."
             fi
           } >> "$GITHUB_STEP_SUMMARY"
