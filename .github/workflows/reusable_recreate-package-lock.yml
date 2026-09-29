@@ -152,7 +152,11 @@ jobs:
           set -euo pipefail
 
           # Recreating package-lock.json must never execute package lifecycle scripts.
-          npm install \\\n            --package-lock-only \\\n            --ignore-scripts \\\n            --no-audit \\\n            --no-fund
+          npm install \
+            --package-lock-only \
+            --ignore-scripts \
+            --no-audit \
+            --no-fund
 
       - name: Validate recreated package-lock.json
         id: changes
