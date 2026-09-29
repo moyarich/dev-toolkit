@@ -12,9 +12,9 @@ test("parseReleaseArgument accepts bump names", () => {
   });
 });
 
-test("parseReleaseArgument accepts a bare selector for existing mode", () => {
+test("parseReleaseArgument accepts a bare selector for package-json mode", () => {
   assert.deepEqual(
-    parseReleaseArgument("demo-tools", { mode: "existing" }),
+    parseReleaseArgument("demo-tools", { mode: "package-json" }),
     {
       selector: "demo-tools",
       versionSpec: null,
