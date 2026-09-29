@@ -3,10 +3,39 @@
   "version": "0.0.0",
   "description": "Reusable web components for demos and developer tooling.",
   "type": "module",
-  "exports": {".":"./src/index.mjs","./caption":"./src/caption/index.mjs","./caption/element":"./src/caption/caption-overlay.mjs","./cursor-overlay":"./src/cursor-overlay/index.mjs","./cursor-overlay/element":"./src/cursor-overlay/cursor-overlay-element.mjs","./magnifier-cursor-overlay":"./src/magnifier-cursor-overlay/index.mjs","./magnifier-cursor-overlay/element":"./src/magnifier-cursor-overlay/element.mjs"},
-  "files": ["src","docs","README.md","CHANGELOG.md"],
-  "engines": {"node":">=22"},
-  "scripts": {"test":"node --check src/index.mjs && node --check src/caption/caption-overlay.mjs && node --check src/cursor-overlay/cursor-overlay-element.mjs && node --check src/magnifier-cursor-overlay/element.mjs"},
-  "repository": {"type":"git","url":"git+https://github.com/moyarich/dev-toolkit.git","directory":"packages/web-components"},
-  "publishConfig": {"registry":"https://npm.pkg.github.com","access":"public"}
+  "exports": {
+    ".": "./dist/index.mjs",
+    "./caption": "./dist/caption.mjs",
+    "./caption/element": "./dist/caption-element.mjs",
+    "./cursor-overlay": "./dist/cursor-overlay.mjs",
+    "./cursor-overlay/element": "./dist/cursor-overlay-element.mjs",
+    "./magnifier-cursor-overlay": "./dist/magnifier-cursor-overlay.mjs",
+    "./magnifier-cursor-overlay/element": "./dist/magnifier-cursor-overlay-element.mjs"
+  },
+  "files": [
+    "dist",
+    "docs",
+    "README.md",
+    "CHANGELOG.md"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "build": "vite build --config vite.config.mts",
+    "test": "node --check src/index.mjs && node --check src/caption/caption-overlay.mjs && node --check src/cursor-overlay/cursor-overlay-element.mjs && node --check src/magnifier-cursor-overlay/element.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/moyarich/dev-toolkit.git",
+    "directory": "packages/web-components"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
+    "access": "public"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "vite": "^7.1.7"
+  }
 }
