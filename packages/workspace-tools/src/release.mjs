@@ -306,7 +306,9 @@ export function release(argument, options = {}) {
 
   const dependencies = dependencyCheck(root, pkg);
 
-  printDependencyCheck(dependencies);
+  if (!options.json) {
+    printDependencyCheck(dependencies);
+  }
   assertDependencies(dependencies);
 
   if (options.dryRun) {
@@ -369,7 +371,8 @@ export function release(argument, options = {}) {
       ? style.cyan(previousRelease)
       : style.yellow(previousRelease);
 
-    console.log(`
+    if (!options.json) {
+      console.log(`
 ${style.bold(style.cyan("Release preview"))}
 
 Package:          ${pkg.manifest.name}
@@ -394,6 +397,7 @@ ${style.dim(
 ${style.bold(style.cyan("Proposed changelog"))}
 
 ${section}`);
+    }
 
     return {
       registry,
