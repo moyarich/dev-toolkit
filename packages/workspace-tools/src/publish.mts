@@ -9,12 +9,11 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { spawnSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 
 import {
   packageInfo,
   repositoryRoot,
-  run,
   workspacePublishOrder,
 } from "./workspace.mts";
 
@@ -230,7 +229,7 @@ export function packageRegistryState(pkg, registry) {
   }
 
   try {
-    run("npm", args, {
+    execFileSync("npm", args, {
       env,
       stdio: "pipe",
     });
@@ -330,7 +329,7 @@ function validate(root, pkg, { quiet = false } = {}) {
   assertDependencies(dependencies);
 
   for (const script of ["typecheck", "test", "build"]) {
-    run(
+    execFileSync(
       "npm",
       ["run", script, "--workspace", pkg.manifest.name, "--if-present"],
       {
@@ -340,7 +339,7 @@ function validate(root, pkg, { quiet = false } = {}) {
     );
   }
 
-  run("npm", ["pack", "--workspace", pkg.manifest.name, "--dry-run"], {
+  execFileSync("npm", ["pack", "--workspace", pkg.manifest.name, "--dry-run"], {
     cwd: root,
     ...(quiet ? { stdio: "pipe" } : {}),
   });
@@ -388,7 +387,7 @@ function publishOne(root, pkg, registry, tag, access, { quiet = false } = {}) {
 
   try {
     if (registry === "github") {
-      run(
+      execFileSync(
         "npm",
         [
           "publish",
@@ -409,7 +408,7 @@ function publishOne(root, pkg, registry, tag, access, { quiet = false } = {}) {
       return;
     }
 
-    run("npm", ["stage", "publish", "--access", access, "--tag", tag], {
+    execFileSync("npm", ["stage", "publish", "--access", access, "--tag", tag], {
       cwd: resolve(root, pkg.directory),
       env,
       ...(quiet ? { stdio: "pipe" } : {}),
