@@ -3,12 +3,39 @@
   "version": "0.0.0",
   "description": "Reusable Playwright README screenshot generator.",
   "type": "module",
-  "bin": {"readme-screenshots":"./bin/readme-screenshots.mjs"},
-  "files": ["bin","src","README.md","CHANGELOG.md"],
-  "dependencies": {"commander":"^14.0.1"},
-  "peerDependencies": {"playwright":">=1.55.0"},
-  "engines": {"node":">=24"},
-  "scripts": {"test":"node --test tests/*.test.mjs"},
-  "repository": {"type":"git","url":"git+https://github.com/moyarich/dev-toolkit.git","directory":"packages/readme-screenshots"},
-  "publishConfig": {"registry":"https://npm.pkg.github.com","access":"public"}
+  "bin": {
+    "readme-screenshots": "./bin/readme-screenshots.mjs"
+  },
+  "files": [
+    "bin",
+    "src",
+    "README.md",
+    "CHANGELOG.md"
+  ],
+  "dependencies": {
+    "commander": "^14.0.1"
+  },
+  "peerDependencies": {
+    "playwright": ">=1.55.0"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "build": "vite build",
+    "test": "node --test tests/*.test.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/moyarich/dev-toolkit.git",
+    "directory": "packages/readme-screenshots"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
+    "access": "public"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "vite": "^7.1.7"
+  }
 }
