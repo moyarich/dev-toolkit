@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 import { program } from 'commander';
-import { discoverDemoStrategies, runDemoStrategies, selectDemoStrategies } from "../src/index.mjs";
-import { captureDemoStrategy } from "../src/generate/index.mjs";
-import { launchBrowserDemo } from "../src/browser/index.mjs";
-import { encodeGif } from "../src/capture/index.mjs";
+import { discoverDemoStrategies, runDemoStrategies, selectDemoStrategies } from "../src/index.mts";
+import { captureDemoStrategy } from "../src/generate/index.mts";
+import { launchBrowserDemo } from "../src/browser/index.mts";
+import { encodeGif } from "../src/capture/index.mts";
 
 program
   .name("demo")
