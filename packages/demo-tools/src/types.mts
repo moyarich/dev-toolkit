@@ -24,22 +24,6 @@ export interface DemoStrategyEntry<T = unknown> {
   strategy: DemoStrategy<T>;
 }
 
-export interface BrowserPage {
-  goto(url: string, options?: Record<string, unknown>): Promise<unknown>;
-  screenshot(options?: Record<string, unknown>): Promise<unknown>;
-  evaluate<T = unknown>(fn: (...args: any[]) => T | Promise<T>, arg?: any): Promise<T>;
-  context(): BrowserContext;
-  mouse: { move(x: number, y: number): Promise<void> };
-  setViewportSize?(viewport: { width: number; height: number }): Promise<void>;
-  bringToFront?(): Promise<void>;
-  once?(event: string, listener: (...args: any[]) => void): unknown;
-}
-
-export interface BrowserLocator {
-  screenshot(options?: Record<string, unknown>): Promise<unknown>;
-  boundingBox(): Promise<{ x: number; y: number; width: number; height: number } | null>;
-}
-
 export interface CDPSession {
   send(method: string, params?: Record<string, unknown>): Promise<any>;
   on(event: string, listener: (payload: any) => void): unknown;
