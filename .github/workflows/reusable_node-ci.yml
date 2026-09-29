@@ -11,6 +11,7 @@ on:
         options:
           - packages/demo-tools
           - packages/readme-screenshots
+          - packages/vs-code-ext-tools
           - packages/web-components
           - packages/workspace-tools
       node-version:
@@ -36,8 +37,8 @@ on:
         required: false
 
 jobs:
-  test-node-project:
-    name: "Test Node project"
+  check-node-project:
+    name: "Check ${{ inputs.package-directory }}"
     runs-on: ubuntu-latest
     steps:
       - name: Initialize workflow summary
@@ -66,11 +67,25 @@ jobs:
         run: npm ci
         env:
           NODE_AUTH_TOKEN: ${{ secrets.package-token || github.token }}
+      - name: Build
+        env:
+          WORKSPACE: ${{ inputs.package-directory }}
+        run: |
+          if [ "$WORKSPACE" = "." ]; then
+            npm run build --if-present
+          else
+            npm run build --workspace "$WORKSPACE" --if-present
+          fi
+
       - name: Test
         env:
           WORKSPACE: ${{ inputs.package-directory }}
         run: |
-          if [ "$WORKSPACE" = "." ]; then npm test; else npm test --workspace "$WORKSPACE"; fi
+          if [ "$WORKSPACE" = "." ]; then
+            npm test
+          else
+            npm test --workspace "$WORKSPACE"
+          fi
       - name: Lint
         env:
           WORKSPACE: ${{ inputs.package-directory }}
