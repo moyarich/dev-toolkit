@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.2
+
+### Changed
+
+- Package release.
+
 ## 0.1.1
 
 ### Added
