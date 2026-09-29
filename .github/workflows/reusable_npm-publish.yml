@@ -1,4 +1,4 @@
-name: -[Reusable] Npm publish
+name: "[Reusable] Publish npm package"
 
 on:
   workflow_dispatch:
@@ -67,7 +67,7 @@ permissions:
   packages: write
 
 jobs:
-  publish:
+  publish-package:
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ secrets.github-token || github.token }}
