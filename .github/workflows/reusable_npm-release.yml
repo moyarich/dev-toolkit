@@ -135,10 +135,6 @@ on:
       _NPM_TOKEN:
         required: false
 
-concurrency:
-  group: npm-release-${{ inputs.package }}
-  cancel-in-progress: false
-
 permissions:
   contents: write
   packages: write
