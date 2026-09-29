@@ -108,7 +108,7 @@ jobs:
           PACKAGE_SELECTOR: ${{ inputs.package-directory }}
           REQUESTED_VERSION: ${{ inputs.version }}
         run: |
-          CURRENT_VERSION="$(npm pkg get version --workspace "$PACKAGE_SELECTOR" | tr -d '"')"
+          CURRENT_VERSION="$(npm pkg get version --workspace "$PACKAGE_SELECTOR" | jq -er 'if type == "string" then . else to_entries[0].value end')"
           if [ "$REQUESTED_VERSION" != "$CURRENT_VERSION" ]; then
             echo "Requested publish version $REQUESTED_VERSION does not match package.json version $CURRENT_VERSION."
             exit 1
