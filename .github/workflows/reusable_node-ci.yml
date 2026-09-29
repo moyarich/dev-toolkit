@@ -16,7 +16,7 @@ on:
       node-version:
         description: Node.js version used by CI
         required: true
-        default: "22"
+        default: "24"
         type: string
   workflow_call:
     inputs:
@@ -29,7 +29,7 @@ on:
         description: Node.js version used by CI
         required: false
         type: string
-        default: "22"
+        default: "24"
     secrets:
       package-token:
         description: Token used to install packages from GitHub Packages
