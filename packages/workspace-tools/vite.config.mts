@@ -1,13 +1,12 @@
-import { defineConfig } from "vite";
 import { resolve } from "node:path";
+import { defineConfig } from "vite";
+
+import { cli } from "./vite/cli.mts";
 
 export default defineConfig({
-  build: {
-    target: "node24",
-    outDir: "bin",
-    emptyOutDir: true,
-    lib: {
-      entry: {
+  plugins: [
+    cli({
+      entries: {
         "workspace-release": resolve(import.meta.dirname, "src/cli/workspace-release.mts"),
         "workspace-publish": resolve(import.meta.dirname, "src/cli/workspace-publish.mts"),
         "workspace-dependency-check": resolve(
@@ -19,16 +18,6 @@ export default defineConfig({
           "src/cli/discover-test-packages.mts",
         ),
       },
-      formats: ["es"],
-      fileName: (_format, entryName) => `${entryName}.mjs`,
-    },
-    rollupOptions: {
-      external: [/^node:/],
-      output: {
-        banner: "#!/usr/bin/env node",
-      },
-    },
-    minify: false,
-    sourcemap: true,
-  },
+    }),
+  ],
 });
