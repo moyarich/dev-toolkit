@@ -140,6 +140,32 @@ on:
         default: "24"
         type: string
 
+    outputs:
+      package-name:
+        description: Released package name
+        value: ${{ jobs.release-package.outputs.package-name }}
+      package-selector:
+        description: Resolved package selector
+        value: ${{ jobs.release-package.outputs.package-selector }}
+      package-version:
+        description: Released or previewed version
+        value: ${{ jobs.release-package.outputs.package-version }}
+      release-status:
+        description: Release result status
+        value: ${{ jobs.release-package.outputs.release-status }}
+      can-release:
+        description: Whether release readiness checks passed
+        value: ${{ jobs.release-package.outputs.can-release }}
+      release-json:
+        description: Complete workspace-release JSON result
+        value: ${{ jobs.release-package.outputs.release-json }}
+      publish-status:
+        description: Publish result status when publishing was requested
+        value: ${{ jobs.release-package.outputs.publish-status }}
+      publish-json:
+        description: Complete workspace-publish JSON result when publishing was requested
+        value: ${{ jobs.release-package.outputs.publish-json }}
+
     secrets:
       _GITHUB_TOKEN:
         required: false
@@ -155,6 +181,15 @@ jobs:
   release-package:
     name: "Release npm package"
     runs-on: ubuntu-latest
+    outputs:
+      package-name: ${{ steps.release.outputs.package-name }}
+      package-selector: ${{ steps.release.outputs.package-selector }}
+      package-version: ${{ steps.release.outputs.package-version }}
+      release-status: ${{ steps.release.outputs.status }}
+      can-release: ${{ steps.release.outputs.can-release }}
+      release-json: ${{ steps.release.outputs.release-json }}
+      publish-status: ${{ steps.publish.outputs.status }}
+      publish-json: ${{ steps.publish.outputs.publish-json }}
 
     env:
       GH_TOKEN: ${{ secrets._GITHUB_TOKEN || github.token }}
@@ -438,6 +473,7 @@ jobs:
           git tag --list | sort > /tmp/release-tags-before
 
       - name: Release or preview package
+        id: release
         env:
           DRY_RUN: ${{ steps.execution.outputs.dry-run }}
           VERSION_MODE: ${{ inputs.version-mode }}
@@ -484,13 +520,24 @@ jobs:
 
           PACKAGE_NAME="$(jq -r '.package.name' <<< "$RELEASE_JSON")"
           PACKAGE_SELECTOR="$(jq -r '.package.selector' <<< "$RELEASE_JSON")"
-          PACKAGE_VERSION="$(jq -r '.currentVersion' <<< "$RELEASE_JSON")"
+          PACKAGE_VERSION="$(jq -r '.nextVersion' <<< "$RELEASE_JSON")"
 
           {
             echo "PACKAGE_NAME=$PACKAGE_NAME"
             echo "PACKAGE_SELECTOR=$PACKAGE_SELECTOR"
             echo "PACKAGE_VERSION=$PACKAGE_VERSION"
           } >> "$GITHUB_ENV"
+
+          {
+            echo "package-name=$PACKAGE_NAME"
+            echo "package-selector=$PACKAGE_SELECTOR"
+            echo "package-version=$PACKAGE_VERSION"
+            echo "status=$(jq -r '.status' <<< "$RELEASE_JSON")"
+            echo "can-release=$(jq -r 'if has("canRelease") then .canRelease else true end' <<< "$RELEASE_JSON")"
+            echo "release-json<<EOF"
+            echo "$RELEASE_JSON" | jq -c .
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
 
           {
             echo "# Package release"
@@ -580,6 +627,7 @@ jobs:
           npm install --global npm@">=11.15.0 <12"
 
       - name: Publish released version
+        id: publish
         if: ${{ steps.execution.outputs.dry-run == 'false' && inputs.publish }}
         env:
           _GITHUB_TOKEN: ${{ secrets._GITHUB_TOKEN || github.token }}
@@ -623,6 +671,13 @@ jobs:
               .operation == "publish" and
               .status == "success"
             ' >/dev/null
+
+            {
+              echo "status=$(jq -r '.status' <<< "$PUBLISH_JSON")"
+              echo "publish-json<<EOF"
+              echo "$PUBLISH_JSON" | jq -c .
+              echo "EOF"
+            } >> "$GITHUB_OUTPUT"
 
             echo "$PUBLISH_JSON" | jq .
 
