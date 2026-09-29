@@ -10,6 +10,12 @@ program
   .option("-d, --dry-run", "Preview without changing repository files")
   .option("-j, --json", "Print the dry-run result as JSON")
   .option("--no-fzf", "Disable automatic fzf selection")
-  .action(releaseWorkspacePackage);
+  .action(async (release, options, command) => {
+    if (options.json && !options.dryRun) {
+      command.error("error: --json is only supported with --dry-run");
+    }
+
+    await releaseWorkspacePackage(release, options, command);
+  });
 
 await program.parseAsync();
