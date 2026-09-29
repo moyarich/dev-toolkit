@@ -1,7 +1,7 @@
 import { resolve } from "node:path";
 import { defineConfig } from "vite";
 
-import { cli } from "./vite/cli.mts";
+import { cli } from "./vite/index.mts";
 
 export default defineConfig({
   plugins: [
