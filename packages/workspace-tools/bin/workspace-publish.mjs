@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 import { createInterface } from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
-import { Command, Option } from "commander";
+import { program } from 'commander';
+import { Option } from "commander";
 import { publish } from "../src/publish.mjs";
 
 function boolean(value) {
@@ -11,7 +12,7 @@ function boolean(value) {
   throw new Error("Boolean options must be true or false.");
 }
 
-const program = new Command()
+program
   .name("workspace-publish")
   .description("Validate and publish an npm workspace package.")
   .argument("[package]", "Workspace path, directory name, or package name")
