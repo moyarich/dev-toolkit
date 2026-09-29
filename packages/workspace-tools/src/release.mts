@@ -33,7 +33,7 @@ const VALID_BUMPS = new Set([
  *
  * @type {ReadonlySet<string>}
  */
-const RELEASE_MODES = new Set(["bump", "exact", "existing"]);
+const RELEASE_MODES = new Set(["bump", "exact", "package-json"]);
 
 /**
  * Semantic Versioning pattern.
@@ -74,7 +74,7 @@ const style = {
 };
 
 /**
- * @typedef {"bump" | "exact" | "existing"} ReleaseMode
+ * @typedef {"bump" | "exact" | "package-json"} ReleaseMode
  */
 
 /**
@@ -185,7 +185,7 @@ export function parseReleaseArgument(argument, options = {}) {
   }
 
   if (!argument.includes("=")) {
-    if (options.mode === "existing") {
+    if (options.mode === "package-json") {
       return {
         selector: argument.trim(),
         versionSpec: null,
@@ -208,7 +208,7 @@ export function parseReleaseArgument(argument, options = {}) {
   }
 
   if (
-    options.mode !== "existing" &&
+    options.mode !== "package-json" &&
     !VALID_BUMPS.has(versionSpec) &&
     !SEMVER.test(versionSpec)
   ) {
@@ -404,6 +404,44 @@ function registryVersion(root, pkg, version) {
  * @returns {string | null}
  * Previous tag or release commit.
  */
+function tagState(root, tag) {
+  const commit = execFileSync(
+    "git",
+    ["rev-list", "-n", "1", tag],
+    {
+      cwd: root,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "pipe"],
+    },
+  ).trim();
+
+  if (!commit) {
+    return {
+      name: tag,
+      exists: false,
+      atHead: false,
+      commit: null,
+    };
+  }
+
+  const head = execFileSync(
+    "git",
+    ["rev-parse", "HEAD"],
+    {
+      cwd: root,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "pipe"],
+    },
+  ).trim();
+
+  return {
+    name: tag,
+    exists: true,
+    atHead: commit === head,
+    commit,
+  };
+}
+
 function previousReleaseRef(root, selector) {
   const tags = execFileSync(
     "git",
@@ -543,7 +581,7 @@ export function release(argument, options = {}) {
   }
 
   const versionSpec =
-    mode === "existing" ? null : options.version || argumentVersionSpec;
+    mode === "package-json" ? null : options.version || argumentVersionSpec;
 
   if (mode === "bump" && !VALID_BUMPS.has(versionSpec)) {
     throw new Error(`Invalid release bump: ${versionSpec}`);
@@ -588,7 +626,7 @@ export function release(argument, options = {}) {
   if (options.dryRun) {
     let nextVersion = pkg.manifest.version;
 
-    if (mode !== "existing") {
+    if (mode !== "package-json") {
       nextVersion = resolveNextVersion(pkg.manifest.version, versionSpec);
     }
 
@@ -602,6 +640,17 @@ export function release(argument, options = {}) {
       published.status === "published" ? published.version : "";
 
     const alreadyPublished = proposed.status === "published";
+
+    const tag = `${selector}@${nextVersion}`;
+    const gitTag = tagState(root, tag);
+    const canRelease = !alreadyPublished && !gitTag.exists;
+    const reason = alreadyPublished
+      ? `${pkg.manifest.name}@${nextVersion} is already published.`
+      : gitTag.exists
+        ? gitTag.atHead
+          ? `Git tag ${tag} already exists at HEAD.`
+          : `Git tag ${tag} already exists at ${gitTag.commit} and will not be moved.`
+        : null;
 
     const previous = previousReleaseRef(root, selector);
 
@@ -618,14 +667,14 @@ export function release(argument, options = {}) {
           : registry;
 
     const selection =
-      mode === "existing"
-        ? "Release the existing package version without changing it."
+      mode === "package-json"
+        ? "Release the package.json version without changing it."
         : mode === "exact"
           ? "Release the explicitly requested version."
           : `Increment the ${versionSpec} version.`;
 
     const versionChange =
-      mode === "existing" ? "" : `\n  ${pkg.manifest.version} → ${nextVersion}`;
+      mode === "package-json" ? "" : `\n  ${pkg.manifest.version} → ${nextVersion}`;
 
     const registryStatus = alreadyPublished
       ? `${pkg.manifest.name}@${nextVersion} is already published.`
@@ -677,7 +726,7 @@ ${section}`);
 
     return {
       operation: "release",
-      status: "preview",
+      status: canRelease ? "preview" : "warning",
       dryRun: true,
       package: {
         name: pkg.manifest.name,
@@ -691,6 +740,9 @@ ${section}`);
       currentVersion: pkg.manifest.version,
       nextVersion,
       alreadyPublished,
+      tag: gitTag,
+      canRelease,
+      reason,
       previousRelease: previous,
       changelog: section,
     };
@@ -700,7 +752,68 @@ ${section}`);
     ? { stdio: ["ignore", "ignore", "inherit"] }
     : { stdio: "inherit" };
 
-  if (mode !== "existing") {
+  if (mode === "package-json") {
+    const version = pkg.manifest.version;
+    const tag = `${selector}@${version}`;
+    const gitTag = tagState(root, tag);
+
+    if (gitTag.exists) {
+      throw new Error(
+        gitTag.atHead
+          ? `Git tag ${tag} already exists at HEAD.`
+          : `Git tag ${tag} already exists at ${gitTag.commit} and will not be moved.`,
+      );
+    }
+
+    if (registryVersion(root, pkg, version).status === "published") {
+      throw new Error(
+        `${pkg.manifest.name}@${version} is already published to ${registryFor(pkg)}.`,
+      );
+    }
+
+    execFileSync("git", ["tag", tag], {
+      cwd: root,
+      ...operationRunOptions,
+    });
+
+    const result = {
+      operation: "release",
+      status: "success",
+      dryRun: false,
+      package: {
+        name: pkg.manifest.name,
+        selector,
+        directory: pkg.directory,
+      },
+      mode,
+      versionRequest: null,
+      registry: registryFor(pkg),
+      currentVersion: version,
+      nextVersion: version,
+      tag: {
+        name: tag,
+        exists: true,
+        atHead: true,
+        commit: execFileSync("git", ["rev-parse", "HEAD"], {
+          cwd: root,
+          encoding: "utf8",
+          stdio: ["ignore", "pipe", "pipe"],
+        }).trim(),
+      },
+      git: {
+        committed: false,
+        tagged: true,
+      },
+    };
+
+    if (!options.json) {
+      console.log(`Created tag ${tag} at HEAD.`);
+    }
+
+    return result;
+  }
+
+  if (mode !== "package-json") {
     execFileSync(
       "npm",
       [
@@ -975,7 +1088,7 @@ function resolveCliReleaseArgument(argument, options) {
     return undefined;
   }
 
-  if (options.mode === "existing") {
+  if (options.mode === "package-json") {
     return selector;
   }
 
