@@ -3,8 +3,8 @@ import { mkdtemp, mkdir, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import test from "node:test";
-import { discoverDemoStrategies } from "../src/discover.mjs";
-import { runDemoStrategies } from "../src/run.mjs";
+import { discoverDemoStrategies } from "../src/runner/discover.mts";
+import { runDemoStrategies } from "../src/runner/run.mts";
 
 async function strategy(root, relative, name) {
   const directory = path.join(root, relative);
