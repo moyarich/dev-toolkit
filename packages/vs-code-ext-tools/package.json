@@ -4,7 +4,6 @@
   "description": "Reusable vs-code extension tools.",
   "type": "module",
   "bin": {
-    "confirm-publish": "./bin/confirm-publish.mjs",
     "vs-code-publish": "./bin/vs-code-publish.mjs",
     "run-extension-dev": "./bin/run-extension-dev.mjs"
   },
