@@ -66,3 +66,16 @@ test("resolveNextVersion computes release versions without touching package file
   assert.equal(resolveNextVersion("1.2.3-beta", "prerelease"), "1.2.3-beta.0");
   assert.equal(resolveNextVersion("1.2.3", "1.2.4"), "1.2.4");
 });
+
+
+test("workspace-release requires --dry-run when --json is used", async () => {
+  const { spawnSync } = await import("node:child_process");
+  const result = spawnSync(
+    process.execPath,
+    ["packages/workspace-tools/bin/workspace-release.mjs", "packages/workspace-tools=patch", "--json"],
+    { cwd: process.cwd(), encoding: "utf8" },
+  );
+
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /--json is only supported with --dry-run/);
+});
