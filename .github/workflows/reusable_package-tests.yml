@@ -33,11 +33,15 @@ jobs:
       matrix: ${{ steps.packages.outputs.matrix }}
     steps:
       - uses: actions/checkout@v4
+      - name: Set up Node.js for TypeScript discovery
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
       - id: packages
         name: Discover packages with tests
         shell: bash
         run: |
-          PACKAGES="$(node scripts/discover-test-packages.mjs "${{ inputs.packages-directory }}")"
+          PACKAGES="$(node packages/workspace-tools/src/discover-test-packages.mts "${{ inputs.packages-directory }}" --json)"
           echo "$PACKAGES" | jq -e 'type == "array"' >/dev/null
           MATRIX="$(jq -cn --argjson packages "$PACKAGES" '{include: $packages}')"
           echo "$MATRIX" | jq -e 'type == "object" and (.include | type == "array")' >/dev/null
