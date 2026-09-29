@@ -9,7 +9,7 @@
   },
   "exports": {
     ".": "./src/index.mjs",
-    "./strategy": "./src/strategy.mjs",
+    "./strategy": "./src/strategy/index.mjs",
     "./utils": "./src/utils/index.mjs",
     "./vscode": "./src/vscode/index.mjs",
     "./capture": "./src/capture/index.mjs",
