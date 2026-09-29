@@ -647,6 +647,9 @@ ${section}`);
     }
 
     return {
+      operation: "release",
+      status: "preview",
+      dryRun: true,
       package: {
         name: pkg.manifest.name,
         selector,
@@ -664,6 +667,8 @@ ${section}`);
     };
   }
 
+  const operationRunOptions = options.json ? { stdio: "pipe" } : {};
+
   if (mode !== "existing") {
     run(
       "npm",
@@ -676,6 +681,7 @@ ${section}`);
       ],
       {
         cwd: root,
+        ...operationRunOptions,
       },
     );
   }
@@ -685,6 +691,7 @@ ${section}`);
   if (registryVersion(root, pkg, version).status === "published") {
     run("git", ["checkout", "--", pkg.file, "package-lock.json"], {
       cwd: root,
+      ...operationRunOptions,
     });
 
     throw new Error(
@@ -698,22 +705,51 @@ ${section}`);
 
   run("git", ["add", pkg.file, "package-lock.json", changelog], {
     cwd: root,
+    ...operationRunOptions,
   });
 
   run("git", ["commit", "-m", `release: ${tag}`], {
     cwd: root,
+    ...operationRunOptions,
   });
 
   run("git", ["tag", tag], {
     cwd: root,
+    ...operationRunOptions,
   });
 
-  console.log(`
+  const result = {
+    operation: "release",
+    status: "success",
+    dryRun: false,
+    package: {
+      name: pkg.manifest.name,
+      selector,
+      directory: pkg.directory,
+    },
+    mode,
+    versionRequest: versionSpec,
+    registry: registryFor(pkg),
+    currentVersion: pkg.manifest.version,
+    nextVersion: version,
+    tag,
+    changelog,
+    git: {
+      committed: true,
+      tagged: true,
+    },
+  };
+
+  if (!options.json) {
+    console.log(`
 Created release ${tag}
 
 Push the release commit and tag with:
 
   git push --follow-tags`);
+  }
+
+  return result;
 }
 
 /**
