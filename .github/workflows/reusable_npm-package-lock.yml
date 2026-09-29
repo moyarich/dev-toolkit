@@ -28,10 +28,6 @@ on:
       package-token:
         required: false
 
-concurrency:
-  group: npm-package-lock-${{ github.ref }}
-  cancel-in-progress: false
-
 permissions:
   contents: write
   packages: read
