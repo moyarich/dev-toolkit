@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import test from "node:test";
 import { changelogSection, parseReleaseArgument, releaseNotes, resolveNextVersion } from "../src/release.mjs";
 import { packageInfo } from "../src/workspace.mjs";
@@ -56,7 +58,6 @@ test("changelogSection renders release-note categories", () => {
   );
 });
 
-
 test("resolveNextVersion computes release versions without touching package files", () => {
   assert.equal(resolveNextVersion("0.1.1", "patch"), "0.1.2");
   assert.equal(resolveNextVersion("0.1.1", "minor"), "0.2.0");
@@ -67,13 +68,12 @@ test("resolveNextVersion computes release versions without touching package file
   assert.equal(resolveNextVersion("1.2.3", "1.2.4"), "1.2.4");
 });
 
-
-test("workspace-release requires --dry-run when --json is used", async () => {
-  const { spawnSync } = await import("node:child_process");
+test("workspace-release requires --dry-run when --json is used", () => {
+  const releaseCli = fileURLToPath(new URL("../bin/workspace-release.mjs", import.meta.url));
   const result = spawnSync(
     process.execPath,
-    ["packages/workspace-tools/bin/workspace-release.mjs", "packages/workspace-tools=patch", "--json"],
-    { cwd: process.cwd(), encoding: "utf8" },
+    [releaseCli, "packages/workspace-tools=patch", "--json"],
+    { encoding: "utf8" },
   );
 
   assert.notEqual(result.status, 0);
