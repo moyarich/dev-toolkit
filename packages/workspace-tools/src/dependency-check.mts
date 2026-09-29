@@ -147,9 +147,15 @@ export function dependencyCheck(root, pkg) {
 
   try {
     outdated = parseOutdated(
-      output("npm", ["outdated", "--workspace", pkg.manifest.name, "--json"], {
-        cwd: root,
-      }),
+      execFileSync(
+        "npm",
+        ["outdated", "--workspace", pkg.manifest.name, "--json"],
+        {
+          cwd: root,
+          encoding: "utf8",
+          stdio: ["ignore", "pipe", "pipe"],
+        },
+      ).trim(),
     );
   } catch (error) {
     const raw = String(error?.stdout ?? "").trim();
