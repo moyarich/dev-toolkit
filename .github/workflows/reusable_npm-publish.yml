@@ -95,11 +95,28 @@ jobs:
           fi
       - name: Publish package
         env:
+          PACKAGE_SELECTOR: ${{ inputs.package-directory }}
           _GITHUB_TOKEN: ${{ secrets.github-token || github.token }}
           _NPM_TOKEN: ${{ secrets.npm-token }}
         run: |
           if [ -f packages/workspace-tools/bin/workspace-publish.mjs ]; then
-            node packages/workspace-tools/bin/workspace-publish.mjs "$PACKAGE_DIRECTORY" --registry="${{ inputs.registry }}" --tag="${{ inputs.tag }}"
+            node packages/workspace-tools/bin/workspace-publish.mjs "$PACKAGE_SELECTOR" --registry="${{ inputs.registry }}" --tag="${{ inputs.tag }}"
           else
-            npx --yes @moyarich/workspace-tools workspace-publish "$PACKAGE_DIRECTORY" --registry="${{ inputs.registry }}" --tag="${{ inputs.tag }}"
+            npx --yes @moyarich/workspace-tools workspace-publish "$PACKAGE_SELECTOR" --registry="${{ inputs.registry }}" --tag="${{ inputs.tag }}"
           fi
+
+      - name: Publish summary
+        if: ${{ always() }}
+        run: |
+          {
+            echo "## Package publish"
+            echo
+            echo "| Setting | Value |"
+            echo "| --- | --- |"
+            echo "| Package | \`${{ inputs.package-directory }}\` |"
+            echo "| Requested version | \`${{ inputs.version || 'package.json' }}\` |"
+            echo "| Registry | \`${{ inputs.registry }}\` |"
+            echo "| Distribution tag | \`${{ inputs.tag }}\` |"
+            echo "| Node.js | \`${{ inputs.node-version }}\` |"
+            echo "| Result | **${{ job.status }}** |"
+          } >> "$GITHUB_STEP_SUMMARY"
