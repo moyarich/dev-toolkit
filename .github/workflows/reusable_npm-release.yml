@@ -1,4 +1,4 @@
-name: -[Reusable] NPM Release
+name: "[Reusable] Release npm package"
 
 on:
   workflow_dispatch:
@@ -140,7 +140,7 @@ permissions:
   packages: write
 
 jobs:
-  release:
+  release-package:
     runs-on: ubuntu-latest
 
     env:
