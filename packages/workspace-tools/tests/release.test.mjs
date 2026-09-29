@@ -2,8 +2,8 @@ import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
-import { changelogSection, parseReleaseArgument, releaseNotes, resolveNextVersion } from "../src/release.mjs";
-import { packageInfo } from "../src/workspace.mjs";
+import { changelogSection, parseReleaseArgument, releaseNotes, resolveNextVersion } from "../src/release.mts";
+import { packageInfo } from "../src/workspace.mts";
 
 test("parseReleaseArgument accepts bump names", () => {
   assert.deepEqual(parseReleaseArgument("demo-tools=patch"), {
