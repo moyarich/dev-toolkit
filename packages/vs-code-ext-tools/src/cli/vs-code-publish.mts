@@ -1,2 +1,2 @@
 #!/usr/bin/env node
-import "../publish_ext.mjs";
+import "../publish_ext.mts";
