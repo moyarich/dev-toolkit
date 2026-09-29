@@ -1,0 +1,135 @@
+name: "Reusable · Package CI"
+
+on:
+  workflow_dispatch:
+    inputs:
+      node-version:
+        description: Node.js version used to run package CI
+        required: true
+        default: "24"
+        type: string
+      packages-directory:
+        description: Directory containing workspace packages
+        required: true
+        default: packages
+        type: string
+  workflow_call:
+    inputs:
+      node-version:
+        description: Node.js version used to run package CI
+        required: false
+        type: string
+        default: "24"
+      packages-directory:
+        description: Directory containing workspace packages
+        required: false
+        type: string
+        default: "packages"
+
+jobs:
+  discover-packages:
+    name: "Discover packages"
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.packages.outputs.matrix }}
+      has-packages: ${{ steps.packages.outputs.has-packages }}
+    steps:
+      - name: Initialize workflow summary
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          {
+            echo "# Reusable · Package CI — Discover packages"
+            echo
+            echo "| Execution | Value |"
+            echo "| --- | --- |"
+            echo "| Workflow | \`Reusable · Package CI\` |"
+            echo "| Job | \`${{ github.job }}\` |"
+            echo "| Repository | \`${{ github.repository }}\` |"
+            echo "| Ref | \`${{ github.ref_name }}\` |"
+            echo "| Run | \`#${{ github.run_number }}\` |"
+            echo
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up Node.js for TypeScript discovery
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ inputs.node-version }}
+      - name: Install dependencies
+        run: npm install --ignore-scripts
+
+      - name: Resolve workspace tools CLI
+        shell: bash
+        env:
+          NODE_AUTH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          if [ -f packages/workspace-tools/package.json ]; then
+            npm run build --workspace @moyarich/workspace-tools
+            TOOL_BIN_DIR="$RUNNER_TEMP/workspace-tools-bin"
+            rm -rf "$TOOL_BIN_DIR"
+            mkdir -p "$TOOL_BIN_DIR"
+            npm install               --prefix "$TOOL_BIN_DIR"               --package-lock=false               --ignore-scripts               "$GITHUB_WORKSPACE/packages/workspace-tools"
+            echo "WORKSPACE_TOOLS_BIN=$TOOL_BIN_DIR/node_modules/.bin" >> "$GITHUB_ENV"
+          else
+            TOOL_ROOT="$RUNNER_TEMP/workspace-tools"
+            rm -rf "$TOOL_ROOT"
+            mkdir -p "$TOOL_ROOT"
+            npm install \
+              --prefix "$TOOL_ROOT" \
+              --package-lock=false \
+              --ignore-scripts \
+              --registry=https://npm.pkg.github.com \
+              @moyarich/workspace-tools
+            echo "WORKSPACE_TOOLS_BIN=$TOOL_ROOT/node_modules/.bin" >> "$GITHUB_ENV"
+          fi
+
+      - id: packages
+        name: Discover packages for CI
+        shell: bash
+        run: |
+          PACKAGES="$("$WORKSPACE_TOOLS_BIN/discover-test-packages" "${{ inputs.packages-directory }}" --json)"
+          echo "$PACKAGES" | jq -e 'type == "array"' >/dev/null
+          MATRIX="$(jq -cn --argjson packages "$PACKAGES" '{include: $packages}')"
+          echo "$MATRIX" | jq -e 'type == "object" and (.include | type == "array")' >/dev/null
+          PACKAGE_COUNT="$(echo "$PACKAGES" | jq 'length')"
+
+          {
+            echo "matrix=$MATRIX"
+            if [ "$PACKAGE_COUNT" -gt 0 ]; then
+              echo "has-packages=true"
+            else
+              echo "has-packages=false"
+            fi
+          } >> "$GITHUB_OUTPUT"
+
+          {
+            echo "## Package CI discovery"
+            echo
+            echo "| Setting | Value |"
+            echo "| --- | --- |"
+            echo "| Packages directory | \`${{ inputs.packages-directory }}\` |"
+            echo "| Node.js | \`${{ inputs.node-version }}\` |"
+            echo "| Package count | **$PACKAGE_COUNT** |"
+            echo
+            echo "### Discovered packages"
+            echo
+            echo '~~~json'
+            echo "$PACKAGES" | jq .
+            echo '~~~'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+
+  check-packages:
+    name: "Check ${{ matrix.name }}"
+    needs: discover-packages
+    if: ${{ needs.discover-packages.result == 'success' && needs.discover-packages.outputs.has-packages == 'true' }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.discover-packages.outputs.matrix || '{"include":[]}') }}
+    uses: ./.github/workflows/reusable_node-ci.yml
+    with:
+      package-directory: ${{ matrix.directory }}
+      node-version: ${{ inputs.node-version }}
+    secrets: inherit
