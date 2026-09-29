@@ -376,8 +376,7 @@ jobs:
               ;;
 
             existing)
-              # release() ignores the version request in existing mode.
-              VERSION_REQUEST="patch"
+              VERSION_REQUEST=""
               ;;
 
             exact)
@@ -444,13 +443,23 @@ jobs:
             DRY_RUN_FLAG="--dry-run"
           fi
 
+          RELEASE_ARGS=(
+            "${{ inputs.package }}"
+            "--mode=$VERSION_MODE"
+            "--json"
+          )
+
+          if [ "$VERSION_MODE" != "existing" ]; then
+            RELEASE_ARGS[0]="${{ inputs.package }}=$VERSION_REQUEST"
+            RELEASE_ARGS+=("--version=$VERSION_REQUEST")
+          fi
+
+          if [ "$DRY_RUN" = "true" ]; then
+            RELEASE_ARGS+=("--dry-run")
+          fi
+
           RELEASE_JSON="$(
-            "$WORKSPACE_TOOLS_BIN/workspace-release" \
-              "${{ inputs.package }}=$VERSION_REQUEST" \
-              --mode="$VERSION_MODE" \
-              --version="$VERSION_REQUEST" \
-              $DRY_RUN_FLAG \
-              --json
+            "$WORKSPACE_TOOLS_BIN/workspace-release" "${RELEASE_ARGS[@]}"
           )"
 
           echo "$RELEASE_JSON" | jq -e '
@@ -489,7 +498,7 @@ jobs:
             echo "| Setting | Value |"
             echo "| --- | --- |"
             echo "| Version selection | \`$VERSION_MODE\` |"
-            echo "| Version request | \`$VERSION_REQUEST\` |"
+            echo "| Version request | \`${VERSION_REQUEST:-existing package version}\` |"
             echo "| Dry run | **$DRY_RUN** |"
             echo "| Publish after release | **$PUBLISH** |"
 
