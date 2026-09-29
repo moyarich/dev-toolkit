@@ -179,8 +179,19 @@ export function resolveNextVersion(currentVersion, versionSpec) {
  * }}
  * Parsed release specification.
  */
-export function parseReleaseArgument(argument) {
-  if (!argument || !argument.includes("=")) {
+export function parseReleaseArgument(argument, options = {}) {
+  if (!argument) {
+    throw new Error("A package selector is required.");
+  }
+
+  if (!argument.includes("=")) {
+    if (options.mode === "existing") {
+      return {
+        selector: argument.trim(),
+        versionSpec: null,
+      };
+    }
+
     throw new Error(
       "Usage: workspace-release <package>=<version|major|minor|patch|premajor|preminor|prepatch|prerelease>",
     );
@@ -196,7 +207,11 @@ export function parseReleaseArgument(argument) {
     throw new Error("A package selector is required.");
   }
 
-  if (!VALID_BUMPS.has(versionSpec) && !SEMVER.test(versionSpec)) {
+  if (
+    options.mode !== "existing" &&
+    !VALID_BUMPS.has(versionSpec) &&
+    !SEMVER.test(versionSpec)
+  ) {
     throw new Error(`Invalid version: ${versionSpec}`);
   }
 
@@ -519,7 +534,7 @@ function updateChangelog(root, pkg, version, selector) {
  */
 export function release(argument, options = {}) {
   const { selector, versionSpec: argumentVersionSpec } =
-    parseReleaseArgument(argument);
+    parseReleaseArgument(argument, options);
 
   const mode = options.mode || "bump";
 
@@ -961,12 +976,7 @@ function resolveCliReleaseArgument(argument, options) {
   }
 
   if (options.mode === "existing") {
-    /*
-     * release() intentionally ignores versionSpec in existing mode.
-     * A syntactically valid placeholder keeps parseReleaseArgument()
-     * backwards compatible.
-     */
-    return `${selector}=patch`;
+    return selector;
   }
 
   if (options.mode === "exact") {
