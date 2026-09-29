@@ -1,6 +1,6 @@
 {
   "name": "@moyarich/workspace-tools",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Reusable workspace release and publishing tools.",
   "type": "module",
   "bin": {
