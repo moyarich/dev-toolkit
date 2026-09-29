@@ -75,7 +75,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ inputs.node-version }}
-      - run: npm install --ignore-scripts
+      - name: Install dependencies
+        run: npm install --ignore-scripts
+
+      - name: Build package
+        run: npm run build --if-present --workspace "${{ matrix.name }}"
+
       - name: Run package tests
         run: npm test --workspace "${{ matrix.name }}"
 
