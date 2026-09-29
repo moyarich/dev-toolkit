@@ -3,8 +3,8 @@ import { access, mkdtemp, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import test from "node:test";
-import { prepareRecordingArtifacts } from "../src/capture/artifacts.mjs";
-import { freePort } from "../src/utils/port.mjs";
+import { prepareRecordingArtifacts } from "../src/capture/artifacts.mts";
+import { freePort } from "../src/utils/port.mts";
 
 test("prepareRecordingArtifacts creates paths and cleans stale frames", async () => {
   const root = await mkdtemp(path.join(tmpdir(), "demo-artifacts-"));
