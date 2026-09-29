@@ -10,7 +10,14 @@ program
   .addOption(new Option("-a, --access <access>", "Package access level").choices(["public", "restricted"]).default("public"))
   .option("-d, --dry-run", "Run release checks without publishing")
   .option("-l, --list", "Print the publish plan without publishing")
+  .option("-j, --json", "Print the publish plan as JSON (requires --list or --dry-run)")
   .option("-w, --with-dependencies", "Include publishable workspace dependencies")
-  .action(publishWorkspacePackage);
+  .action((selector, options, command) => {
+    if (options.json && !options.list && !options.dryRun) {
+      command.error("error: --json requires --list or --dry-run");
+    }
+
+    return publishWorkspacePackage(selector, options);
+  });
 
 await program.parseAsync();
