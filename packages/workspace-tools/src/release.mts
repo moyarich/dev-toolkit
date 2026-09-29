@@ -536,11 +536,11 @@ function updateChangelog(root, pkg, version, selector) {
     releaseNotes(packageChanges(root, pkg, previous)),
   );
 
-  const existing = existsSync(changelog)
+  const current = existsSync(changelog)
     ? readFileSync(changelog, "utf8")
     : "# Changelog\n";
 
-  const body = existing.replace(/^# Changelog\s*/, "");
+  const body = current.replace(/^# Changelog\s*/, "");
 
   writeFileSync(
     changelog,
@@ -688,9 +688,9 @@ export function release(argument, options = {}) {
 
     const releaseDisplay = style.bold(style.green(nextVersion));
 
-    const statusDisplay = alreadyPublished
-      ? style.red(registryStatus)
-      : style.green(registryStatus);
+    const statusDisplay = canRelease
+      ? style.green(registryStatus)
+      : style.red(reason || registryStatus);
 
     const previousDisplay = previous
       ? style.cyan(previousRelease)
@@ -709,7 +709,7 @@ ${style.bold("Release selection")}
   ${selection}${versionChange}
   Version to release: ${releaseDisplay}
 
-${style.bold("Registry status")}
+${style.bold("Release readiness")}
   ${statusDisplay}
 
 ${style.bold("Previous release")}
