@@ -100,8 +100,27 @@ jobs:
       - name: Install workspace dependencies
         run: npm ci --include=optional
 
-      - name: Build workspace publishing CLI
-        run: npm run build --workspace @moyarich/workspace-tools
+      - name: Resolve workspace tools CLI
+        shell: bash
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.github-token || secrets._GITHUB_TOKEN || github.token }}
+        run: |
+          set -euo pipefail
+
+          if [ -f packages/workspace-tools/package.json ]; then
+            npm run build --workspace @moyarich/workspace-tools
+            echo "WORKSPACE_TOOLS_BIN=$GITHUB_WORKSPACE/packages/workspace-tools/bin" >> "$GITHUB_ENV"
+          else
+            TOOL_ROOT="$RUNNER_TEMP/workspace-tools"
+            rm -rf "$TOOL_ROOT"
+            mkdir -p "$TOOL_ROOT"
+            npm install \
+              --prefix "$TOOL_ROOT" \
+              --package-lock=false \
+              --ignore-scripts \
+              @moyarich/workspace-tools
+            echo "WORKSPACE_TOOLS_BIN=$TOOL_ROOT/node_modules/.bin" >> "$GITHUB_ENV"
+          fi
       - name: Resolve publish plan
         id: plan
         env:
@@ -109,7 +128,7 @@ jobs:
         shell: bash
         run: |
           PLAN="$(
-            node packages/workspace-tools/bin/workspace-publish.mjs \
+            "$WORKSPACE_TOOLS_BIN/workspace-publish" \
               "$PACKAGE_SELECTOR" \
               --registry="${{ inputs.registry }}" \
               --tag="${{ inputs.tag }}" \
@@ -146,7 +165,7 @@ jobs:
           _NPM_TOKEN: ${{ secrets.npm-token }}
         run: |
           RESULT="$(
-            node packages/workspace-tools/bin/workspace-publish.mjs \
+            "$WORKSPACE_TOOLS_BIN/workspace-publish" \
               "$PACKAGE_SELECTOR" \
               --registry="${{ inputs.registry }}" \
               --tag="${{ inputs.tag }}" \
