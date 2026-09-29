@@ -18,7 +18,7 @@ export default defineConfig({
     },
     rollupOptions: {
       external: [/^node:/, "@vscode/test-electron", "playwright-core"],
-      output: { banner: "#!/usr/bin/env node" },
+      output: {},
     },
   },
 });
