@@ -51,6 +51,7 @@ import {
  * @property {boolean} [list]
  * @property {boolean} [json]
  * @property {boolean} [withDependencies]
+ * @property {boolean} [verifyGitTag]
  */
 
 /**
@@ -253,6 +254,47 @@ export function packageRegistryState(pkg, registry) {
 }
 
 /**
+ * Inspect the package release tag for the current package version.
+ *
+ * @param {string} root
+ * @param {ReturnType<typeof packageInfo>} pkg
+ * @returns {{name: string, exists: boolean, atHead: boolean, commit: string | null}}
+ */
+export function packageGitTagState(root, pkg) {
+  const selector = pkg.directory.split("/").at(-1);
+  const name = `${selector}@${pkg.manifest.version}`;
+
+  let commit = "";
+
+  try {
+    commit = execFileSync("git", ["rev-list", "-n", "1", name], {
+      cwd: root,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "pipe"],
+    }).trim();
+  } catch {
+    commit = "";
+  }
+
+  if (!commit) {
+    return { name, exists: false, atHead: false, commit: null };
+  }
+
+  const head = execFileSync("git", ["rev-parse", "HEAD"], {
+    cwd: root,
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "pipe"],
+  }).trim();
+
+  return {
+    name,
+    exists: true,
+    atHead: commit === head,
+    commit,
+  };
+}
+
+/**
  * Create a publishing plan for the selected packages.
  *
  * @param {ReturnType<typeof packageInfo>[]} packages
@@ -450,6 +492,7 @@ export function publish({
   list = false,
   json = false,
   withDependencies = false,
+  verifyGitTag = true,
 }) {
   if (!/^[A-Za-z][A-Za-z0-9._-]*$/.test(tag)) {
     throw new Error("Invalid npm distribution tag.");
@@ -505,6 +548,31 @@ export function publish({
 
   const plan = publishPlan(packages, registry);
 
+  const gitTags = Object.fromEntries(
+    packages.map((item) => [
+      item.manifest.name,
+      packageGitTagState(root, item),
+    ]),
+  );
+
+  const tagProblems = verifyGitTag
+    ? packages
+        .map((item) => {
+          const state = gitTags[item.manifest.name];
+
+          if (!state.exists) {
+            return `Git release tag ${state.name} does not exist.`;
+          }
+
+          if (!state.atHead) {
+            return `Git release tag ${state.name} points to ${state.commit}, not HEAD.`;
+          }
+
+          return null;
+        })
+        .filter(Boolean)
+    : [];
+
   if (list && !json) {
     printPlan(plan);
   }
@@ -518,8 +586,16 @@ export function publish({
       operation: "publish",
       status: "plan",
       dryRun: false,
+      verifyGitTag,
+      gitTags,
       ...serializePublishPlan(plan, { registry, tag, access }),
     };
+  }
+
+  if (tagProblems.length && !dryRun) {
+    throw new Error(
+      `Publish blocked by Git tag verification:\n${tagProblems.map((problem) => `- ${problem}`).join("\n")}`,
+    );
   }
 
   for (const item of pendingPackages) {
@@ -539,8 +615,12 @@ export function publish({
 
     return {
       operation: "publish",
-      status: "preview",
+      status: tagProblems.length ? "warning" : "preview",
       dryRun: true,
+      verifyGitTag,
+      gitTags,
+      canPublish: tagProblems.length === 0,
+      reason: tagProblems.length ? tagProblems.join(" ") : null,
       ...serializePublishPlan(plan, { registry, tag, access }),
     };
   }
@@ -579,6 +659,8 @@ export function publish({
     operation: "publish",
     status: "success",
     dryRun: false,
+    verifyGitTag,
+    gitTags,
     registry,
     tag,
     access,
@@ -661,6 +743,7 @@ export function publishWorkspacePackage(selector, options) {
     list: options.list,
     json: options.json,
     withDependencies: options.withDependencies,
+    verifyGitTag: options.verifyGitTag,
   });
 
   if (options.json && result) {
