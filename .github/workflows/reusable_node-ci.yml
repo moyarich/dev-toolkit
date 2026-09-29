@@ -1,4 +1,4 @@
-name: "[Reusable] Node CI"
+name: "Node CI (Reusable)"
 
 on:
   workflow_dispatch:
@@ -37,6 +37,7 @@ on:
 
 jobs:
   test-node-project:
+    name: "Test Node project"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
