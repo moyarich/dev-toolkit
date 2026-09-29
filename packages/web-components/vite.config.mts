@@ -2,6 +2,9 @@ import { resolve } from "node:path";
 import { defineConfig } from "vite";
 
 export default defineConfig({
+  css: {
+    transformer: "lightningcss",
+  },
   build: {
     target: "es2022",
     outDir: "dist",
@@ -20,6 +23,9 @@ export default defineConfig({
       },
       formats: ["es"],
       fileName: (_format, entryName) => `${entryName}.mjs`,
+    },
+    rollupOptions: {
+      external: [/\.css$/],
     },
   },
 });
