@@ -67,6 +67,12 @@ on:
         default: latest
         type: string
 
+      verify-git-tag:
+        description: Publish — verify matching release Git tag before publishing
+        required: true
+        default: true
+        type: boolean
+
       node-version:
         description: Advanced — Node.js version
         required: true
@@ -121,6 +127,12 @@ on:
         required: false
         default: latest
         type: string
+
+      verify-git-tag:
+        description: Publish — verify matching release Git tag before publishing
+        required: false
+        default: true
+        type: boolean
 
       node-version:
         description: Advanced — Node.js version
@@ -572,9 +584,21 @@ jobs:
         env:
           _GITHUB_TOKEN: ${{ secrets._GITHUB_TOKEN || github.token }}
           _NPM_TOKEN: ${{ secrets._NPM_TOKEN }}
+          VERIFY_GIT_TAG: ${{ inputs.verify-git-tag }}
         shell: bash
         run: |
           set -euo pipefail
+
+          PUBLISH_ARGS=(
+            "$PACKAGE_SELECTOR"
+            --registry="${{ inputs.registry }}"
+            --tag="${{ inputs.dist-tag }}"
+            --json
+          )
+
+          if [ "$VERIFY_GIT_TAG" != "true" ]; then
+            PUBLISH_ARGS+=(--no-verify-git-tag)
+          fi
 
           {
             echo
@@ -586,15 +610,12 @@ jobs:
             echo "| Package selector | \`$PACKAGE_SELECTOR\` |"
             echo "| Registry | \`${{ inputs.registry }}\` |"
             echo "| Distribution tag | \`${{ inputs.dist-tag }}\` |"
+            echo "| Verify Git release tag | **${{ inputs.verify-git-tag }}** |"
             echo
             echo '```text'
 
             PUBLISH_JSON="$(
-              "$WORKSPACE_TOOLS_BIN/workspace-publish" \
-                "$PACKAGE_SELECTOR" \
-                --registry="${{ inputs.registry }}" \
-                --tag="${{ inputs.dist-tag }}" \
-                --json
+              "$WORKSPACE_TOOLS_BIN/workspace-publish" "${PUBLISH_ARGS[@]}"
             )"
 
             echo "$PUBLISH_JSON" | jq -e '
