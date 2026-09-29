@@ -9,7 +9,7 @@ on:
 
 jobs:
   packages:
-    uses: ./.github/workflows/package-tests.yml
+    uses: ./.github/workflows/reusable_package-tests.yml
     with:
       node-version: "22"
       packages-directory: packages

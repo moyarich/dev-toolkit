@@ -1,4 +1,4 @@
-name: Reusable Node CI
+name: -[Reusable] Node CI
 
 on:
   workflow_dispatch:

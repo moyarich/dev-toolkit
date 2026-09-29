@@ -28,7 +28,7 @@ permissions:
 
 jobs:
   publish:
-    uses: ./.github/workflows/npm-publish.yml
+    uses: ./.github/workflows/reusable_npm-publish.yml
     with:
       package-directory: packages/workspace-tools
       version: ${{ inputs.version }}

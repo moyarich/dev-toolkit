@@ -1,0 +1,31 @@
+{
+  "name": "@moyarich/vs-code-ext-tools",
+  "version": "0.1.0",
+  "description": "Reusable vs-code extension tools.",
+  "type": "module",
+  "bin": {
+    "vs-code-release": "./bin/vs-code-release.mjs",
+    "vs-code-publish": "./bin/vs-code-publish.mjs"
+  },
+  "files": [
+    "bin",
+    "src",
+    "README.md",
+    "CHANGELOG.md"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node --test tests/*.test.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/moyarich/dev-toolkit.git",
+    "directory": "packages/vs-code-ext-tools"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
+    "access": "public"
+  }
+}

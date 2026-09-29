@@ -3,13 +3,22 @@ name: Release workspace-tools
 on:
   workflow_dispatch:
     inputs:
-      version:
-        description: Version
+      version-mode:
+        description: Version — bump, use existing, or enter an exact version
         required: true
-        default: current
+        default: bump
         type: choice
         options:
-          - current
+          - bump
+          - existing
+          - exact
+
+      version-bump:
+        description: Version — bump amount (used with "bump")
+        required: true
+        default: patch
+        type: choice
+        options:
           - patch
           - minor
           - major
@@ -17,26 +26,45 @@ on:
           - preminor
           - premajor
           - prerelease
-      custom-version:
-        description: Custom SemVer (optional; overrides Version)
+
+      exact-version:
+        description: Version — exact version (used with "exact", e.g. 1.2.3)
         required: false
         default: ""
         type: string
-      action:
-        description: Action
+
+      dry-run:
+        description: Release — preview without making changes
         required: true
-        default: preview
+        default: true
+        type: boolean
+
+      publish:
+        description: Publish — publish after creating the release
+        required: true
+        default: false
+        type: boolean
+
+      registry:
+        description: Publish — where to publish
+        required: true
+        default: github
         type: choice
         options:
-          - preview
-          - release
-          - release-publish-github
-          - release-publish-npm
-          - release-publish-both
-      tag:
-        description: Distribution tag (publishing only)
-        required: false
+          - github
+          - npm
+          - both
+
+      dist-tag:
+        description: Publish — package tag (usually "latest")
+        required: true
         default: latest
+        type: string
+
+      node-version:
+        description: Advanced — Node.js version
+        required: true
+        default: "24"
         type: string
 
 permissions:
@@ -44,59 +72,20 @@ permissions:
   packages: write
 
 jobs:
-  resolve:
-    runs-on: ubuntu-latest
-    outputs:
-      release-mode: ${{ steps.resolve.outputs.release-mode }}
-      release-bump: ${{ steps.resolve.outputs.release-bump }}
-      exact-version: ${{ steps.resolve.outputs.exact-version }}
-      dry-run: ${{ steps.resolve.outputs.dry-run }}
-      auto-publish: ${{ steps.resolve.outputs.auto-publish }}
-      registry: ${{ steps.resolve.outputs.registry }}
-    steps:
-      - id: resolve
-        env:
-          VERSION: ${{ inputs.version }}
-          CUSTOM_VERSION: ${{ inputs.custom-version }}
-          ACTION: ${{ inputs.action }}
-        run: |
-          if [ -n "$CUSTOM_VERSION" ]; then
-            RELEASE_MODE=exact
-          elif [ "$VERSION" = current ]; then
-            RELEASE_MODE=current
-          else
-            RELEASE_MODE=bump
-          fi
-          case "$ACTION" in
-            preview) DRY_RUN=true; AUTO_PUBLISH=false; REGISTRY=github ;;
-            release) DRY_RUN=false; AUTO_PUBLISH=false; REGISTRY=github ;;
-            release-publish-github) DRY_RUN=false; AUTO_PUBLISH=true; REGISTRY=github ;;
-            release-publish-npm) DRY_RUN=false; AUTO_PUBLISH=true; REGISTRY=npm ;;
-            release-publish-both) DRY_RUN=false; AUTO_PUBLISH=true; REGISTRY=both ;;
-            *) echo "Invalid action: $ACTION"; exit 1 ;;
-          esac
-          {
-            echo "release-mode=$RELEASE_MODE"
-            echo "release-bump=$VERSION"
-            echo "exact-version=$CUSTOM_VERSION"
-            echo "dry-run=$DRY_RUN"
-            echo "auto-publish=$AUTO_PUBLISH"
-            echo "registry=$REGISTRY"
-          } >> "$GITHUB_OUTPUT"
-
   release:
-    needs: resolve
-    uses: ./.github/workflows/npm-release.yml
+    uses: ./.github/workflows/reusable_npm-release.yml
+
     with:
-      package-directory: packages/workspace-tools
-      release-mode: ${{ needs.resolve.outputs.release-mode }}
-      release-bump: ${{ needs.resolve.outputs.release-bump }}
-      exact-version: ${{ needs.resolve.outputs.exact-version }}
-      dry-run: ${{ needs.resolve.outputs.dry-run == 'true' }}
-      auto-publish: ${{ needs.resolve.outputs.auto-publish == 'true' }}
-      registry: ${{ needs.resolve.outputs.registry }}
-      tag: ${{ inputs.tag }}
-      node-version: "22"
+      package: packages/workspace-tools
+      version-mode: ${{ inputs.version-mode }}
+      version-bump: ${{ inputs.version-bump }}
+      exact-version: ${{ inputs.exact-version }}
+      dry-run: ${{ inputs.dry-run }}
+      publish: ${{ inputs.publish }}
+      registry: ${{ inputs.registry }}
+      dist-tag: ${{ inputs.dist-tag }}
+      node-version: ${{ inputs.node-version }}
+
     secrets:
       github-token: ${{ secrets._GITHUB_TOKEN }}
       npm-token: ${{ secrets._NPM_TOKEN }}

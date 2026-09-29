@@ -2,45 +2,24 @@ name: Playground Pages
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
     paths:
       - "apps/playground/**"
       - "packages/demo-tools/**"
       - "package.json"
+      - "package-lock.json"
       - ".github/workflows/playground-pages.yml"
+      - ".github/workflows/reusable_github-pages.yml"
+
   workflow_dispatch:
 
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: pages
-  cancel-in-progress: true
-
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - run: npm install --ignore-scripts
-      - run: npm run build --workspace @moyarich/demo-tools-playground
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: apps/playground/dist
-
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - name: Deploy
-        id: deployment
-        uses: actions/deploy-pages@v4
+  pages:
+    uses: ./.github/workflows/reusable_github-pages.yml
+    with:
+      build-command: npm run build --workspace @moyarich/demo-tools-playground
+      output-directory: apps/playground/dist
+      node-version: "24"
+      install-command: npm ci --include=optional
+      working-directory: "."

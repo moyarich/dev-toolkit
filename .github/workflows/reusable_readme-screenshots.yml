@@ -1,4 +1,4 @@
-name: Reusable README screenshots
+name: -[Reusable] README Screenshots
 
 on:
   workflow_dispatch:

@@ -1,4 +1,4 @@
-name: Reusable - update workspace lockfile
+name: -[Reusable] Update workspace lockfile
 
 on:
   workflow_dispatch:

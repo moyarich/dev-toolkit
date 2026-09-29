@@ -1,0 +1,545 @@
+name: -[Reusable] NPM Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: Dry-run — preview without making changes
+        required: true
+        default: true
+        type: boolean
+
+      package:
+        description: Package — package to release
+        required: true
+        default: packages/workspace-tools
+        type: string
+
+      version-mode:
+        description: Version — bump, use existing, or enter an exact version
+        required: true
+        default: bump
+        type: choice
+        options:
+          - bump
+          - existing
+          - exact
+
+      version-bump:
+        description: Version — bump amount (used with "bump")
+        required: true
+        default: patch
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+          - prepatch
+          - preminor
+          - premajor
+          - prerelease
+
+      exact-version:
+        description: Version — exact version (used with "exact", e.g. 1.2.3)
+        required: false
+        default: ""
+        type: string
+
+      publish:
+        description: Publish — publish after creating the release
+        required: true
+        default: false
+        type: boolean
+
+      registry:
+        description: Publish — registry to publish to
+        required: true
+        default: github
+        type: choice
+        options:
+          - github
+          - npm
+          - both
+
+      dist-tag:
+        description: Publish — package tag (usually "latest")
+        required: true
+        default: latest
+        type: string
+
+      node-version:
+        description: Advanced — Node.js version
+        required: true
+        default: "24"
+        type: string
+
+  workflow_call:
+    inputs:
+      dry-run:
+        description: Dry-run — preview without making changes
+        required: true
+        default: true
+        type: boolean
+
+      package:
+        description: Package — package to release
+        required: true
+        type: string
+
+      version-mode:
+        description: Version — bump, use existing, or enter an exact version
+        required: false
+        default: bump
+        type: string
+
+      version-bump:
+        description: Version — bump amount (used with "bump")
+        required: false
+        default: patch
+        type: string
+
+      exact-version:
+        description: Version — exact version (used with "exact", e.g. 1.2.3)
+        required: false
+        default: ""
+        type: string
+
+      publish:
+        description: Publish — publish after creating the release
+        required: false
+        default: false
+        type: boolean
+
+      registry:
+        description: Publish — registry to publish to
+        required: false
+        default: github
+        type: string
+
+      dist-tag:
+        description: Publish — package tag (usually "latest")
+        required: false
+        default: latest
+        type: string
+
+      node-version:
+        description: Advanced — Node.js version
+        required: false
+        default: "24"
+        type: string
+
+    secrets:
+      _GITHUB_TOKEN:
+        required: false
+
+      _NPM_TOKEN:
+        required: false
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    env:
+      GH_TOKEN: ${{ secrets._GITHUB_TOKEN || github.token }}
+      GH_REPO: ${{ github.repository }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+          token: ${{ secrets._GITHUB_TOKEN || github.token }}
+
+      - name: Configure GitHub remote
+        env:
+          GH_TOKEN: ${{ secrets._GITHUB_TOKEN || github.token }}
+          GH_REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::error::A GitHub token is required for release operations."
+            exit 1
+          fi
+
+          git remote set-url origin \
+            "https://x-access-token:${GH_TOKEN}@github.com/${GH_REPO}.git"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: npm
+          registry-url: https://npm.pkg.github.com
+          scope: "@moyarich"
+
+      - name: Install workspace dependencies
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets._GITHUB_TOKEN || github.token }}
+        run: npm ci --include=optional
+
+      - name: Restore tracked files after install
+        run: git restore --worktree -- .
+
+      - name: Validate release inputs
+        env:
+          VERSION_MODE: ${{ inputs.version-mode }}
+          VERSION_BUMP: ${{ inputs.version-bump }}
+          EXACT_VERSION: ${{ inputs.exact-version }}
+          REGISTRY: ${{ inputs.registry }}
+          DIST_TAG: ${{ inputs.dist-tag }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          case "$VERSION_MODE" in
+            bump|existing|exact)
+              ;;
+            *)
+              echo "::error::Version selection must be bump, existing, or exact."
+              exit 1
+              ;;
+          esac
+
+          case "$VERSION_BUMP" in
+            patch|minor|major|prepatch|preminor|premajor|prerelease)
+              ;;
+            *)
+              echo "::error::Invalid version bump: $VERSION_BUMP"
+              exit 1
+              ;;
+          esac
+
+          if [ "$VERSION_MODE" = "exact" ] && [ -z "$EXACT_VERSION" ]; then
+            echo "::error::Exact version is required when version selection is exact."
+            exit 1
+          fi
+
+          case "$REGISTRY" in
+            github|npm|both)
+              ;;
+            *)
+              echo "::error::Registry must be github, npm, or both."
+              exit 1
+              ;;
+          esac
+
+          if [ -z "$DIST_TAG" ]; then
+            echo "::error::Distribution tag cannot be empty."
+            exit 1
+          fi
+
+      - name: Validate publishing credentials
+        if: ${{ !inputs.dry-run && inputs.publish }}
+        env:
+          GITHUB_TOKEN_VALUE: ${{ secrets._GITHUB_TOKEN || github.token }}
+          NPM_TOKEN_VALUE: ${{ secrets._NPM_TOKEN }}
+          REGISTRY: ${{ inputs.registry }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          case "$REGISTRY" in
+            github)
+              if [ -z "$GITHUB_TOKEN_VALUE" ]; then
+                echo "::error::_GITHUB_TOKEN or github.token is required to publish to GitHub Packages."
+                exit 1
+              fi
+              ;;
+
+            npm)
+              if [ -z "$NPM_TOKEN_VALUE" ]; then
+                echo "::error::_NPM_TOKEN is required to publish to npm."
+                exit 1
+              fi
+              ;;
+
+            both)
+              if [ -z "$GITHUB_TOKEN_VALUE" ]; then
+                echo "::error::_GITHUB_TOKEN or github.token is required to publish to GitHub Packages."
+                exit 1
+              fi
+
+              if [ -z "$NPM_TOKEN_VALUE" ]; then
+                echo "::error::_NPM_TOKEN is required to publish to npm."
+                exit 1
+              fi
+              ;;
+          esac
+
+      - name: Configure release author
+        if: ${{ !inputs.dry-run }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Resolve package
+        env:
+          PACKAGE_SELECTOR: ${{ inputs.package }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          PACKAGE_JSON="$PACKAGE_SELECTOR/package.json"
+
+          if [ ! -f "$PACKAGE_JSON" ]; then
+            echo "::error::Package does not exist: $PACKAGE_SELECTOR"
+            exit 1
+          fi
+
+          PACKAGE_NAME="$(
+            node -p "require('./$PACKAGE_JSON').name"
+          )"
+
+          PACKAGE_VERSION="$(
+            node -p "require('./$PACKAGE_JSON').version"
+          )"
+
+          if [ -z "$PACKAGE_NAME" ] || [ "$PACKAGE_NAME" = "undefined" ]; then
+            echo "::error::Unable to resolve package name: $PACKAGE_SELECTOR"
+            exit 1
+          fi
+
+          if [ -z "$PACKAGE_VERSION" ] || [ "$PACKAGE_VERSION" = "undefined" ]; then
+            echo "::error::Unable to resolve package version: $PACKAGE_SELECTOR"
+            exit 1
+          fi
+
+          {
+            echo "PACKAGE_SELECTOR=$PACKAGE_SELECTOR"
+            echo "PACKAGE_NAME=$PACKAGE_NAME"
+            echo "PACKAGE_VERSION=$PACKAGE_VERSION"
+          } >> "$GITHUB_ENV"
+
+          echo "Package: $PACKAGE_NAME"
+          echo "Package version: $PACKAGE_VERSION"
+          echo "Package selector: $PACKAGE_SELECTOR"
+
+      - name: Resolve release version
+        env:
+          VERSION_MODE: ${{ inputs.version-mode }}
+          VERSION_BUMP: ${{ inputs.version-bump }}
+          EXACT_VERSION: ${{ inputs.exact-version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          case "$VERSION_MODE" in
+            bump)
+              VERSION_REQUEST="$VERSION_BUMP"
+              ;;
+
+            existing)
+              VERSION_REQUEST="$PACKAGE_VERSION"
+              ;;
+
+            exact)
+              VERSION_REQUEST="$EXACT_VERSION"
+              ;;
+          esac
+
+          echo "VERSION_REQUEST=$VERSION_REQUEST" >> "$GITHUB_ENV"
+
+      - name: Verify clean working tree
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          STATUS="$(git status --short)"
+
+          if [ -n "$STATUS" ]; then
+            echo "::error::Working tree is not clean before release."
+            echo
+            echo "$STATUS"
+            echo
+
+            {
+              echo
+              echo "## Working tree"
+              echo
+              echo "> [!CAUTION]"
+              echo "> The release cannot continue because the working tree is not clean."
+              echo
+              echo '```text'
+              echo "$STATUS"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+
+            exit 1
+          fi
+
+          echo "Working tree is clean."
+
+      - name: Release or preview package
+        env:
+          DRY_RUN: ${{ inputs.dry-run }}
+          VERSION_MODE: ${{ inputs.version-mode }}
+          PUBLISH: ${{ inputs.publish }}
+          REGISTRY: ${{ inputs.registry }}
+          DIST_TAG: ${{ inputs.dist-tag }}
+          GIT_REF: ${{ github.ref_name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          DRY_RUN_FLAG=""
+
+          if [ "$DRY_RUN" = "true" ]; then
+            DRY_RUN_FLAG="--dry-run"
+          fi
+
+          {
+            echo "# Package release"
+            echo
+
+            echo "## Package"
+            echo
+            echo "| Setting | Value |"
+            echo "| --- | --- |"
+            echo "| Repository | \`$GH_REPO\` |"
+            echo "| Package | \`$PACKAGE_NAME\` |"
+            echo "| Package selector | \`$PACKAGE_SELECTOR\` |"
+            echo "| Package version | \`$PACKAGE_VERSION\` |"
+            echo "| Git ref | \`$GIT_REF\` |"
+            echo
+
+            echo "## Release configuration"
+            echo
+            echo "| Setting | Value |"
+            echo "| --- | --- |"
+            echo "| Version selection | \`$VERSION_MODE\` |"
+            echo "| Version request | \`$VERSION_REQUEST\` |"
+            echo "| Dry run | **$DRY_RUN** |"
+            echo "| Publish after release | **$PUBLISH** |"
+
+            if [ "$PUBLISH" = "true" ]; then
+              echo "| Publish registry | \`$REGISTRY\` |"
+              echo "| Distribution tag | \`$DIST_TAG\` |"
+            fi
+
+            echo
+
+            if [ "$DRY_RUN" = "true" ]; then
+              echo "> [!NOTE]"
+              echo "> **Preview only.** No files, commits, Git tags, pushes, or packages will be changed."
+            elif [ "$PUBLISH" = "true" ]; then
+              echo "> [!IMPORTANT]"
+              echo "> This run will create and push the release commit and Git tag, then publish the package."
+            else
+              echo "> [!IMPORTANT]"
+              echo "> This run will create and push the release commit and Git tag. Package publishing is disabled."
+            fi
+
+            echo
+            echo "## Release details"
+            echo
+            echo '```text'
+
+            if [ -f packages/workspace-tools/bin/workspace-release.mjs ]; then
+              node packages/workspace-tools/bin/workspace-release.mjs \
+                "$PACKAGE_SELECTOR=$VERSION_REQUEST" \
+                --mode="$VERSION_MODE" \
+                --version="$VERSION_REQUEST" \
+                $DRY_RUN_FLAG
+            else
+              npx --yes @moyarich/workspace-tools workspace-release \
+                "$PACKAGE_SELECTOR=$VERSION_REQUEST" \
+                --mode="$VERSION_MODE" \
+                --version="$VERSION_REQUEST" \
+                $DRY_RUN_FLAG
+            fi
+
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Push release commit and tag
+        if: ${{ !inputs.dry-run }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git push origin \
+            "HEAD:$GITHUB_REF_NAME" \
+            --follow-tags
+
+      - name: Ensure staged publishing CLI support
+        if: ${{ !inputs.dry-run && inputs.publish && inputs.registry != 'github' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          npm install --global npm@">=11.15.0 <12"
+
+      - name: Publish released version
+        if: ${{ !inputs.dry-run && inputs.publish }}
+        env:
+          _GITHUB_TOKEN: ${{ secrets._GITHUB_TOKEN || github.token }}
+          _NPM_TOKEN: ${{ secrets._NPM_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          {
+            echo
+            echo "## Publishing"
+            echo
+            echo "| Setting | Value |"
+            echo "| --- | --- |"
+            echo "| Package | \`$PACKAGE_NAME\` |"
+            echo "| Package selector | \`$PACKAGE_SELECTOR\` |"
+            echo "| Registry | \`${{ inputs.registry }}\` |"
+            echo "| Distribution tag | \`${{ inputs.dist-tag }}\` |"
+            echo
+            echo '```text'
+
+            if [ -f packages/workspace-tools/bin/workspace-publish.mjs ]; then
+              node packages/workspace-tools/bin/workspace-publish.mjs \
+                "$PACKAGE_SELECTOR" \
+                --registry="${{ inputs.registry }}" \
+                --tag="${{ inputs.dist-tag }}"
+            else
+              npx --yes @moyarich/workspace-tools workspace-publish \
+                "$PACKAGE_SELECTOR" \
+                --registry="${{ inputs.registry }}" \
+                --tag="${{ inputs.dist-tag }}"
+            fi
+
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Release result
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          {
+            echo
+            echo "## Result"
+            echo
+
+            if [ "${{ job.status }}" != "success" ]; then
+              echo "### ❌ Release failed"
+              echo
+              echo "Review the workflow logs above for the failing step."
+
+            elif [ "${{ inputs.dry-run }}" = "true" ]; then
+              echo "### ✅ Release preview completed"
+              echo
+              echo "No repository or package changes were made."
+
+            elif [ "${{ inputs.publish }}" = "true" ]; then
+              echo "### ✅ Release and publish completed"
+              echo
+              echo "Published to: \`${{ inputs.registry }}\`"
+
+            else
+              echo "### ✅ Release completed"
+              echo
+              echo "The release commit and Git tag were pushed. Package publishing was not requested."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
