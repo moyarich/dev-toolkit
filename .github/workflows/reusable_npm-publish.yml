@@ -76,6 +76,22 @@ on:
         required: false
         default: "24"
         type: string
+    outputs:
+      package-name:
+        description: Resolved package name
+        value: ${{ jobs.publish-package.outputs.package-name }}
+      package-version:
+        description: Resolved package version
+        value: ${{ jobs.publish-package.outputs.package-version }}
+      publish-status:
+        description: Publish result status
+        value: ${{ jobs.publish-package.outputs.publish-status }}
+      can-publish:
+        description: Whether publish readiness checks passed
+        value: ${{ jobs.publish-package.outputs.can-publish }}
+      result-json:
+        description: Complete workspace-publish JSON result
+        value: ${{ jobs.publish-package.outputs.result-json }}
     secrets:
       github-token:
         required: false
@@ -90,6 +106,12 @@ jobs:
   publish-package:
     name: "Publish npm package"
     runs-on: ubuntu-latest
+    outputs:
+      package-name: ${{ steps.plan.outputs.name }}
+      package-version: ${{ steps.plan.outputs.version }}
+      publish-status: ${{ steps.publish.outputs.status }}
+      can-publish: ${{ steps.publish.outputs.can-publish }}
+      result-json: ${{ steps.publish.outputs.result-json }}
     env:
       GH_TOKEN: ${{ secrets.github-token || github.token }}
       GH_REPO: ${{ github.repository }}
@@ -182,6 +204,7 @@ jobs:
             exit 1
           fi
       - name: Publish package
+        id: publish
         env:
           DRY_RUN: ${{ inputs.dry-run }}
           VERIFY_GIT_TAG: ${{ inputs.verify-git-tag }}
@@ -222,6 +245,14 @@ jobs:
             )
           ' >/dev/null
 
+          {
+            echo "status=$(jq -r '.status' <<< "$RESULT")"
+            echo "can-publish=$(jq -r 'if has("canPublish") then .canPublish else true end' <<< "$RESULT")"
+            echo "result-json<<EOF"
+            echo "$RESULT" | jq -c .
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
           echo "$RESULT" | jq .
 
       - name: Publish summary
@@ -240,5 +271,7 @@ jobs:
             echo "| Distribution tag | \`${{ inputs.tag }}\` |"
             echo "| Verify Git release tag | **${{ inputs.verify-git-tag }}** |"
             echo "| Node.js | \`${{ inputs.node-version }}\` |"
+            echo "| Publish status | \`${{ steps.publish.outputs.status || 'unresolved' }}\` |"
+            echo "| Can publish | **${{ steps.publish.outputs.can-publish || 'unresolved' }}** |"
             echo "| Result | **${{ job.status }}** |"
           } >> "$GITHUB_STEP_SUMMARY"
