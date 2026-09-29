@@ -1,4 +1,4 @@
-name: -[Reusable] Package Tests
+name: "[Reusable] Package Tests"
 
 on:
   workflow_dispatch:
@@ -27,7 +27,7 @@ on:
         default: "packages"
 
 jobs:
-  discover:
+  discover-packages:
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.packages.outputs.matrix }}
@@ -65,14 +65,14 @@ jobs:
             echo '~~~'
           } >> "$GITHUB_STEP_SUMMARY"
 
-  test:
+  test-packages:
     needs: discover
     env:
       FORCE_COLOR: "1"
-    if: needs.discover.outputs.matrix != '{"include":[]}'
+    if: needs.discover-packages.outputs.matrix != '{"include":[]}'
     strategy:
       fail-fast: false
-      matrix: ${{ fromJSON(needs.discover.outputs.matrix) }}
+      matrix: ${{ fromJSON(needs.discover-packages.outputs.matrix) }}
     name: Test ${{ matrix.name }}
     runs-on: ubuntu-latest
     steps:
