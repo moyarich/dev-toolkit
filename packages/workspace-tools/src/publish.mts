@@ -334,14 +334,14 @@ function validate(root, pkg, { quiet = false } = {}) {
       ["run", script, "--workspace", pkg.manifest.name, "--if-present"],
       {
         cwd: root,
-        ...(quiet ? { stdio: "pipe" } : {}),
+        stdio: quiet ? ["ignore", "ignore", "inherit"] : "inherit",
       },
     );
   }
 
   execFileSync("npm", ["pack", "--workspace", pkg.manifest.name, "--dry-run"], {
     cwd: root,
-    ...(quiet ? { stdio: "pipe" } : {}),
+    stdio: quiet ? ["ignore", "ignore", "inherit"] : "inherit",
   });
 }
 
@@ -401,7 +401,7 @@ function publishOne(root, pkg, registry, tag, access, { quiet = false } = {}) {
         {
           cwd: root,
           env,
-          ...(quiet ? { stdio: "pipe" } : {}),
+          stdio: quiet ? ["ignore", "ignore", "inherit"] : "inherit",
         },
       );
 
@@ -411,7 +411,7 @@ function publishOne(root, pkg, registry, tag, access, { quiet = false } = {}) {
     execFileSync("npm", ["stage", "publish", "--access", access, "--tag", tag], {
       cwd: resolve(root, pkg.directory),
       env,
-      ...(quiet ? { stdio: "pipe" } : {}),
+      stdio: quiet ? ["ignore", "ignore", "inherit"] : "inherit",
     });
 
     if (!quiet) {
