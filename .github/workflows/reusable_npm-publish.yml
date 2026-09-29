@@ -3,6 +3,11 @@ name: "Reusable · Publish npm package"
 on:
   workflow_dispatch:
     inputs:
+      dry-run:
+        description: Preview publishing without registry mutation
+        required: true
+        default: true
+        type: boolean
       package-directory:
         description: Workspace path, directory name, or package name
         required: true
@@ -38,6 +43,11 @@ on:
         type: string
   workflow_call:
     inputs:
+      dry-run:
+        description: Preview publishing without registry mutation
+        required: false
+        default: true
+        type: boolean
       package-directory:
         description: Workspace path, directory name, or package name
         required: true
@@ -171,6 +181,7 @@ jobs:
           fi
       - name: Publish package
         env:
+          DRY_RUN: ${{ inputs.dry-run }}
           VERIFY_GIT_TAG: ${{ inputs.verify-git-tag }}
           PACKAGE_SELECTOR: ${{ inputs.package-directory }}
           _GITHUB_TOKEN: ${{ secrets.github-token || github.token }}
@@ -185,6 +196,10 @@ jobs:
             --json
           )
 
+          if [ "$DRY_RUN" = "true" ]; then
+            PUBLISH_ARGS+=(--dry-run)
+          fi
+
           if [ "$VERIFY_GIT_TAG" != "true" ]; then
             PUBLISH_ARGS+=(--no-verify-git-tag)
           fi
@@ -193,10 +208,16 @@ jobs:
             "$WORKSPACE_TOOLS_BIN/workspace-publish" "${PUBLISH_ARGS[@]}"
           )"
 
-          echo "$RESULT" | jq -e '
+          echo "$RESULT" | jq -e --argjson dryRun "$DRY_RUN" '
             type == "object" and
             .operation == "publish" and
-            .status == "success"
+            .dryRun == $dryRun and
+            (
+              if $dryRun
+              then (.status == "preview" or .status == "warning")
+              else .status == "success"
+              end
+            )
           ' >/dev/null
 
           echo "$RESULT" | jq .
@@ -209,6 +230,7 @@ jobs:
             echo
             echo "| Setting | Value |"
             echo "| --- | --- |"
+            echo "| Dry run | **${{ inputs.dry-run }}** |"
             echo "| Package | \`${{ steps.plan.outputs.name || inputs.package-directory }}\` |"
             echo "| Package version | \`${{ steps.plan.outputs.version || 'unresolved' }}\` |"
             echo "| Requested version | \`${{ inputs.version || 'package version' }}\` |"
