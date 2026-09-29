@@ -1,4 +1,4 @@
-name: "[Reusable] Recreate workspace package-lock.json"
+name: "Recreate workspace package-lock.json (Reusable)"
 
 on:
   workflow_dispatch:
@@ -36,6 +36,7 @@ permissions:
 
 jobs:
   recreate-lockfile:
+    name: "Recreate workspace package-lock.json"
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
