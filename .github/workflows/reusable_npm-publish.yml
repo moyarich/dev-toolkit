@@ -145,11 +145,17 @@ jobs:
           _GITHUB_TOKEN: ${{ secrets.github-token || github.token }}
           _NPM_TOKEN: ${{ secrets.npm-token }}
         run: |
-          if [ -f packages/workspace-tools/bin/workspace-publish.mjs ]; then
-            node packages/workspace-tools/bin/workspace-publish.mjs "$PACKAGE_SELECTOR" --registry="${{ inputs.registry }}" --tag="${{ inputs.tag }}"
-          else
-            npx --yes @moyarich/workspace-tools workspace-publish "$PACKAGE_SELECTOR" --registry="${{ inputs.registry }}" --tag="${{ inputs.tag }}"
-          fi
+          RESULT="$(
+            node packages/workspace-tools/bin/workspace-publish.mjs               "$PACKAGE_SELECTOR"               --registry="${{ inputs.registry }}"               --tag="${{ inputs.tag }}"               --json
+          )"
+
+          echo "$RESULT" | jq -e '
+            type == "object" and
+            .operation == "publish" and
+            .status == "success"
+          ' >/dev/null
+
+          echo "$RESULT" | jq .
 
       - name: Publish summary
         if: ${{ always() }}
