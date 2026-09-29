@@ -352,13 +352,8 @@ jobs:
             exit 1
           fi
 
-          PACKAGE_NAME="$(
-            node -p "require('./$PACKAGE_JSON').name"
-          )"
-
-          PACKAGE_VERSION="$(
-            node -p "require('./$PACKAGE_JSON').version"
-          )"
+          PACKAGE_NAME="$(jq -er '.name | select(type == "string" and length > 0)' "$PACKAGE_JSON")"
+          PACKAGE_VERSION="$(jq -er '.version | select(type == "string" and length > 0)' "$PACKAGE_JSON")"
 
           if [ -z "$PACKAGE_NAME" ] || [ "$PACKAGE_NAME" = "undefined" ]; then
             echo "::error::Unable to resolve package name: $PACKAGE_SELECTOR"
