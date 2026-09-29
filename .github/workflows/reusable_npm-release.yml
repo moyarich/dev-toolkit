@@ -155,7 +155,31 @@ jobs:
           persist-credentials: true
           token: ${{ secrets._GITHUB_TOKEN || github.token }}
 
+      - name: Resolve execution mode
+        id: execution
+        env:
+          INPUT_DRY_RUN: ${{ inputs.dry-run }}
+          EVENT_DRY_RUN: ${{ github.event.inputs.dry-run }}
+          EVENT_NAME: ${{ github.event_name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Fail safe for local runners such as act: when workflow_dispatch does
+          # not provide the boolean input at all, treat the run as a dry run.
+          if [ "$EVENT_NAME" = "workflow_dispatch" ] && [ -z "$EVENT_DRY_RUN" ]; then
+            DRY_RUN=true
+          elif [ "$INPUT_DRY_RUN" = "true" ]; then
+            DRY_RUN=true
+          else
+            DRY_RUN=false
+          fi
+
+          echo "dry-run=$DRY_RUN" >> "$GITHUB_OUTPUT"
+          echo "Dry run: $DRY_RUN"
+
       - name: Configure GitHub remote
+        if: ${{ steps.execution.outputs.dry-run == 'false' }}
         env:
           GH_TOKEN: ${{ secrets._GITHUB_TOKEN || github.token }}
           GH_REPO: ${{ github.repository }}
@@ -236,7 +260,7 @@ jobs:
           fi
 
       - name: Validate publishing credentials
-        if: ${{ !inputs.dry-run && inputs.publish }}
+        if: ${{ steps.execution.outputs.dry-run == 'false' && inputs.publish }}
         env:
           GITHUB_TOKEN_VALUE: ${{ secrets._GITHUB_TOKEN || github.token }}
           NPM_TOKEN_VALUE: ${{ secrets._NPM_TOKEN }}
@@ -274,7 +298,7 @@ jobs:
           esac
 
       - name: Configure release author
-        if: ${{ !inputs.dry-run }}
+        if: ${{ steps.execution.outputs.dry-run == 'false' }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -376,9 +400,18 @@ jobs:
 
           echo "Working tree is clean."
 
+      - name: Capture dry-run repository state
+        if: ${{ steps.execution.outputs.dry-run == 'true' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rev-parse HEAD > /tmp/release-head-before
+          git status --porcelain=v1 --untracked-files=all > /tmp/release-status-before
+          git tag --list | sort > /tmp/release-tags-before
+
       - name: Release or preview package
         env:
-          DRY_RUN: ${{ inputs.dry-run }}
+          DRY_RUN: ${{ steps.execution.outputs.dry-run }}
           VERSION_MODE: ${{ inputs.version-mode }}
           PUBLISH: ${{ inputs.publish }}
           REGISTRY: ${{ inputs.registry }}
@@ -458,8 +491,29 @@ jobs:
             echo '```'
           } | tee -a "$GITHUB_STEP_SUMMARY"
 
+      - name: Verify dry run made no repository changes
+        if: ${{ steps.execution.outputs.dry-run == 'true' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git rev-parse HEAD > /tmp/release-head-after
+          git status --porcelain=v1 --untracked-files=all > /tmp/release-status-after
+          git tag --list | sort > /tmp/release-tags-after
+
+          if ! cmp -s /tmp/release-head-before /tmp/release-head-after || \
+             ! cmp -s /tmp/release-status-before /tmp/release-status-after || \
+             ! cmp -s /tmp/release-tags-before /tmp/release-tags-after; then
+            echo "::error::Dry run modified repository state."
+            echo "Repository status after dry run:"
+            git status --short
+            exit 1
+          fi
+
+          echo "Dry-run verification passed: repository state is unchanged."
+
       - name: Push release commit and tag
-        if: ${{ !inputs.dry-run }}
+        if: ${{ steps.execution.outputs.dry-run == 'false' }}
         shell: bash
         run: |
           set -euo pipefail
@@ -469,7 +523,7 @@ jobs:
             --follow-tags
 
       - name: Ensure staged publishing CLI support
-        if: ${{ !inputs.dry-run && inputs.publish && inputs.registry != 'github' }}
+        if: ${{ steps.execution.outputs.dry-run == 'false' && inputs.publish && inputs.registry != 'github' }}
         shell: bash
         run: |
           set -euo pipefail
@@ -477,7 +531,7 @@ jobs:
           npm install --global npm@">=11.15.0 <12"
 
       - name: Publish released version
-        if: ${{ !inputs.dry-run && inputs.publish }}
+        if: ${{ steps.execution.outputs.dry-run == 'false' && inputs.publish }}
         env:
           _GITHUB_TOKEN: ${{ secrets._GITHUB_TOKEN || github.token }}
           _NPM_TOKEN: ${{ secrets._NPM_TOKEN }}
@@ -527,10 +581,10 @@ jobs:
               echo
               echo "Review the workflow logs above for the failing step."
 
-            elif [ "${{ inputs.dry-run }}" = "true" ]; then
+            elif [ "${{ steps.execution.outputs.dry-run }}" = "true" ]; then
               echo "### ✅ Release preview completed"
               echo
-              echo "No repository or package changes were made."
+              echo "No files, commits, tags, pushes, or package publishing were performed."
 
             elif [ "${{ inputs.publish }}" = "true" ]; then
               echo "### ✅ Release and publish completed"
@@ -540,6 +594,6 @@ jobs:
             else
               echo "### ✅ Release completed"
               echo
-              echo "The release commit and Git tag were pushed. Package publishing was not requested."
+              echo "Release mode was applied successfully. Package publishing was not requested."
             fi
           } >> "$GITHUB_STEP_SUMMARY"
