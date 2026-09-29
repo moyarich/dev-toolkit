@@ -1,4 +1,4 @@
-name: -[Reusable] GitHub Pages
+name: Reusable · GitHub Pages
 
 on:
   workflow_dispatch:
@@ -77,7 +77,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        uses: actions/checkout@v7 # v7
 
       # ------------------------------------------------------------
       # Validate everything before install/build/filesystem traversal
@@ -164,7 +164,7 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Setup Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        uses: actions/setup-node@7 # v7
         with:
           node-version: ${{ inputs.node-version }}
           cache: npm

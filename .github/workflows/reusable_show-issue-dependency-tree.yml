@@ -1,5 +1,4 @@
-name: -[Reusable] Show issue dependency tree
-
+name: Reusable ·  Show issue dependency tree
 on:
   workflow_dispatch:
   push:
@@ -14,14 +13,14 @@ permissions:
 
 jobs:
   dependency-tree:
-    name: -[Reusable] Render native issue dependency tree
+    name: Render native issue dependency tree
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
 
     steps:
-      - name: -[Reusable] Build dependency tree
+      - name: Build dependency tree
         shell: bash
         run: |
           set -euo pipefail
