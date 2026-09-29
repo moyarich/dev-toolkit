@@ -79,3 +79,17 @@ test("workspace-release requires --dry-run when --json is used", () => {
   assert.notEqual(result.status, 0);
   assert.match(result.stderr, /--json is only supported with --dry-run/);
 });
+
+
+test("release JSON mode remains restricted to dry-run previews", () => {
+  const releaseCli = fileURLToPath(new URL("../bin/workspace-release.mjs", import.meta.url));
+  const result = spawnSync(
+    process.execPath,
+    [releaseCli, "packages/workspace-tools=patch", "--json"],
+    { encoding: "utf8" },
+  );
+
+  assert.notEqual(result.status, 0);
+  assert.equal(result.stdout, "");
+  assert.match(result.stderr, /--json is only supported with --dry-run/);
+});
