@@ -5,7 +5,7 @@ import { execFileSync } from "node:child_process";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
-import { output, packageInfo, repositoryRoot, run } from "./workspace.mts";
+import { packageInfo, repositoryRoot } from "./workspace.mts";
 
 import {
   assertDependencies,
@@ -337,13 +337,15 @@ function registryVersion(root, pkg, version) {
   const spec = version ? `${pkg.manifest.name}@${version}` : pkg.manifest.name;
 
   try {
-    const publishedVersion = output(
+    const publishedVersion = execFileSync(
       "npm",
       ["view", spec, "version", "--registry", registry],
       {
         cwd: root,
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "pipe"],
       },
-    );
+    ).trim();
 
     return {
       status: "published",
@@ -388,7 +390,7 @@ function registryVersion(root, pkg, version) {
  * Previous tag or release commit.
  */
 function previousReleaseRef(root, selector) {
-  const tags = output(
+  const tags = execFileSync(
     "git",
     ["tag", "--list", `${selector}@*`, "--sort=-version:refname"],
     {
@@ -402,7 +404,7 @@ function previousReleaseRef(root, selector) {
     return tag;
   }
 
-  const commit = output(
+  const commit = execFileSync(
     "git",
     ["log", "-n", "1", "--format=%H", "--grep", `^release: ${selector}@[0-9]`],
     {
@@ -431,7 +433,7 @@ function previousReleaseRef(root, selector) {
 function packageChanges(root, pkg, previousRef) {
   const range = previousRef ? `${previousRef}..HEAD` : "HEAD";
 
-  const log = output(
+  const log = execFileSync(
     "git",
     ["log", range, "--format=%B%x1e", "--", pkg.directory],
     {
@@ -539,9 +541,15 @@ export function release(argument, options = {}) {
   }
 
   if (
-    output("git", ["status", "--porcelain"], {
-      cwd: root,
-    })
+    execFileSync(
+      "git",
+      ["status", "--porcelain"],
+      {
+        cwd: root,
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "pipe"],
+      },
+    ).trim()
   ) {
     throw new Error(
       "Working tree must be clean before creating a package release.",
@@ -670,7 +678,7 @@ ${section}`);
   const operationRunOptions = options.json ? { stdio: "pipe" } : {};
 
   if (mode !== "existing") {
-    run(
+    execFileSync(
       "npm",
       [
         "version",
@@ -689,7 +697,7 @@ ${section}`);
   const version = JSON.parse(readFileSync(pkg.file, "utf8")).version;
 
   if (registryVersion(root, pkg, version).status === "published") {
-    run("git", ["checkout", "--", pkg.file, "package-lock.json"], {
+    execFileSync("git", ["checkout", "--", pkg.file, "package-lock.json"], {
       cwd: root,
       ...operationRunOptions,
     });
@@ -703,17 +711,17 @@ ${section}`);
 
   const changelog = updateChangelog(root, pkg, version, selector);
 
-  run("git", ["add", pkg.file, "package-lock.json", changelog], {
+  execFileSync("git", ["add", pkg.file, "package-lock.json", changelog], {
     cwd: root,
     ...operationRunOptions,
   });
 
-  run("git", ["commit", "-m", `release: ${tag}`], {
+  execFileSync("git", ["commit", "-m", `release: ${tag}`], {
     cwd: root,
     ...operationRunOptions,
   });
 
-  run("git", ["tag", tag], {
+  execFileSync("git", ["tag", tag], {
     cwd: root,
     ...operationRunOptions,
   });
