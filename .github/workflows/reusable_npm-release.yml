@@ -246,7 +246,7 @@ jobs:
       - name: Resolve workspace tools CLI
         shell: bash
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.github-token || secrets._GITHUB_TOKEN || github.token }}
+          NODE_AUTH_TOKEN: ${{ secrets._GITHUB_TOKEN || github.token }}
         run: |
           set -euo pipefail
 
@@ -261,6 +261,7 @@ jobs:
               --prefix "$TOOL_ROOT" \
               --package-lock=false \
               --ignore-scripts \
+              --registry=https://npm.pkg.github.com \
               @moyarich/workspace-tools
             echo "WORKSPACE_TOOLS_BIN=$TOOL_ROOT/node_modules/.bin" >> "$GITHUB_ENV"
           fi
