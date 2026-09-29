@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { defineDemoStrategy, isMainModule, runDemoStrategy } from "../src/index.mjs";
+import { defineDemoStrategy, isMainModule, runDemoStrategy } from "../src/index.mts";
 
 test("defineDemoStrategy preserves a valid strategy", () => {
   const strategy = defineDemoStrategy({ name: "example", run() {} });
