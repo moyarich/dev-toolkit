@@ -8,14 +8,14 @@
     "demo-strategy": "./bin/demo-strategy.mjs"
   },
   "exports": {
-    ".": "./src/index.mjs",
-    "./strategy": "./src/strategy/index.mjs",
-    "./utils": "./src/utils/index.mjs",
-    "./vscode": "./src/vscode/index.mjs",
-    "./capture": "./src/capture/index.mjs",
-    "./browser": "./src/browser/index.mjs",
-    "./components": "./src/components/index.mjs",
-    "./generate": "./src/generate/index.mjs"
+    ".": "./src/index.mts",
+    "./strategy": "./src/strategy/index.mts",
+    "./utils": "./src/utils/index.mts",
+    "./vscode": "./src/vscode/index.mts",
+    "./capture": "./src/capture/index.mts",
+    "./browser": "./src/browser/index.mts",
+    "./components": "./src/components/index.mts",
+    "./generate": "./src/generate/index.mts"
   },
   "files": [
     "bin",
