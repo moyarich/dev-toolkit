@@ -6,7 +6,16 @@ Validate without publishing:
 workspace-publish css-expand-collapse --dry-run
 ```
 
-A dry run reports Git-tag readiness without failing for a missing or mismatched release tag. The JSON result includes `verifyGitTag`, `gitTags`, `canPublish`, and the reason when publishing is blocked.
+A dry run performs the publish checks without registry mutation. It checks registry state, verifies the matching Git release tag by default, and validates versions that would need publishing. A missing or mismatched release tag is reported as a warning instead of failing the preview. The JSON result includes `dryRun: true`, `verifyGitTag`, `gitTags`, `canPublish`, registry states, and the reason when publishing is blocked.
+
+To preview every publishable workspace package:
+
+```sh
+workspace-publish --dry-run
+workspace-publish --dry-run --json
+```
+
+The reusable publish workflow also exposes a `dry-run` boolean input and defaults it to `true` for safer manual and reusable runs.
 
 Publish to GitHub Packages:
 
