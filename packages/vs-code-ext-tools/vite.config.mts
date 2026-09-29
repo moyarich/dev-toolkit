@@ -18,9 +18,6 @@ export default defineConfig({
     },
     rollupOptions: {
       external: [/^node:/, /^@inquirer\//, "chalk", "commander"],
-      output: {
-        banner: "#!/usr/bin/env node",
-      },
     },
   },
 });
