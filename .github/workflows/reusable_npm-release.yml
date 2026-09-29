@@ -243,7 +243,10 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets._GITHUB_TOKEN || github.token }}
         run: npm ci --include=optional
 
-      - name: Restore tracked files after install
+      - name: Build workspace tools CLI
+        run: npm run build --workspace @moyarich/workspace-tools
+
+      - name: Restore tracked files after build
         run: git restore --worktree -- .
 
       - name: Validate release inputs
@@ -338,43 +341,6 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-      - name: Resolve package
-        env:
-          PACKAGE_SELECTOR: ${{ inputs.package }}
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          PACKAGE_JSON="$PACKAGE_SELECTOR/package.json"
-
-          if [ ! -f "$PACKAGE_JSON" ]; then
-            echo "::error::Package does not exist: $PACKAGE_SELECTOR"
-            exit 1
-          fi
-
-          PACKAGE_NAME="$(jq -er '.name | select(type == "string" and length > 0)' "$PACKAGE_JSON")"
-          PACKAGE_VERSION="$(jq -er '.version | select(type == "string" and length > 0)' "$PACKAGE_JSON")"
-
-          if [ -z "$PACKAGE_NAME" ] || [ "$PACKAGE_NAME" = "undefined" ]; then
-            echo "::error::Unable to resolve package name: $PACKAGE_SELECTOR"
-            exit 1
-          fi
-
-          if [ -z "$PACKAGE_VERSION" ] || [ "$PACKAGE_VERSION" = "undefined" ]; then
-            echo "::error::Unable to resolve package version: $PACKAGE_SELECTOR"
-            exit 1
-          fi
-
-          {
-            echo "PACKAGE_SELECTOR=$PACKAGE_SELECTOR"
-            echo "PACKAGE_NAME=$PACKAGE_NAME"
-            echo "PACKAGE_VERSION=$PACKAGE_VERSION"
-          } >> "$GITHUB_ENV"
-
-          echo "Package: $PACKAGE_NAME"
-          echo "Package version: $PACKAGE_VERSION"
-          echo "Package selector: $PACKAGE_SELECTOR"
-
       - name: Resolve release version
         env:
           VERSION_MODE: ${{ inputs.version-mode }}
@@ -466,9 +432,7 @@ jobs:
             echo "| Setting | Value |"
             echo "| --- | --- |"
             echo "| Repository | \`$GH_REPO\` |"
-            echo "| Package | \`$PACKAGE_NAME\` |"
-            echo "| Package selector | \`$PACKAGE_SELECTOR\` |"
-            echo "| Package version | \`$PACKAGE_VERSION\` |"
+            echo "| Package selector | `${{ inputs.package }}` |"
             echo "| Git ref | \`$GIT_REF\` |"
             echo
 
