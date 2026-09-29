@@ -1,4 +1,4 @@
-name: -[Reusable] README Screenshots
+name: "[Reusable] README Screenshots"
 
 on:
   workflow_dispatch:
@@ -75,7 +75,7 @@ permissions:
   contents: write
 
 jobs:
-  screenshots:
+  update-readme-screenshots:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
