@@ -1,35 +1,28 @@
 import { importHTMLElement } from "./import-html-element.mts";
+import type { BrowserPage } from "../types.mts";
 
 const captionUrl = new URL(import.meta.resolve("@moyarich/web-components/caption/element"));
 const cursorUrl = new URL(import.meta.resolve("@moyarich/web-components/cursor-overlay/element"));
+export interface DemoCaption { [key: string]: unknown }
 
-export async function installDemoCursor({ page }) {
+export async function installDemoCursor({ page }: { page: BrowserPage }): Promise<void> {
   const tagName = "moyarich-cursor-overlay";
   await importHTMLElement({ page, tagName, componentUrl: cursorUrl });
-  await page.evaluate((name) => {
-    document.querySelector(name)?.remove();
-    document.documentElement.append(document.createElement(name));
-  }, tagName);
+  await page.evaluate((name: string) => { document.querySelector(name)?.remove(); document.documentElement.append(document.createElement(name)); }, tagName);
 }
-
-export async function showDemoCaption({ page, caption }) {
+export async function showDemoCaption({ page, caption }: { page: BrowserPage; caption: DemoCaption }): Promise<void> {
   const tagName = "moyarich-caption-overlay";
   await importHTMLElement({ page, tagName, componentUrl: captionUrl });
-  await page.evaluate(({ tagName, caption }) => {
-    let element = document.querySelector(tagName);
-    if (!element) {
-      element = document.createElement(tagName);
-      element.setAttribute("popover", "manual");
-      document.documentElement.append(element);
-    }
+  await page.evaluate(({ tagName, caption }: { tagName: string; caption: DemoCaption }) => {
+    let element = document.querySelector(tagName) as (HTMLElement & { caption?: DemoCaption }) | null;
+    if (!element) { element = document.createElement(tagName) as HTMLElement & { caption?: DemoCaption }; element.setAttribute("popover", "manual"); document.documentElement.append(element); }
     if (typeof element.showPopover === "function" && !element.matches(":popover-open")) element.showPopover();
     element.caption = { ...caption, visible: true };
   }, { tagName, caption });
 }
-
-export async function hideDemoCaption({ page }) {
-  await page.evaluate((tagName) => {
-    const element = document.querySelector(tagName);
-    if (element) element.caption = { ...element.caption, visible: false };
+export async function hideDemoCaption({ page }: { page: BrowserPage }): Promise<void> {
+  await page.evaluate((tagName: string) => {
+    const element = document.querySelector(tagName) as (HTMLElement & { caption?: DemoCaption }) | null;
+    if (element) element.caption = { ...(element.caption ?? {}), visible: false };
   }, "moyarich-caption-overlay");
 }
