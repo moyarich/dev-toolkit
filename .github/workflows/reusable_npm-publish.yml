@@ -82,6 +82,9 @@ jobs:
         run: npm install --global npm@">=11.15.0 <12"
       - name: Install workspace dependencies
         run: npm ci --include=optional
+
+      - name: Build workspace publishing CLI
+        run: npm run build --workspace @moyarich/workspace-tools
       - name: Validate requested version
         if: ${{ inputs.version != '' }}
         env:
