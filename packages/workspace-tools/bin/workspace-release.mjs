@@ -1,25 +1,27 @@
 #!/usr/bin/env node
 import { createInterface } from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
+import { program } from 'commander';
 import { release } from "../src/release.mjs";
 
+program
+  .name("workspace-release")
+  .description("Preview or create a workspace package release.")
+  .argument("<package=version>", "Workspace selector and version or bump")
+  .option("--dry-run", "Preview without changing repository files", false)
+  .option("--json", "Print the dry-run result as JSON", false)
+  .option("--mode <mode>", "Version mode: bump, exact, or existing")
+  .option("--version <version>", "Override the version or bump in the argument");
+
 try {
-  const args = process.argv.slice(2);
-  const dryRun = args.includes("--dry-run");
-  const json = args.includes("--json");
+  program.parse();
+  const [argument] = program.args;
+  const options = program.opts();
+  const { dryRun, json } = options;
 
   if (json && !dryRun) {
     throw new Error("--json is only supported with --dry-run.");
   }
-  const modeArg = args.find((arg) => arg.startsWith("--mode="));
-  const versionArg = args.find((arg) => arg.startsWith("--version="));
-  const argument = args.find((arg) => !arg.startsWith("--"));
-  const options = {
-    dryRun,
-    json,
-    mode: modeArg?.slice("--mode=".length),
-    version: versionArg?.slice("--version=".length),
-  };
 
   if (!dryRun && input.isTTY && output.isTTY) {
     release(argument, { ...options, dryRun: true });

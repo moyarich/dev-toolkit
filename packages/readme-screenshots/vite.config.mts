@@ -1,0 +1,23 @@
+import { resolve } from "node:path";
+import { defineConfig } from "vite";
+
+export default defineConfig({
+  build: {
+    target: "node24",
+    outDir: "bin",
+    emptyOutDir: true,
+    sourcemap: true,
+    minify: false,
+    lib: {
+      entry: {
+        "readme-screenshots": resolve(import.meta.dirname, "bin/readme-screenshots.mjs"),
+      },
+      formats: ["es"],
+      fileName: (_format, entryName) => `${entryName}.mjs`,
+    },
+    rollupOptions: {
+      external: [/^node:/, "playwright"],
+      output: {},
+    },
+  },
+});

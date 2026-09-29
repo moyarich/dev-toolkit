@@ -1,11 +1,11 @@
 #!/usr/bin/env node
-import { Command } from "commander";
-import { discoverDemoStrategies, runDemoStrategies, selectDemoStrategies } from "../src/index.mjs";
-import { captureDemoStrategy } from "../src/generate/index.mjs";
-import { launchBrowserDemo } from "../src/browser/index.mjs";
-import { encodeGif } from "../src/capture/index.mjs";
+import { program } from 'commander';
+import { discoverDemoStrategies, runDemoStrategies, selectDemoStrategies } from "../src/index.mts";
+import { captureDemoStrategy } from "../src/generate/index.mts";
+import { launchBrowserDemo } from "../src/browser/index.mts";
+import { encodeGif } from "../src/capture/index.mts";
 
-const program = new Command()
+program
   .name("demo")
   .description("Discover, select, and run self-contained demo strategies.")
   .version("0.0.0")

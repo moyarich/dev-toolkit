@@ -8,14 +8,19 @@
     "apps/*"
   ],
   "scripts": {
-    "test": "npm test --workspaces --if-present",
+    "test": "node --test tests/cli.test.mjs && npm test --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "demo": "demo",
     "demo:list": "demo list",
     "test:playground": "node --test tests/playground/*.test.mjs"
   },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "commander": "^14.0.1"
+  },
   "engines": {
-    "node": ">=22"
-  }
+    "node": ">=24"
+  },
+  "license": "MIT"
 }

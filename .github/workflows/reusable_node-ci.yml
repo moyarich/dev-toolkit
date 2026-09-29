@@ -1,4 +1,4 @@
-name: -[Reusable] Node CI
+name: "Reusable · Node CI"
 
 on:
   workflow_dispatch:
@@ -11,12 +11,13 @@ on:
         options:
           - packages/demo-tools
           - packages/readme-screenshots
+          - packages/vs-code-ext-tools
           - packages/web-components
           - packages/workspace-tools
       node-version:
         description: Node.js version used by CI
         required: true
-        default: "22"
+        default: "24"
         type: string
   workflow_call:
     inputs:
@@ -29,22 +30,35 @@ on:
         description: Node.js version used by CI
         required: false
         type: string
-        default: "22"
+        default: "24"
     secrets:
       package-token:
         description: Token used to install packages from GitHub Packages
         required: false
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}-${{ inputs.package-directory }}
-  cancel-in-progress: true
-
 jobs:
-  test:
+  check-node-project:
+    name: "Check ${{ inputs.package-directory }}"
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Initialize workflow summary
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          {
+            echo "# Reusable · Node CI"
+            echo
+            echo "| Execution | Value |"
+            echo "| --- | --- |"
+            echo "| Workflow | \`Reusable · Node CI\` |"
+            echo "| Job | \`${{ github.job }}\` |"
+            echo "| Repository | \`${{ github.repository }}\` |"
+            echo "| Ref | \`${{ github.ref_name }}\` |"
+            echo "| Run | \`#${{ github.run_number }}\` |"
+            echo
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: ${{ inputs.node-version }}
           registry-url: https://npm.pkg.github.com
@@ -53,11 +67,25 @@ jobs:
         run: npm ci
         env:
           NODE_AUTH_TOKEN: ${{ secrets.package-token || github.token }}
+      - name: Build
+        env:
+          WORKSPACE: ${{ inputs.package-directory }}
+        run: |
+          if [ "$WORKSPACE" = "." ]; then
+            npm run build --if-present
+          else
+            npm run build --workspace "$WORKSPACE" --if-present
+          fi
+
       - name: Test
         env:
           WORKSPACE: ${{ inputs.package-directory }}
         run: |
-          if [ "$WORKSPACE" = "." ]; then npm test; else npm test --workspace "$WORKSPACE"; fi
+          if [ "$WORKSPACE" = "." ]; then
+            npm test
+          else
+            npm test --workspace "$WORKSPACE"
+          fi
       - name: Lint
         env:
           WORKSPACE: ${{ inputs.package-directory }}

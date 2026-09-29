@@ -1,2 +1,0 @@
-import path from "node:path"; import { mkdir } from "node:fs/promises";
-export async function captureScreenshot({page,artifactsDirectory,name="screenshot.png",locator,...options}){if(!page)throw new TypeError("captureScreenshot requires a Playwright page.");if(!artifactsDirectory)throw new TypeError("captureScreenshot requires artifactsDirectory.");await mkdir(artifactsDirectory,{recursive:true});const destination=path.resolve(artifactsDirectory,name);await (locator??page).screenshot({path:destination,...options});return destination;}

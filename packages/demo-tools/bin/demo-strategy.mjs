@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import { Command } from "commander";
-import { runDemoStrategy } from "../src/index.mjs";
+import { program } from 'commander';
+import { runDemoStrategy } from "../src/index.mts";
 
-const program = new Command()
+program
   .name("demo-strategy")
   .description("Run a demo strategy module directly.")
   .argument("<file>", "strategy module path")

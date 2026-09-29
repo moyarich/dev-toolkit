@@ -1,4 +1,4 @@
-name: Package Tests
+name: "Package CI"
 
 on:
   workflow_dispatch:
@@ -8,8 +8,8 @@ on:
       - main
 
 jobs:
-  packages:
-    uses: ./.github/workflows/reusable_package-tests.yml
+  package-ci:
+    name: "Package CI"
+    uses: ./.github/workflows/reusable_package-ci.yml
     with:
-      node-version: "22"
       packages-directory: packages
