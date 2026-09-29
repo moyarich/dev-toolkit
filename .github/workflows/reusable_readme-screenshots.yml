@@ -71,10 +71,6 @@ on:
         default: "docs: update README screenshots"
         type: string
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}-readme-screenshots
-  cancel-in-progress: true
-
 permissions:
   contents: write
 
