@@ -582,6 +582,13 @@ jobs:
             echo
             echo "## Release details"
             echo
+            echo "| Resolved | Value |"
+            echo "| --- | --- |"
+            echo "| Package | \`$PACKAGE_NAME\` |"
+            echo "| Version | \`$PACKAGE_VERSION\` |"
+            echo "| Status | \`$(jq -r '.status' <<< "$RELEASE_JSON")\` |"
+            echo "| Can release | **$(jq -r 'if has("canRelease") then .canRelease else true end' <<< "$RELEASE_JSON")** |"
+            echo
             echo '~~~json'
             echo "$RELEASE_JSON" | jq .
             echo '~~~'
