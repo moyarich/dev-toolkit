@@ -19,4 +19,6 @@ workspace-publish [package] [--registry=github|npm|both] [--tag=latest] [--acces
 
 Matching Git release tag verification defaults to enabled. A real publish requires `<selector>@<package.json.version>` to point to `HEAD`. Use `--no-verify-git-tag` to explicitly disable this condition.
 
-When verification fails during `--dry-run`, the command returns warning/readiness metadata rather than failing because of the tag state.
+`--dry-run` never publishes to a registry. With a selector it previews that package; without a selector it previews every publishable package. JSON dry-runs return `dryRun: true`, registry states, Git-tag states, `canPublish`, and an optional `reason`.
+
+When Git-tag verification fails during `--dry-run`, the command returns `status: "warning"` rather than failing because of the tag state. The reusable publish workflow exposes the same behavior through its `dry-run` input, which defaults to `true`.
