@@ -1,4 +1,4 @@
-import { importHTMLElement } from "./import-html-element.mjs";
+import { importHTMLElement } from "./import-html-element.mts";
 
 const captionUrl = new URL(import.meta.resolve("@moyarich/web-components/caption/element"));
 const cursorUrl = new URL(import.meta.resolve("@moyarich/web-components/cursor-overlay/element"));

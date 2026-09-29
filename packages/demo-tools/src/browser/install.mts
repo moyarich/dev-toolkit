@@ -1,5 +1,5 @@
 import { createRequire } from "node:module";
-import { runProcess } from "../utils/process.mjs";
+import { runProcess } from "../utils/process.mts";
 
 export async function installDemoBrowser({
   browser = "chromium",

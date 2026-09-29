@@ -1,9 +1,9 @@
 import { access, mkdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { createVSCodeEnvironment } from "./environment.mjs";
-import { connectToVSCode } from "./devtools.mjs";
-import { freePort, runProcess } from "../utils/index.mjs";
+import { createVSCodeEnvironment } from "./environment.mts";
+import { connectToVSCode } from "./devtools.mts";
+import { freePort, runProcess } from "../utils/index.mts";
 
 const extensionHostPath = fileURLToPath(new URL("./extension-host.cjs", import.meta.url));
 

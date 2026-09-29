@@ -1,6 +1,6 @@
-export { runProcess } from "./process.mjs";
+export { runProcess } from "./process.mts";
 
 export function pause(milliseconds) {
   return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
-export { freePort } from "./port.mjs";
+export { freePort } from "./port.mts";

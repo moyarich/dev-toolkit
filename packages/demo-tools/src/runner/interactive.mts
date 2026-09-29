@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { discoverDemoStrategies } from "./discover.mjs";
+import { discoverDemoStrategies } from "./discover.mts";
 
 export function selectWithFzf(lines, {
   prompt = "Strategies › ",

@@ -1,6 +1,6 @@
 import path from "node:path";
 import { mkdir } from "node:fs/promises";
-import { discoverDemoStrategies } from "./discover.mjs";
+import { discoverDemoStrategies } from "./discover.mts";
 
 export async function runDemoStrategies({
   directory = path.resolve("demo/strategies"),
