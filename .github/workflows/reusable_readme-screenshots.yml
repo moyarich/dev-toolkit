@@ -71,6 +71,10 @@ on:
         default: "docs: update README screenshots"
         type: string
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-readme-screenshots
+  cancel-in-progress: true
+
 permissions:
   contents: write
 
@@ -122,3 +126,20 @@ jobs:
           git diff --cached --quiet && exit 0
           git commit -m "$COMMIT_MESSAGE"
           git push origin "HEAD:${{ github.ref_name }}"
+
+      - name: Screenshot summary
+        if: ${{ always() }}
+        run: |
+          {
+            echo "## README screenshots"
+            echo
+            echo "| Setting | Value |"
+            echo "| --- | --- |"
+            echo "| URL | \`${{ inputs.url }}\` |"
+            echo "| Output directory | \`${{ inputs.output-directory }}\` |"
+            echo "| Config | \`${{ inputs.config || 'default' }}\` |"
+            echo "| Node.js | \`${{ inputs.node-version }}\` |"
+            echo "| Playwright | \`${{ inputs.playwright-version }}\` |"
+            echo "| Commit changes | **yes, when generated files changed** |"
+            echo "| Result | **${{ job.status }}** |"
+          } >> "$GITHUB_STEP_SUMMARY"

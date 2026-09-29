@@ -35,6 +35,10 @@ on:
         description: Token used to install packages from GitHub Packages
         required: false
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ inputs.package-directory }}
+  cancel-in-progress: true
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -64,3 +68,16 @@ jobs:
           WORKSPACE: ${{ inputs.package-directory }}
         run: |
           if [ "$WORKSPACE" = "." ]; then npm run typecheck --if-present; else npm run typecheck --workspace "$WORKSPACE" --if-present; fi
+
+      - name: CI summary
+        if: ${{ always() }}
+        run: |
+          {
+            echo "## Node CI"
+            echo
+            echo "| Setting | Value |"
+            echo "| --- | --- |"
+            echo "| Workspace | \`${{ inputs.package-directory }}\` |"
+            echo "| Node.js | \`${{ inputs.node-version }}\` |"
+            echo "| Result | **${{ job.status }}** |"
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import test from "node:test";
-import { changelogSection, parseReleaseArgument, releaseNotes } from "../src/release.mjs";
+import { changelogSection, parseReleaseArgument, releaseNotes, resolveNextVersion } from "../src/release.mjs";
 import { packageInfo } from "../src/workspace.mjs";
 
 test("parseReleaseArgument accepts bump names", () => {
@@ -54,4 +56,26 @@ test("changelogSection renders release-note categories", () => {
     }),
     "## 1.2.3\n\n### Added\n\n- support relative colors\n\n### Fixed\n\n- preserve alpha values\n",
   );
+});
+
+test("resolveNextVersion computes release versions without touching package files", () => {
+  assert.equal(resolveNextVersion("0.1.1", "patch"), "0.1.2");
+  assert.equal(resolveNextVersion("0.1.1", "minor"), "0.2.0");
+  assert.equal(resolveNextVersion("0.1.1", "major"), "1.0.0");
+  assert.equal(resolveNextVersion("1.2.3", "prepatch"), "1.2.4-0");
+  assert.equal(resolveNextVersion("1.2.3-beta.1", "prerelease"), "1.2.3-beta.2");
+  assert.equal(resolveNextVersion("1.2.3-beta", "prerelease"), "1.2.3-beta.0");
+  assert.equal(resolveNextVersion("1.2.3", "1.2.4"), "1.2.4");
+});
+
+test("workspace-release requires --dry-run when --json is used", () => {
+  const releaseCli = fileURLToPath(new URL("../bin/workspace-release.mjs", import.meta.url));
+  const result = spawnSync(
+    process.execPath,
+    [releaseCli, "packages/workspace-tools=patch", "--json"],
+    { encoding: "utf8" },
+  );
+
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /--json is only supported with --dry-run/);
 });
