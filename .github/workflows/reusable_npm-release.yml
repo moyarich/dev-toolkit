@@ -1,4 +1,4 @@
-name: "Release npm package (Reusable)"
+name: "Reusable · Release npm package"
 
 on:
   workflow_dispatch:
