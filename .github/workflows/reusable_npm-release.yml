@@ -559,17 +559,21 @@ jobs:
             echo
             echo '```text'
 
-            if [ -f packages/workspace-tools/bin/workspace-publish.mjs ]; then
+            PUBLISH_JSON="$(
               node packages/workspace-tools/bin/workspace-publish.mjs \
                 "$PACKAGE_SELECTOR" \
                 --registry="${{ inputs.registry }}" \
-                --tag="${{ inputs.dist-tag }}"
-            else
-              npx --yes @moyarich/workspace-tools workspace-publish \
-                "$PACKAGE_SELECTOR" \
-                --registry="${{ inputs.registry }}" \
-                --tag="${{ inputs.dist-tag }}"
-            fi
+                --tag="${{ inputs.dist-tag }}" \
+                --json
+            )"
+
+            echo "$PUBLISH_JSON" | jq -e '
+              type == "object" and
+              .operation == "publish" and
+              .status == "success"
+            ' >/dev/null
+
+            echo "$PUBLISH_JSON" | jq .
 
             echo '```'
           } | tee -a "$GITHUB_STEP_SUMMARY"
