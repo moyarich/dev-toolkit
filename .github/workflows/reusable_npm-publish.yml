@@ -102,15 +102,41 @@ jobs:
 
       - name: Build workspace publishing CLI
         run: npm run build --workspace @moyarich/workspace-tools
+      - name: Resolve publish plan
+        id: plan
+        env:
+          PACKAGE_SELECTOR: ${{ inputs.package-directory }}
+        shell: bash
+        run: |
+          PLAN="$(
+            node packages/workspace-tools/bin/workspace-publish.mjs \
+              "$PACKAGE_SELECTOR" \
+              --registry="${{ inputs.registry }}" \
+              --tag="${{ inputs.tag }}" \
+              --list \
+              --json
+          )"
+
+          echo "$PLAN" | jq -e '
+            type == "object" and
+            (.packages | type == "array" and length >= 1) and
+            (.packages[0].name | type == "string" and length > 0) and
+            (.packages[0].version | type == "string" and length > 0)
+          ' >/dev/null
+
+          {
+            echo "name=$(jq -r '.packages[0].name' <<< "$PLAN")"
+            echo "version=$(jq -r '.packages[0].version' <<< "$PLAN")"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Validate requested version
         if: ${{ inputs.version != '' }}
         env:
-          PACKAGE_SELECTOR: ${{ inputs.package-directory }}
+          CURRENT_VERSION: ${{ steps.plan.outputs.version }}
           REQUESTED_VERSION: ${{ inputs.version }}
         run: |
-          CURRENT_VERSION="$(npm pkg get version --workspace "$PACKAGE_SELECTOR" | jq -er 'if type == "string" then . else to_entries[0].value end')"
           if [ "$REQUESTED_VERSION" != "$CURRENT_VERSION" ]; then
-            echo "Requested publish version $REQUESTED_VERSION does not match package.json version $CURRENT_VERSION."
+            echo "Requested publish version $REQUESTED_VERSION does not match package version $CURRENT_VERSION."
             exit 1
           fi
       - name: Publish package
@@ -133,8 +159,9 @@ jobs:
             echo
             echo "| Setting | Value |"
             echo "| --- | --- |"
-            echo "| Package | \`${{ inputs.package-directory }}\` |"
-            echo "| Requested version | \`${{ inputs.version || 'package.json' }}\` |"
+            echo "| Package | \`${{ steps.plan.outputs.name || inputs.package-directory }}\` |"
+            echo "| Package version | \`${{ steps.plan.outputs.version || 'unresolved' }}\` |"
+            echo "| Requested version | \`${{ inputs.version || 'package version' }}\` |"
             echo "| Registry | \`${{ inputs.registry }}\` |"
             echo "| Distribution tag | \`${{ inputs.tag }}\` |"
             echo "| Node.js | \`${{ inputs.node-version }}\` |"
