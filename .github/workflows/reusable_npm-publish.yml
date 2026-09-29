@@ -62,6 +62,10 @@ on:
       npm-token:
         required: false
 
+concurrency:
+  group: npm-publish-${{ inputs.package-directory }}
+  cancel-in-progress: false
+
 permissions:
   contents: read
   packages: write
