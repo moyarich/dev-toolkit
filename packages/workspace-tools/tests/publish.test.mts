@@ -72,6 +72,27 @@ test("serializePublishPlan marks fully published packages as not publishable", (
 });
 
 
+test("serializePublishPlan preserves mixed registry readiness for dry-run reporting", () => {
+  const result = serializePublishPlan(
+    [
+      {
+        pkg: {
+          directory: "packages/demo-tools",
+          manifest: { name: "@moyarich/demo-tools", version: "0.1.0" },
+        },
+        registries: { github: "missing", npm: "published" },
+      },
+    ],
+    { registry: "both", tag: "latest", access: "public" },
+  );
+
+  assert.equal(result.packages[0].publishable, true);
+  assert.deepEqual(result.packages[0].registries, {
+    github: "missing",
+    npm: "published",
+  });
+});
+
 test("packageGitTagState reports the expected package-scoped tag name", () => {
   const state = packageGitTagState(process.cwd(), {
     directory: "packages/workspace-tools",
