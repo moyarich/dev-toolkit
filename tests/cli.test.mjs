@@ -11,7 +11,7 @@ const commands = [
   "packages/workspace-tools/bin/workspace-publish.mjs",
   "packages/readme-screenshots/bin/readme-screenshots.mjs",
   "packages/vs-code-ext-tools/src/confirm-publish.mjs",
-  "packages/workspace-tools/src/discover-test-packages.mts",
+  "packages/workspace-tools/bin/discover-test-packages.mjs",
 ];
 
 function invoke(script, ...args) {
@@ -38,8 +38,8 @@ for (const command of commands) {
 }
 
 test("package discovery preserves its default directory and JSON output", () => {
-  const implicit = invoke("packages/workspace-tools/src/discover-test-packages.mts");
-  const explicit = invoke("packages/workspace-tools/src/discover-test-packages.mts", "packages");
+  const implicit = invoke("packages/workspace-tools/bin/discover-test-packages.mjs");
+  const explicit = invoke("packages/workspace-tools/bin/discover-test-packages.mjs", "packages");
   assert.equal(implicit.status, 0, implicit.stderr);
   assert.equal(explicit.status, 0, explicit.stderr);
   assert.deepEqual(JSON.parse(implicit.stdout), JSON.parse(explicit.stdout));
