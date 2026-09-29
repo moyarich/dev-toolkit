@@ -146,7 +146,11 @@ jobs:
           _NPM_TOKEN: ${{ secrets.npm-token }}
         run: |
           RESULT="$(
-            node packages/workspace-tools/bin/workspace-publish.mjs               "$PACKAGE_SELECTOR"               --registry="${{ inputs.registry }}"               --tag="${{ inputs.tag }}"               --json
+            node packages/workspace-tools/bin/workspace-publish.mjs \
+              "$PACKAGE_SELECTOR" \
+              --registry="${{ inputs.registry }}" \
+              --tag="${{ inputs.tag }}" \
+              --json
           )"
 
           echo "$RESULT" | jq -e '
