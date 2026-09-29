@@ -10,16 +10,18 @@ export default defineConfig({
     minify: false,
     lib: {
       entry: {
-        "confirm-publish": resolve(import.meta.dirname, "src/confirm-publish.mjs"),
-        "vs-code-publish": resolve(import.meta.dirname, "src/publish_ext.mjs"),
-        "run-extension-dev": resolve(import.meta.dirname, "src/run-extension-dev.mjs"),
+        "confirm-publish": resolve(import.meta.dirname, "src/cli/confirm-publish.mjs"),
+        "vs-code-publish": resolve(import.meta.dirname, "src/cli/vs-code-publish.mjs"),
+        "run-extension-dev": resolve(import.meta.dirname, "src/cli/run-extension-dev.mjs"),
       },
       formats: ["es"],
       fileName: (_format, entryName) => `${entryName}.mjs`,
     },
     rollupOptions: {
       external: [/^node:/],
-      output: { banner: "#!/usr/bin/env node" },
+      output: {
+        banner: "#!/usr/bin/env node",
+      },
     },
   },
 });
