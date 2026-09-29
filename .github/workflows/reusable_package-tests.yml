@@ -41,7 +41,7 @@ jobs:
         name: Discover packages with tests
         shell: bash
         run: |
-          PACKAGES="$(node packages/workspace-tools/src/discover-test-packages.mts "${{ inputs.packages-directory }}" --json)"
+          PACKAGES="$(node packages/workspace-tools/src/cli/discover-test-packages.mts "${{ inputs.packages-directory }}" --json)"
           echo "$PACKAGES" | jq -e 'type == "array"' >/dev/null
           MATRIX="$(jq -cn --argjson packages "$PACKAGES" '{include: $packages}')"
           echo "$MATRIX" | jq -e 'type == "object" and (.include | type == "array")' >/dev/null
