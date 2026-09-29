@@ -3,9 +3,6 @@
 import { existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { resolve } from "node:path";
-import { pathToFileURL } from "node:url";
-
-import { Argument, Option, program } from "commander";
 
 import { output, packageInfo, repositoryRoot, run } from "./workspace.mts";
 
@@ -941,7 +938,7 @@ function resolveCliReleaseArgument(argument, options) {
  *
  * @returns {void}
  */
-function releaseWorkspacePackage(argument, options) {
+export function releaseWorkspacePackage(argument, options) {
   const releaseArgument = resolveCliReleaseArgument(argument, options);
 
   if (!releaseArgument) {
@@ -969,60 +966,4 @@ function isMainModule() {
   }
 
   return import.meta.url === pathToFileURL(resolve(process.argv[1])).href;
-}
-
-program
-  .name("workspace-release")
-  .description("Create or preview a workspace package release.")
-  .addArgument(
-    new Argument(
-      "[release]",
-      "Package or release specification (<package>=<version|bump>)",
-    ),
-  )
-  .addOption(
-    new Option("-m, --mode <mode>", "Release mode")
-      .choices(["bump", "exact", "existing"])
-      .default("bump"),
-  )
-  .option("-v, --version <version>", "Version bump or exact semantic version")
-  .option(
-    "-d, --dry-run",
-    "Preview the release without changing files, commits, or tags",
-  )
-  .option("-j, --json", "Output dry-run information as JSON")
-  .option("--no-fzf", "Disable interactive fzf selection")
-  .addHelpText(
-    "after",
-    `
-Examples:
-  $ workspace-release
-  $ workspace-release workspace-tools
-  $ workspace-release workspace-tools=patch
-  $ workspace-release workspace-tools=minor
-  $ workspace-release workspace-tools=1.2.3
-
-  $ workspace-release workspace-tools -v patch
-  $ workspace-release workspace-tools -m exact -v 1.2.3
-  $ workspace-release workspace-tools -m existing
-
-  $ workspace-release workspace-tools=patch --dry-run
-  $ workspace-release workspace-tools=patch --dry-run --json
-
-  $ workspace-release --no-fzf workspace-tools=patch
-
-Interactive mode:
-  Running workspace-release without a package opens fzf to select
-  a package, followed by a version-bump selector.
-
-  $ workspace-release
-
-  Package > @moyarich/workspace-tools
-  Version > patch
-`,
-  )
-  .action(releaseWorkspacePackage);
-
-if (isMainModule()) {
-  await program.parseAsync();
 }
