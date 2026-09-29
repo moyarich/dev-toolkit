@@ -3,6 +3,7 @@
 import { existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 
 import { output, packageInfo, repositoryRoot, run } from "./workspace.mts";
 
@@ -646,6 +647,13 @@ ${section}`);
     }
 
     return {
+      package: {
+        name: pkg.manifest.name,
+        selector,
+        directory: pkg.directory,
+      },
+      mode,
+      versionRequest: versionSpec,
       registry,
       latestPublished,
       currentVersion: pkg.manifest.version,
