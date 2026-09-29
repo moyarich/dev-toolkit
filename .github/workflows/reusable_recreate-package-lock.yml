@@ -200,13 +200,7 @@ jobs:
             git diff --stat -- package-lock.json
           fi
 
-          LOCKFILE_VERSION="$(
-            node -e '
-              const fs = require("node:fs");
-              const lock = JSON.parse(fs.readFileSync("package-lock.json", "utf8"));
-              process.stdout.write(String(lock.lockfileVersion ?? "unknown"));
-            '
-          )"
+          LOCKFILE_VERSION="$(jq -er '.lockfileVersion // "unknown"' package-lock.json)"
 
           echo "lockfile-version=$LOCKFILE_VERSION" >> "$GITHUB_OUTPUT"
 
