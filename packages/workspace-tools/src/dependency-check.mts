@@ -3,9 +3,6 @@
 import { execFileSync } from "node:child_process";
 import { existsSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
-import { pathToFileURL } from "node:url";
-
-import { Argument, program } from "commander";
 
 import {
   output,
@@ -683,7 +680,7 @@ function resolveOutputFormat(options) {
  *
  * @returns {void}
  */
-function runDependencyCheck(selector, options) {
+export function runDependencyCheck(selector, options) {
   const root = repositoryRoot();
 
   /*
@@ -753,68 +750,4 @@ function isMainModule() {
   }
 
   return import.meta.url === pathToFileURL(resolve(process.argv[1])).href;
-}
-
-program
-  .name("workspace-dependency-check")
-  .description(
-    "Check workspace dependencies for outdated versions and internal version mismatches.",
-  )
-  .addArgument(
-    new Argument("[package]", "Package name, directory, or workspace selector"),
-  )
-  .option("-a, --all", "Check every workspace package")
-  .option("-j, --json", "Output dependency check results as JSON")
-  .option(
-    "-n, --no-assert",
-    "Report dependency failures without exiting with an error",
-  )
-  .option("--no-fzf", "Disable automatic fzf selection")
-  .addHelpText(
-    "after",
-    `
-Examples:
-  $ workspace-dependency-check
-  $ workspace-dependency-check workspace-tools
-  $ workspace-dependency-check --all
-
-  $ workspace-dependency-check workspace-tools --json
-  $ workspace-dependency-check --json
-  $ workspace-dependency-check --all --json
-
-  $ workspace-dependency-check workspace-tools --no-assert
-  $ workspace-dependency-check --no-fzf workspace-tools
-
-Interactive mode:
-  When a TTY and fzf are available:
-
-    $ workspace-dependency-check
-
-    Package > @moyarich/workspace-tools
-    Output  > text
-
-  Or:
-
-    Package > @moyarich/workspace-tools
-    Output  > json
-
-    $ workspace-dependency-check workspace-tools --json
-
-Non-interactive mode:
-  CI and Docker examples:
-
-    $ workspace-dependency-check workspace-tools
-
-    $ workspace-dependency-check workspace-tools --json
-
-    $ workspace-dependency-check --json
-
-Docker interactive:
-    $ docker run -it <image> workspace-dependency-check
-`,
-  )
-  .action(runDependencyCheck);
-
-if (isMainModule()) {
-  await program.parseAsync();
 }
