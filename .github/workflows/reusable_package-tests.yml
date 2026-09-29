@@ -32,6 +32,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.packages.outputs.matrix }}
+      has-packages: ${{ steps.packages.outputs.has-packages }}
     steps:
       - name: Initialize workflow summary
         if: ${{ always() }}
@@ -65,7 +66,16 @@ jobs:
           echo "$PACKAGES" | jq -e 'type == "array"' >/dev/null
           MATRIX="$(jq -cn --argjson packages "$PACKAGES" '{include: $packages}')"
           echo "$MATRIX" | jq -e 'type == "object" and (.include | type == "array")' >/dev/null
-          echo "matrix=$MATRIX" >> "$GITHUB_OUTPUT"
+          PACKAGE_COUNT="$(echo "$PACKAGES" | jq 'length')"
+
+          {
+            echo "matrix=$MATRIX"
+            if [ "$PACKAGE_COUNT" -gt 0 ]; then
+              echo "has-packages=true"
+            else
+              echo "has-packages=false"
+            fi
+          } >> "$GITHUB_OUTPUT"
 
           {
             echo "## Package test discovery"
@@ -74,6 +84,7 @@ jobs:
             echo "| --- | --- |"
             echo "| Packages directory | \`${{ inputs.packages-directory }}\` |"
             echo "| Node.js | \`${{ inputs.node-version }}\` |"
+            echo "| Package count | **$PACKAGE_COUNT** |"
             echo
             echo "### Discovered packages"
             echo
@@ -86,10 +97,10 @@ jobs:
     needs: discover-packages
     env:
       FORCE_COLOR: "1"
-    if: needs.discover-packages.outputs.matrix != '{"include":[]}'
+    if: ${{ needs.discover-packages.result == 'success' && needs.discover-packages.outputs.has-packages == 'true' }}
     strategy:
       fail-fast: false
-      matrix: ${{ fromJSON(needs.discover-packages.outputs.matrix) }}
+      matrix: ${{ fromJSON(needs.discover-packages.outputs.matrix || '{"include":[]}') }}
     name: Test ${{ matrix.name }}
     runs-on: ubuntu-latest
     steps:
