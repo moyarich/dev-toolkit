@@ -40,6 +40,22 @@ jobs:
     name: "Test Node project"
     runs-on: ubuntu-latest
     steps:
+      - name: Initialize workflow summary
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          {
+            echo "# Reusable · Node CI"
+            echo
+            echo "| Execution | Value |"
+            echo "| --- | --- |"
+            echo "| Workflow | \`Reusable · Node CI\` |"
+            echo "| Job | \`${{ github.job }}\` |"
+            echo "| Repository | \`${{ github.repository }}\` |"
+            echo "| Ref | \`${{ github.ref_name }}\` |"
+            echo "| Run | \`#${{ github.run_number }}\` |"
+            echo
+          } >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
