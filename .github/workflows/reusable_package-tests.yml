@@ -6,7 +6,7 @@ on:
       node-version:
         description: Node.js version used to run package tests
         required: true
-        default: "22"
+        default: "24"
         type: string
       packages-directory:
         description: Directory containing workspace packages
@@ -19,7 +19,7 @@ on:
         description: Node.js version used to run package tests
         required: false
         type: string
-        default: "22"
+        default: "24"
       packages-directory:
         description: Directory containing workspace packages
         required: false
