@@ -58,14 +58,33 @@ jobs:
       - name: Install dependencies
         run: npm install --ignore-scripts
 
-      - name: Build workspace tools CLI
-        run: npm run build --workspace @moyarich/workspace-tools
+      - name: Resolve workspace tools CLI
+        shell: bash
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.github-token || secrets._GITHUB_TOKEN || github.token }}
+        run: |
+          set -euo pipefail
+
+          if [ -f packages/workspace-tools/package.json ]; then
+            npm run build --workspace @moyarich/workspace-tools
+            echo "WORKSPACE_TOOLS_BIN=$GITHUB_WORKSPACE/packages/workspace-tools/bin" >> "$GITHUB_ENV"
+          else
+            TOOL_ROOT="$RUNNER_TEMP/workspace-tools"
+            rm -rf "$TOOL_ROOT"
+            mkdir -p "$TOOL_ROOT"
+            npm install \
+              --prefix "$TOOL_ROOT" \
+              --package-lock=false \
+              --ignore-scripts \
+              @moyarich/workspace-tools
+            echo "WORKSPACE_TOOLS_BIN=$TOOL_ROOT/node_modules/.bin" >> "$GITHUB_ENV"
+          fi
 
       - id: packages
         name: Discover packages with tests
         shell: bash
         run: |
-          PACKAGES="$(node packages/workspace-tools/bin/discover-test-packages.mjs "${{ inputs.packages-directory }}" --json)"
+          PACKAGES="$("$WORKSPACE_TOOLS_BIN/discover-test-packages" "${{ inputs.packages-directory }}" --json)"
           echo "$PACKAGES" | jq -e 'type == "array"' >/dev/null
           MATRIX="$(jq -cn --argjson packages "$PACKAGES" '{include: $packages}')"
           echo "$MATRIX" | jq -e 'type == "object" and (.include | type == "array")' >/dev/null
