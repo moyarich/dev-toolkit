@@ -1,0 +1,287 @@
+name: "Recreate workspace package-lock.json"
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit:
+        description: Commit recreated package-lock.json
+        required: true
+        default: false
+        type: boolean
+      node-version:
+        description: Node.js version
+        required: true
+        default: "24"
+        type: string
+
+  workflow_call:
+    inputs:
+      commit:
+        description: Commit recreated package-lock.json
+        required: false
+        default: false
+        type: boolean
+      node-version:
+        description: Node.js version
+        required: false
+        default: "24"
+        type: string
+    secrets:
+      package-token:
+        required: false
+
+permissions:
+  contents: write
+  packages: read
+
+jobs:
+  recreate-lockfile:
+    name: "Recreate workspace package-lock.json"
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Initialize workflow summary
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          {
+            echo "# Recreate workspace package-lock.json"
+            echo
+            echo "| Execution | Value |"
+            echo "| --- | --- |"
+            echo "| Workflow | \`Recreate workspace package-lock.json\` |"
+            echo "| Job | \`${{ github.job }}\` |"
+            echo "| Repository | \`${{ github.repository }}\` |"
+            echo "| Ref | \`${{ github.ref_name }}\` |"
+            echo "| Run | \`#${{ github.run_number }}\` |"
+            echo
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Resolve execution mode
+        id: execution
+        env:
+          INPUT_COMMIT: ${{ inputs.commit }}
+          EVENT_COMMIT: ${{ github.event.inputs.commit }}
+          EVENT_NAME: ${{ github.event_name }}
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+          ACT: ${{ env.ACT }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          COMMIT=false
+
+          # Fail safe under act: an omitted boolean can be resolved as false.
+          # Only an explicitly supplied workflow_dispatch value of true may
+          # enable repository mutation locally.
+          if [ "${ACT:-}" = "true" ]; then
+            if [ "${EVENT_COMMIT:-}" = "true" ]; then
+              COMMIT=true
+            fi
+          elif [ "${INPUT_COMMIT:-false}" = "true" ]; then
+            COMMIT=true
+          fi
+
+          if [ "$COMMIT" = "true" ]; then
+            if [ "$REF_TYPE" != "branch" ]; then
+              echo "::error::Lockfile commits are allowed only from a branch ref."
+              exit 1
+            fi
+
+            case "$REF_NAME" in
+              ""|refs/*|pull/*|*..*|*~*|*^*|*:*|*\\*|*' '*)
+                echo "::error::Unsafe branch ref: $REF_NAME"
+                exit 1
+                ;;
+            esac
+          fi
+
+          echo "commit=$COMMIT" >> "$GITHUB_OUTPUT"
+          echo "branch=$REF_NAME" >> "$GITHUB_OUTPUT"
+
+          if [ "$COMMIT" = "true" ]; then
+            echo "Execution mode: recreate and commit package-lock.json."
+          else
+            echo "Execution mode: recreate package-lock.json for preview only."
+          fi
+
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: ${{ steps.execution.outputs.commit == 'true' }}
+          fetch-depth: 1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: npm
+          registry-url: https://npm.pkg.github.com
+          scope: "@moyarich"
+
+      - name: Capture repository state
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ ! -f package.json ]; then
+            echo "::error::Root package.json was not found."
+            exit 1
+          fi
+
+          if [ ! -f package-lock.json ]; then
+            echo "::error::Root package-lock.json was not found."
+            exit 1
+          fi
+
+          if [ -n "$(git status --porcelain=v1 --untracked-files=all)" ]; then
+            echo "::error::Working tree is not clean before recreating package-lock.json."
+            git status --short
+            exit 1
+          fi
+
+          git rev-parse HEAD > /tmp/lockfile-head-before
+          sha256sum package-lock.json > /tmp/lockfile-sha-before
+
+      - name: Recreate workspace package-lock.json
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.package-token || github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Recreating package-lock.json must never execute package lifecycle scripts.
+          npm install \
+            --package-lock-only \
+            --ignore-scripts \
+            --no-audit \
+            --no-fund
+
+      - name: Validate recreated package-lock.json
+        id: changes
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ ! -f package-lock.json ]; then
+            echo "::error::package-lock.json was removed while being recreated."
+            exit 1
+          fi
+
+          mapfile -t CHANGED_FILES < <(
+            git status --porcelain=v1 --untracked-files=all |
+              sed -E 's/^.. //' |
+              sed -E 's/^.* -> //'
+          )
+
+          UNEXPECTED=()
+
+          for file in "${CHANGED_FILES[@]}"; do
+            if [ "$file" != "package-lock.json" ]; then
+              UNEXPECTED+=("$file")
+            fi
+          done
+
+          if [ "${#UNEXPECTED[@]}" -gt 0 ]; then
+            echo "::error::Recreating package-lock.json modified files other than package-lock.json:"
+            printf '  - %s\n' "${UNEXPECTED[@]}"
+            echo
+            git status --short
+            exit 1
+          fi
+
+          if git diff --quiet -- package-lock.json; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "package-lock.json is already current."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "package-lock.json changed."
+            git diff --stat -- package-lock.json
+          fi
+
+          LOCKFILE_VERSION="$(jq -er '.lockfileVersion // "unknown"' package-lock.json)"
+
+          echo "lockfile-version=$LOCKFILE_VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Commit recreated package-lock.json
+        if: ${{ steps.execution.outputs.commit == 'true' && steps.changes.outputs.changed == 'true' }}
+        env:
+          TARGET_BRANCH: ${{ steps.execution.outputs.branch }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Stage only the lockfile. Never use git add -A here.
+          git add -- package-lock.json
+
+          STAGED_FILES="$(git diff --cached --name-only)"
+
+          if [ "$STAGED_FILES" != "package-lock.json" ]; then
+            echo "::error::Refusing to commit unexpected staged files."
+            printf '%s\n' "$STAGED_FILES"
+            exit 1
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git commit -m "chore(workspaces): recreate package-lock.json"
+
+          # Push only the validated branch resolved before checkout.
+          git push -- origin "HEAD:refs/heads/$TARGET_BRANCH"
+
+      - name: Verify preview did not mutate repository history
+        if: ${{ steps.execution.outputs.commit != 'true' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ "$(git rev-parse HEAD)" != "$(cat /tmp/lockfile-head-before)" ]; then
+            echo "::error::Preview mode changed repository history."
+            exit 1
+          fi
+
+          echo "Preview verification passed: no commit or push was performed."
+
+      - name: Recreate package-lock.json summary
+        if: ${{ always() }}
+        env:
+          COMMIT_MODE: ${{ steps.execution.outputs.commit }}
+          TARGET_BRANCH: ${{ steps.execution.outputs.branch }}
+          LOCKFILE_CHANGED: ${{ steps.changes.outputs.changed }}
+          LOCKFILE_VERSION: ${{ steps.changes.outputs.lockfile-version }}
+        shell: bash
+        run: |
+          {
+            echo "## Recreate workspace package-lock.json"
+            echo
+            echo "| Setting | Value |"
+            echo "| --- | --- |"
+            echo "| Node.js | `${{ inputs.node-version }}` |"
+            echo "| npm | `$(npm --version 2>/dev/null || echo unavailable)` |"
+            echo "| Lockfile version | `${LOCKFILE_VERSION:-unknown}` |"
+            echo "| Commit requested | **${COMMIT_MODE:-false}** |"
+            echo "| Target branch | `${TARGET_BRANCH:-n/a}` |"
+            echo "| Lockfile changed | **${LOCKFILE_CHANGED:-unknown}** |"
+            echo "| Result | **${{ job.status }}** |"
+            echo
+
+            if [ "${{ job.status }}" != "success" ]; then
+              echo "### ❌ package-lock.json recreation failed"
+              echo
+              echo "Review the failing step above. No unexpected files are permitted in the lockfile commit."
+            elif [ "${COMMIT_MODE:-false}" = "true" ] && [ "${LOCKFILE_CHANGED:-false}" = "true" ]; then
+              echo "### ✅ Recreated package-lock.json committed"
+              echo
+              echo "Only `package-lock.json` was staged and pushed."
+            elif [ "${LOCKFILE_CHANGED:-false}" = "true" ]; then
+              echo "### ✅ package-lock.json recreation preview completed"
+              echo
+              echo "Changes were generated for review, but no commit or push was performed."
+            else
+              echo "### ✅ package-lock.json is current"
+              echo
+              echo "No lockfile changes were required."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
