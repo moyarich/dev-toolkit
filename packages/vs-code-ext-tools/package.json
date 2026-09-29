@@ -4,8 +4,9 @@
   "description": "Reusable vs-code extension tools.",
   "type": "module",
   "bin": {
-    "vs-code-release": "./bin/vs-code-release.mjs",
-    "vs-code-publish": "./bin/vs-code-publish.mjs"
+    "confirm-publish": "./bin/confirm-publish.mjs",
+    "vs-code-publish": "./bin/vs-code-publish.mjs",
+    "run-extension-dev": "./bin/run-extension-dev.mjs"
   },
   "files": [
     "bin",
@@ -17,6 +18,7 @@
     "node": ">=24"
   },
   "scripts": {
+    "build": "vite build --config vite.config.mts",
     "test": "node --test tests/*.test.mjs"
   },
   "dependencies": {
