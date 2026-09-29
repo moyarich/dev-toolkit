@@ -50,6 +50,7 @@ import {
  * @property {PackageAccess} [access]
  * @property {boolean} [dryRun]
  * @property {boolean} [list]
+ * @property {boolean} [json]
  * @property {boolean} [withDependencies]
  */
 
@@ -293,6 +294,21 @@ function printPlan(plan) {
   }
 }
 
+export function serializePublishPlan(plan, { registry, tag, access }) {
+  return {
+    registry,
+    tag,
+    access,
+    packages: plan.map(({ pkg, registries }) => ({
+      name: pkg.manifest.name,
+      version: pkg.manifest.version,
+      directory: pkg.directory,
+      registries,
+      publishable: Object.values(registries).includes("missing"),
+    })),
+  };
+}
+
 /**
  * Run release validation for a package.
  *
@@ -425,6 +441,7 @@ export function publish({
   access = "public",
   dryRun = false,
   list = false,
+  json = false,
   withDependencies = false,
 }) {
   if (!/^[A-Za-z][A-Za-z0-9._-]*$/.test(tag)) {
@@ -481,7 +498,11 @@ export function publish({
 
   const plan = publishPlan(packages, registry);
 
-  if (list) {
+  if (json) {
+    process.stdout.write(
+      `${JSON.stringify(serializePublishPlan(plan, { registry, tag, access }))}\n`,
+    );
+  } else if (list) {
     printPlan(plan);
   }
 
@@ -596,6 +617,7 @@ export function publishWorkspacePackage(selector, options) {
     access: options.access,
     dryRun: options.dryRun,
     list: options.list,
+    json: options.json,
     withDependencies: options.withDependencies,
   });
 }
