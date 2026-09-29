@@ -12,6 +12,7 @@ program
   .option("-l, --list", "Print the publish plan without publishing")
   .option("-j, --json", "Print the operation result as JSON")
   .option("-w, --with-dependencies", "Include publishable workspace dependencies")
+  .option("--no-verify-git-tag", "Allow publishing without verifying the matching package release Git tag")
   .action((selector, options) => publishWorkspacePackage(selector, options));
 
 await program.parseAsync();
