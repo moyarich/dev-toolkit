@@ -9,6 +9,7 @@ on:
 
 jobs:
   test-packages:
+    name: "Test packages"
     uses: ./.github/workflows/reusable_package-tests.yml
     with:
       packages-directory: packages
