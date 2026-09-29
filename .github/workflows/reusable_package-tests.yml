@@ -30,7 +30,7 @@ jobs:
   discover:
     runs-on: ubuntu-latest
     outputs:
-      packages: ${{ steps.packages.outputs.packages }}
+      matrix: ${{ steps.packages.outputs.matrix }}
     steps:
       - uses: actions/checkout@v4
       - id: packages
@@ -38,7 +38,10 @@ jobs:
         shell: bash
         run: |
           PACKAGES="$(node scripts/discover-test-packages.mjs "${{ inputs.packages-directory }}")"
-          echo "packages=$PACKAGES" >> "$GITHUB_OUTPUT"
+          echo "$PACKAGES" | jq -e 'type == "array"' >/dev/null
+          MATRIX="$(jq -cn --argjson packages "$PACKAGES" '{include: $packages}')"
+          echo "$MATRIX" | jq -e 'type == "object" and (.include | type == "array")' >/dev/null
+          echo "matrix=$MATRIX" >> "$GITHUB_OUTPUT"
 
           {
             echo "## Package test discovery"
@@ -57,12 +60,11 @@ jobs:
 
   test:
     needs: discover
-    if: needs.discover.outputs.packages != '[]'
+    if: needs.discover.outputs.matrix != '{"include":[]}'
     strategy:
       fail-fast: false
-      matrix:
-        package: ${{ fromJSON(needs.discover.outputs.packages) }}
-    name: Test ${{ matrix.package.name }}
+      matrix: ${{ fromJSON(needs.discover.outputs.matrix) }}
+    name: Test ${{ matrix.name }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -71,7 +73,7 @@ jobs:
           node-version: ${{ inputs.node-version }}
       - run: npm install --ignore-scripts
       - name: Run package tests
-        run: npm test --workspace "${{ matrix.package.name }}"
+        run: npm test --workspace "${{ matrix.name }}"
 
       - name: Package test summary
         if: ${{ always() }}
@@ -81,8 +83,8 @@ jobs:
             echo
             echo "| Setting | Value |"
             echo "| --- | --- |"
-            echo "| Package | \`${{ matrix.package.name }}\` |"
-            echo "| Directory | \`${{ matrix.package.directory }}\` |"
+            echo "| Package | \`${{ matrix.name }}\` |"
+            echo "| Directory | \`${{ matrix.directory }}\` |"
             echo "| Node.js | \`${{ inputs.node-version }}\` |"
             echo "| Result | **${{ job.status }}** |"
           } >> "$GITHUB_STEP_SUMMARY"
