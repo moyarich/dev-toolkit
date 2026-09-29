@@ -26,6 +26,11 @@ on:
         required: true
         default: latest
         type: string
+      verify-git-tag:
+        description: Verify matching package release Git tag before publishing
+        required: true
+        default: true
+        type: boolean
       node-version:
         description: Node.js version
         required: true
@@ -52,6 +57,11 @@ on:
         required: false
         default: latest
         type: string
+      verify-git-tag:
+        description: Verify matching package release Git tag before publishing
+        required: false
+        default: true
+        type: boolean
       node-version:
         required: false
         default: "24"
@@ -161,16 +171,26 @@ jobs:
           fi
       - name: Publish package
         env:
+          VERIFY_GIT_TAG: ${{ inputs.verify-git-tag }}
           PACKAGE_SELECTOR: ${{ inputs.package-directory }}
           _GITHUB_TOKEN: ${{ secrets.github-token || github.token }}
           _NPM_TOKEN: ${{ secrets.npm-token }}
         run: |
+          set -euo pipefail
+
+          PUBLISH_ARGS=(
+            "$PACKAGE_SELECTOR"
+            --registry="${{ inputs.registry }}"
+            --tag="${{ inputs.tag }}"
+            --json
+          )
+
+          if [ "$VERIFY_GIT_TAG" != "true" ]; then
+            PUBLISH_ARGS+=(--no-verify-git-tag)
+          fi
+
           RESULT="$(
-            "$WORKSPACE_TOOLS_BIN/workspace-publish" \
-              "$PACKAGE_SELECTOR" \
-              --registry="${{ inputs.registry }}" \
-              --tag="${{ inputs.tag }}" \
-              --json
+            "$WORKSPACE_TOOLS_BIN/workspace-publish" "${PUBLISH_ARGS[@]}"
           )"
 
           echo "$RESULT" | jq -e '
@@ -194,6 +214,7 @@ jobs:
             echo "| Requested version | \`${{ inputs.version || 'package version' }}\` |"
             echo "| Registry | \`${{ inputs.registry }}\` |"
             echo "| Distribution tag | \`${{ inputs.tag }}\` |"
+            echo "| Verify Git release tag | **${{ inputs.verify-git-tag }}** |"
             echo "| Node.js | \`${{ inputs.node-version }}\` |"
             echo "| Result | **${{ job.status }}** |"
           } >> "$GITHUB_STEP_SUMMARY"
