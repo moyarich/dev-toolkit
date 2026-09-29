@@ -8,14 +8,10 @@ program
   .addOption(new Option("--mode <mode>", "Version mode").choices(["bump", "exact", "existing"]))
   .option("--version <version>", "Override the version or bump")
   .option("-d, --dry-run", "Preview without changing repository files")
-  .option("-j, --json", "Print the dry-run result as JSON")
+  .option("-j, --json", "Print the operation result as JSON")
   .option("--no-fzf", "Disable automatic fzf selection")
-  .action(async (release, options, command) => {
-    if (options.json && !options.dryRun) {
-      command.error("error: --json is only supported with --dry-run");
-    }
-
-    await releaseWorkspacePackage(release, options, command);
+  .action(async (release, options) => {
+    await releaseWorkspacePackage(release, options);
   });
 
 await program.parseAsync();
