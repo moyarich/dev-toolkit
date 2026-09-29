@@ -1,14 +1,6 @@
+import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
-import { execFileSync } from "node:child_process";
-
-export function run(command, args, options = {}) {
-  return execFileSync(command, args, { stdio: "inherit", ...options });
-}
-
-export function output(command, args, options = {}) {
-  return execFileSync(command, args, { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], ...options }).trim();
-}
 
 export function workspacePatterns(root) {
   const manifest = JSON.parse(readFileSync(resolve(root, "package.json"), "utf8"));
@@ -54,7 +46,10 @@ export function packageInfo(root, selector) {
 }
 
 export function repositoryRoot() {
-  return output("git", ["rev-parse", "--show-toplevel"]);
+  return execFileSync("git", ["rev-parse", "--show-toplevel"], {
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "pipe"],
+  }).trim();
 }
 
 export function workspaceDependencies(root, pkg) {
