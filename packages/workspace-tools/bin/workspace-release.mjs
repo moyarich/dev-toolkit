@@ -6,11 +6,17 @@ import { release } from "../src/release.mjs";
 try {
   const args = process.argv.slice(2);
   const dryRun = args.includes("--dry-run");
+  const json = args.includes("--json");
+
+  if (json && !dryRun) {
+    throw new Error("--json is only supported with --dry-run.");
+  }
   const modeArg = args.find((arg) => arg.startsWith("--mode="));
   const versionArg = args.find((arg) => arg.startsWith("--version="));
   const argument = args.find((arg) => !arg.startsWith("--"));
   const options = {
     dryRun,
+    json,
     mode: modeArg?.slice("--mode=".length),
     version: versionArg?.slice("--version=".length),
   };
@@ -26,7 +32,11 @@ try {
     }
   }
 
-  release(argument, options);
+  const result = release(argument, options);
+
+  if (json) {
+    console.log(JSON.stringify(result, null, 2));
+  }
 } catch (error) {
   console.error(error.message);
   process.exitCode = 1;
