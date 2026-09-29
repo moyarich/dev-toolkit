@@ -515,15 +515,55 @@ export function publish({
       throw new Error("No publishable packages were found under packages/*.");
     }
 
-    for (const pkg of packages) {
-      validate(root, pkg, { quiet: json });
+    const plan = publishPlan(packages, registry);
+    const gitTags = Object.fromEntries(
+      packages.map((item) => [
+        item.manifest.name,
+        packageGitTagState(root, item),
+      ]),
+    );
+    const tagProblems = verifyGitTag
+      ? packages
+          .map((item) => {
+            const state = gitTags[item.manifest.name];
+
+            if (!state.exists) {
+              return `Git release tag ${state.name} does not exist.`;
+            }
+
+            if (!state.atHead) {
+              return `Git release tag ${state.name} points to ${state.commit}, not HEAD.`;
+            }
+
+            return null;
+          })
+          .filter(Boolean)
+      : [];
+
+    const pendingPackages = plan
+      .filter(({ registries }) => Object.values(registries).includes("missing"))
+      .map(({ pkg: item }) => item);
+
+    for (const item of pendingPackages) {
+      validate(root, item, { quiet: json });
     }
 
-    console.log(
-      `\nRelease checks passed for ${packages.length} package(s). Nothing was published.`,
-    );
+    if (!json) {
+      console.log(
+        `\nPublish preview completed for ${packages.length} package(s). Nothing was published.`,
+      );
+    }
 
-    return;
+    return {
+      operation: "publish",
+      status: tagProblems.length ? "warning" : "preview",
+      dryRun: true,
+      verifyGitTag,
+      gitTags,
+      canPublish: tagProblems.length === 0,
+      reason: tagProblems.length ? tagProblems.join(" ") : null,
+      ...serializePublishPlan(plan, { registry, tag, access }),
+    };
   }
 
   if (!selector) {
