@@ -18,6 +18,9 @@ export default defineConfig({
     },
     rollupOptions: {
       external: [/^node:/],
+      output: {
+        banner: "#!/usr/bin/env node",
+      },
     },
     minify: false,
     sourcemap: true,
