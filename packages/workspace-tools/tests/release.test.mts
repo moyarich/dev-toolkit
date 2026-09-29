@@ -1,0 +1,81 @@
+import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
+import test from "node:test";
+import { changelogSection, parseReleaseArgument, releaseNotes, resolveNextVersion } from "../src/release.mts";
+import { packageInfo } from "../src/workspace.mts";
+
+test("parseReleaseArgument accepts bump names", () => {
+  assert.deepEqual(parseReleaseArgument("demo-tools=patch"), {
+    selector: "demo-tools",
+    versionSpec: "patch",
+  });
+});
+
+test("parseReleaseArgument accepts explicit semver", () => {
+  assert.deepEqual(parseReleaseArgument("demo-tools=1.2.3-beta.1"), {
+    selector: "demo-tools",
+    versionSpec: "1.2.3-beta.1",
+  });
+});
+
+test("parseReleaseArgument rejects malformed input and versions", () => {
+  assert.throws(() => parseReleaseArgument("demo-tools"), /Usage:/);
+  assert.throws(() => parseReleaseArgument("demo-tools=banana"), /Invalid version/);
+});
+
+test("packageInfo rejects selectors that can escape configured workspaces", () => {
+  assert.throws(() => packageInfo(process.cwd(), "../demo-tools"), /Package selector/);
+  assert.throws(() => packageInfo(process.cwd(), "packages/../demo-tools"), /Package selector/);
+});
+
+test("releaseNotes groups package changes for consumers", () => {
+  assert.deepEqual(
+    releaseNotes([
+      "feat(parser): support relative colors",
+      "fix: preserve alpha values",
+      "refactor: simplify tokenizer",
+      "release: parser@1.2.2",
+    ]),
+    {
+      Added: ["support relative colors"],
+      Changed: ["simplify tokenizer"],
+      Fixed: ["preserve alpha values"],
+      Removed: [],
+    },
+  );
+});
+
+test("changelogSection renders release-note categories", () => {
+  assert.equal(
+    changelogSection("1.2.3", {
+      Added: ["support relative colors"],
+      Changed: [],
+      Fixed: ["preserve alpha values"],
+      Removed: [],
+    }),
+    "## 1.2.3\n\n### Added\n\n- support relative colors\n\n### Fixed\n\n- preserve alpha values\n",
+  );
+});
+
+test("resolveNextVersion computes release versions without touching package files", () => {
+  assert.equal(resolveNextVersion("0.1.1", "patch"), "0.1.2");
+  assert.equal(resolveNextVersion("0.1.1", "minor"), "0.2.0");
+  assert.equal(resolveNextVersion("0.1.1", "major"), "1.0.0");
+  assert.equal(resolveNextVersion("1.2.3", "prepatch"), "1.2.4-0");
+  assert.equal(resolveNextVersion("1.2.3-beta.1", "prerelease"), "1.2.3-beta.2");
+  assert.equal(resolveNextVersion("1.2.3-beta", "prerelease"), "1.2.3-beta.0");
+  assert.equal(resolveNextVersion("1.2.3", "1.2.4"), "1.2.4");
+});
+
+test("workspace-release requires --dry-run when --json is used", () => {
+  const releaseCli = fileURLToPath(new URL("../bin/workspace-release.mjs", import.meta.url));
+  const result = spawnSync(
+    process.execPath,
+    [releaseCli, "packages/workspace-tools=patch", "--json"],
+    { encoding: "utf8" },
+  );
+
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /--json is only supported with --dry-run/);
+});
