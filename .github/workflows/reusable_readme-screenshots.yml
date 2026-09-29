@@ -1,4 +1,4 @@
-name: "README Screenshots (Reusable)"
+name: "Reusable · README Screenshots"
 
 on:
   workflow_dispatch:
