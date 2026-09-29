@@ -395,8 +395,10 @@ function previousReleaseRef(root, selector) {
     ["tag", "--list", `${selector}@*`, "--sort=-version:refname"],
     {
       cwd: root,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "pipe"],
     },
-  );
+  ).trim();
 
   const tag = tags.split("\n").find(Boolean);
 
@@ -409,8 +411,10 @@ function previousReleaseRef(root, selector) {
     ["log", "-n", "1", "--format=%H", "--grep", `^release: ${selector}@[0-9]`],
     {
       cwd: root,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "pipe"],
     },
-  );
+  ).trim();
 
   return commit || null;
 }
@@ -438,8 +442,10 @@ function packageChanges(root, pkg, previousRef) {
     ["log", range, "--format=%B%x1e", "--", pkg.directory],
     {
       cwd: root,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "pipe"],
     },
-  );
+  ).trim();
 
   return log
     ? log
@@ -675,7 +681,9 @@ ${section}`);
     };
   }
 
-  const operationRunOptions = options.json ? { stdio: "pipe" } : {};
+  const operationRunOptions = options.json
+    ? { stdio: ["ignore", "ignore", "inherit"] }
+    : { stdio: "inherit" };
 
   if (mode !== "existing") {
     execFileSync(
