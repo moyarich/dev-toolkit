@@ -16,6 +16,7 @@
     "test:playground": "node --test tests/playground/*.test.mjs"
   },
   "devDependencies": {
+    "@types/node": "^24.0.0",
     "commander": "^14.0.1"
   },
   "engines": {
