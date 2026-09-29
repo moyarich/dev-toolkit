@@ -17,7 +17,7 @@ export default defineConfig({
     },
     rollupOptions: {
       external: [/^node:/, "playwright"],
-      output: { banner: "#!/usr/bin/env node" },
+      output: {},
     },
   },
 });
