@@ -9,9 +9,7 @@ export default defineConfig({
     sourcemap: true,
     minify: false,
     lib: {
-      entry: {
-        "confirm-publish": resolve(import.meta.dirname, "src/cli/confirm-publish.mts"),
-        "vs-code-publish": resolve(import.meta.dirname, "src/cli/vs-code-publish.mts"),
+      entry: {        "vs-code-publish": resolve(import.meta.dirname, "src/cli/vs-code-publish.mts"),
         "run-extension-dev": resolve(import.meta.dirname, "src/cli/run-extension-dev.mts"),
       },
       formats: ["es"],
