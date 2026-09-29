@@ -67,6 +67,8 @@ jobs:
 
   test:
     needs: discover
+    env:
+      FORCE_COLOR: "1"
     if: needs.discover.outputs.matrix != '{"include":[]}'
     strategy:
       fail-fast: false
