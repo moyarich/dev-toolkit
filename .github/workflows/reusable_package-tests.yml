@@ -33,6 +33,11 @@ jobs:
       packages: ${{ steps.packages.outputs.packages }}
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+      - name: Install discovery dependencies
+        run: npm ci --ignore-scripts
       - id: packages
         name: Discover packages with tests
         shell: bash

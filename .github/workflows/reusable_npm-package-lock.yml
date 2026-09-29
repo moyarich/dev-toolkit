@@ -49,7 +49,7 @@ jobs:
       - name: Verify workspace lockfile
         run: test -f package-lock.json
       - name: Commit workspace lockfile
-        if: ${{ inputs.commit }}
+        if: ${{ inputs.commit && env.ACT != 'true' }}
         run: |
           git add package-lock.json
           if git diff --cached --quiet; then
@@ -70,6 +70,6 @@ jobs:
             echo "| Setting | Value |"
             echo "| --- | --- |"
             echo "| Node.js | \`${{ inputs.node-version }}\` |"
-            echo "| Commit changes | **${{ inputs.commit }}** |"
+            echo "| Commit changes | **${{ inputs.commit && env.ACT != 'true' }}** |"
             echo "| Result | **${{ job.status }}** |"
           } >> "$GITHUB_STEP_SUMMARY"

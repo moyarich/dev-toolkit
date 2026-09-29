@@ -1,6 +1,14 @@
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
-const root = process.argv[2] ?? "packages";
+import { program } from 'commander';
+
+program
+  .name("discover-test-packages")
+  .description("List workspace packages that define a test script.")
+  .argument("[directory]", "Packages directory", "packages")
+  .parse();
+
+const [root] = program.processedArgs;
 const entries = await readdir(root, { withFileTypes: true });
 const packages = [];
 for (const entry of entries) {

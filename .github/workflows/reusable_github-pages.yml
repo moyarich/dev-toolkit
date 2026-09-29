@@ -170,8 +170,23 @@ jobs:
           cache: npm
 
       - name: Configure GitHub Pages
+        if: ${{ env.ACT != 'true' }}
         id: pages
         uses: actions/configure-pages@v5
+
+      - name: Configure local Pages preview
+        if: ${{ env.ACT == 'true' }}
+        id: local-pages
+        env:
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          owner="${REPOSITORY%/*}"
+          name="${REPOSITORY#*/}"
+          base_path="/$name"
+          if [ "$name" = "$owner.github.io" ]; then base_path=""; fi
+          echo "base_path=$base_path" >> "$GITHUB_OUTPUT"
+          echo "origin=https://$owner.github.io" >> "$GITHUB_OUTPUT"
+          echo "base_url=https://$owner.github.io$base_path" >> "$GITHUB_OUTPUT"
 
       # ------------------------------------------------------------
       # Install
@@ -193,9 +208,9 @@ jobs:
         working-directory: ${{ inputs.working-directory }}
         env:
           BUILD_COMMAND: ${{ inputs.build-command }}
-          PAGES_BASE_PATH: ${{ steps.pages.outputs.base_path }}
-          PAGES_BASE_URL: ${{ steps.pages.outputs.base_url }}
-          PAGES_ORIGIN: ${{ steps.pages.outputs.origin }}
+          PAGES_BASE_PATH: ${{ steps.pages.outputs.base_path || steps.local-pages.outputs.base_path }}
+          PAGES_BASE_URL: ${{ steps.pages.outputs.base_url || steps.local-pages.outputs.base_url }}
+          PAGES_ORIGIN: ${{ steps.pages.outputs.origin || steps.local-pages.outputs.origin }}
         run: |
           set -euo pipefail
           bash -lc "$BUILD_COMMAND"
@@ -299,9 +314,9 @@ jobs:
           OUTPUT_DIRECTORY: ${{ inputs.output-directory }}
           INSTALL_COMMAND: ${{ inputs.install-command }}
           BUILD_COMMAND: ${{ inputs.build-command }}
-          PAGES_BASE_PATH: ${{ steps.pages.outputs.base_path }}
-          PAGES_BASE_URL: ${{ steps.pages.outputs.base_url }}
-          PAGES_ORIGIN: ${{ steps.pages.outputs.origin }}
+          PAGES_BASE_PATH: ${{ steps.pages.outputs.base_path || steps.local-pages.outputs.base_path }}
+          PAGES_BASE_URL: ${{ steps.pages.outputs.base_url || steps.local-pages.outputs.base_url }}
+          PAGES_ORIGIN: ${{ steps.pages.outputs.origin || steps.local-pages.outputs.origin }}
         run: |
           set -u
 

@@ -3,6 +3,11 @@ name: Publish workspace-tools
 on:
   workflow_dispatch:
     inputs:
+      dry-run:
+        description: Validate publishing without uploading a package (always enabled in ACT)
+        required: false
+        default: false
+        type: boolean
       version:
         description: Exact version; empty uses package.json
         required: false
@@ -30,6 +35,7 @@ jobs:
   publish:
     uses: ./.github/workflows/reusable_npm-publish.yml
     with:
+      dry-run: ${{ inputs.dry-run }}
       package-directory: packages/workspace-tools
       version: ${{ inputs.version }}
       registry: ${{ inputs.registry }}

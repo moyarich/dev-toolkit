@@ -3,6 +3,11 @@ name: -[Reusable] Npm publish
 on:
   workflow_dispatch:
     inputs:
+      dry-run:
+        description: Validate publishing without uploading a package (always enabled in ACT)
+        required: false
+        default: false
+        type: boolean
       package-directory:
         description: Workspace path, directory name, or package name
         required: true
@@ -33,6 +38,11 @@ on:
         type: string
   workflow_call:
     inputs:
+      dry-run:
+        description: Validate publishing without uploading a package (always enabled in ACT)
+        required: false
+        default: false
+        type: boolean
       package-directory:
         description: Workspace path, directory name, or package name
         required: true
@@ -57,6 +67,10 @@ on:
         default: "24"
         type: string
     secrets:
+      _GITHUB_TOKEN:
+        required: false
+      _NPM_TOKEN:
+        required: false
       github-token:
         required: false
       npm-token:
@@ -70,7 +84,7 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     env:
-      GH_TOKEN: ${{ secrets.github-token || github.token }}
+      GH_TOKEN: ${{ secrets.github-token || secrets._GITHUB_TOKEN || github.token }}
       GH_REPO: ${{ github.repository }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -88,7 +102,7 @@ jobs:
           PACKAGE_SELECTOR: ${{ inputs.package-directory }}
           REQUESTED_VERSION: ${{ inputs.version }}
         run: |
-          CURRENT_VERSION="$(npm pkg get version --workspace "$PACKAGE_SELECTOR" | tr -d '"')"
+          CURRENT_VERSION="$(npm pkg get version --workspace "$PACKAGE_SELECTOR" | node -e 'let s="";process.stdin.on("data",d=>s+=d);process.stdin.on("end",()=>{const v=JSON.parse(s);const values=Object.values(v);if(values.length!==1)process.exit(1);console.log(values[0]);})')"
           if [ "$REQUESTED_VERSION" != "$CURRENT_VERSION" ]; then
             echo "Requested publish version $REQUESTED_VERSION does not match package.json version $CURRENT_VERSION."
             exit 1
@@ -96,13 +110,16 @@ jobs:
       - name: Publish package
         env:
           PACKAGE_SELECTOR: ${{ inputs.package-directory }}
-          _GITHUB_TOKEN: ${{ secrets.github-token || github.token }}
-          _NPM_TOKEN: ${{ secrets.npm-token }}
+          DRY_RUN: ${{ inputs.dry-run || env.ACT == 'true' }}
+          _GITHUB_TOKEN: ${{ secrets.github-token || secrets._GITHUB_TOKEN || github.token }}
+          _NPM_TOKEN: ${{ secrets.npm-token || secrets._NPM_TOKEN }}
         run: |
+          args=("$PACKAGE_SELECTOR" "--registry=${{ inputs.registry }}" "--tag=${{ inputs.tag }}")
+          if [ "$DRY_RUN" = "true" ]; then args+=(--dry-run); fi
           if [ -f packages/workspace-tools/bin/workspace-publish.mjs ]; then
-            node packages/workspace-tools/bin/workspace-publish.mjs "$PACKAGE_SELECTOR" --registry="${{ inputs.registry }}" --tag="${{ inputs.tag }}"
+            node packages/workspace-tools/bin/workspace-publish.mjs "${args[@]}"
           else
-            npx --yes @moyarich/workspace-tools workspace-publish "$PACKAGE_SELECTOR" --registry="${{ inputs.registry }}" --tag="${{ inputs.tag }}"
+            npx --yes @moyarich/workspace-tools workspace-publish "${args[@]}"
           fi
 
       - name: Publish summary
@@ -118,5 +135,6 @@ jobs:
             echo "| Registry | \`${{ inputs.registry }}\` |"
             echo "| Distribution tag | \`${{ inputs.tag }}\` |"
             echo "| Node.js | \`${{ inputs.node-version }}\` |"
+            echo "| Dry run | **${{ inputs.dry-run || env.ACT == 'true' }}** |"
             echo "| Result | **${{ job.status }}** |"
           } >> "$GITHUB_STEP_SUMMARY"

@@ -17,10 +17,26 @@ jobs:
     name: Set native issue dependencies
     runs-on: ubuntu-latest
     env:
-      GH_TOKEN: ${{ github.token }}
+      GH_TOKEN: ${{ secrets._GITHUB_TOKEN || github.token }}
       GH_REPO: ${{ github.repository }}
 
     steps:
+      - name: Install GitHub CLI
+        shell: bash
+        run: |
+          set -euo pipefail
+          version=2.101.0
+          case "$(uname -m)" in
+            x86_64) arch=amd64 ;;
+            aarch64|arm64) arch=arm64 ;;
+            *) echo "Unsupported runner architecture" >&2; exit 1 ;;
+          esac
+          cli_dir="$(mktemp -d)"
+          curl --fail --silent --show-error --location \
+            "https://github.com/cli/cli/releases/download/v${version}/gh_${version}_linux_${arch}.tar.gz" \
+            | tar -xz -C "$cli_dir" --strip-components=1
+          echo "$cli_dir/bin" >> "$GITHUB_PATH"
+
       - name: Apply dependencies
         shell: bash
         run: |
@@ -33,13 +49,17 @@ jobs:
             if gh issue view "$issue" \
               --repo "$GH_REPO" \
               --json blockedBy \
-              --jq '.blockedBy[].number' \
+              --jq '.blockedBy.nodes[].number' \
               | grep -Fxq "$blocker"; then
               echo "#$issue is already blocked by #$blocker"
               return
             fi
 
             echo "Setting #$issue as blocked by #$blocker"
+            if [ "${ACT:-false}" = "true" ]; then
+              echo "ACT preview: dependency was not changed."
+              return
+            fi
             gh issue edit "$issue" \
               --repo "$GH_REPO" \
               --add-blocked-by "$blocker"

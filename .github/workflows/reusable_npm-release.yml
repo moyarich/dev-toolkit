@@ -77,7 +77,7 @@ on:
     inputs:
       dry-run:
         description: Dry-run — preview without making changes
-        required: true
+        required: false
         default: true
         type: boolean
 

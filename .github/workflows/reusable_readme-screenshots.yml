@@ -79,8 +79,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          ref: ${{ github.ref_name }}
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: ${{ inputs.node-version }}
@@ -88,7 +86,11 @@ jobs:
       - run: npm ci --include=optional
       - name: Install screenshot tooling
         run: |
-          npm install --no-save --package-lock=false playwright@${{ inputs.playwright-version }} @moyarich/readme-screenshots
+          packages=("playwright@${{ inputs.playwright-version }}")
+          if [ ! -f packages/readme-screenshots/bin/readme-screenshots.mjs ]; then
+            packages+=(@moyarich/readme-screenshots)
+          fi
+          npm install --no-save --package-lock=false "${packages[@]}"
           npx playwright install --with-deps chromium
       - name: Start site
         env:
@@ -112,6 +114,7 @@ jobs:
             *) npx readme-screenshots "${{ inputs.config }}" ;;
           esac
       - name: Commit screenshots when changed
+        if: ${{ env.ACT != 'true' }}
         env:
           OUTPUT_DIRECTORY: ${{ inputs.output-directory }}
           COMMIT_MESSAGE: ${{ inputs.commit-message }}
@@ -136,6 +139,6 @@ jobs:
             echo "| Config | \`${{ inputs.config || 'default' }}\` |"
             echo "| Node.js | \`${{ inputs.node-version }}\` |"
             echo "| Playwright | \`${{ inputs.playwright-version }}\` |"
-            echo "| Commit changes | **yes, when generated files changed** |"
+            echo "| Commit changes | **${{ env.ACT != 'true' }} (when generated files changed)** |"
             echo "| Result | **${{ job.status }}** |"
           } >> "$GITHUB_STEP_SUMMARY"
