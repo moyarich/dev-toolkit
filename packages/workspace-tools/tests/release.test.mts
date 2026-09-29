@@ -12,6 +12,16 @@ test("parseReleaseArgument accepts bump names", () => {
   });
 });
 
+test("parseReleaseArgument accepts a bare selector for existing mode", () => {
+  assert.deepEqual(
+    parseReleaseArgument("demo-tools", { mode: "existing" }),
+    {
+      selector: "demo-tools",
+      versionSpec: null,
+    },
+  );
+});
+
 test("parseReleaseArgument accepts explicit semver", () => {
   assert.deepEqual(parseReleaseArgument("demo-tools=1.2.3-beta.1"), {
     selector: "demo-tools",
