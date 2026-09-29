@@ -1,4 +1,4 @@
-name: "Recreate workspace package-lock.json (Reusable)"
+name: "Reusable · Recreate workspace package-lock.json"
 
 on:
   workflow_dispatch:
