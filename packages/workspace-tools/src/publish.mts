@@ -316,14 +316,16 @@ export function serializePublishPlan(plan, { registry, tag, access }) {
  * @param {ReturnType<typeof packageInfo>} pkg
  * @returns {void}
  */
-function validate(root, pkg) {
-  console.log(
-    `\nValidating ${pkg.manifest.name}@${pkg.manifest.version} (${pkg.directory})`,
-  );
+function validate(root, pkg, { quiet = false } = {}) {
+  if (!quiet) {
+    console.log(
+      `\nValidating ${pkg.manifest.name}@${pkg.manifest.version} (${pkg.directory})`,
+    );
+  }
 
   const dependencies = dependencyCheck(root, pkg);
 
-  printDependencyCheck(dependencies);
+  if (!quiet) printDependencyCheck(dependencies);
 
   assertDependencies(dependencies);
 
@@ -333,12 +335,14 @@ function validate(root, pkg) {
       ["run", script, "--workspace", pkg.manifest.name, "--if-present"],
       {
         cwd: root,
+        ...(quiet ? { stdio: "pipe" } : {}),
       },
     );
   }
 
   run("npm", ["pack", "--workspace", pkg.manifest.name, "--dry-run"], {
     cwd: root,
+    ...(quiet ? { stdio: "pipe" } : {}),
   });
 }
 
@@ -352,7 +356,7 @@ function validate(root, pkg) {
  * @param {PackageAccess} access
  * @returns {void}
  */
-function publishOne(root, pkg, registry, tag, access) {
+function publishOne(root, pkg, registry, tag, access, { quiet = false } = {}) {
   const config = registryConfig(registry);
 
   if (!config.token) {
@@ -398,6 +402,7 @@ function publishOne(root, pkg, registry, tag, access) {
         {
           cwd: root,
           env,
+          ...(quiet ? { stdio: "pipe" } : {}),
         },
       );
 
@@ -407,12 +412,15 @@ function publishOne(root, pkg, registry, tag, access) {
     run("npm", ["stage", "publish", "--access", access, "--tag", tag], {
       cwd: resolve(root, pkg.directory),
       env,
+      ...(quiet ? { stdio: "pipe" } : {}),
     });
 
-    console.log(
-      `Staged ${pkg.manifest.name}@${pkg.manifest.version} on npmjs.org. ` +
-        "Approve the staged release with 2FA before it becomes public.",
-    );
+    if (!quiet) {
+      console.log(
+        `Staged ${pkg.manifest.name}@${pkg.manifest.version} on npmjs.org. ` +
+          "Approve the staged release with 2FA before it becomes public.",
+      );
+    }
   } finally {
     rmSync(directory, {
       recursive: true,
@@ -466,7 +474,7 @@ export function publish({
     }
 
     for (const pkg of packages) {
-      validate(root, pkg);
+      validate(root, pkg, { quiet: json });
     }
 
     console.log(
@@ -498,11 +506,7 @@ export function publish({
 
   const plan = publishPlan(packages, registry);
 
-  if (json) {
-    process.stdout.write(
-      `${JSON.stringify(serializePublishPlan(plan, { registry, tag, access }))}\n`,
-    );
-  } else if (list) {
+  if (list && !json) {
     printPlan(plan);
   }
 
@@ -511,38 +515,77 @@ export function publish({
     .map(({ pkg: item }) => item);
 
   if (list && !dryRun) {
-    return;
+    return {
+      operation: "publish",
+      status: "plan",
+      dryRun: false,
+      ...serializePublishPlan(plan, { registry, tag, access }),
+    };
   }
 
   for (const item of pendingPackages) {
-    validate(root, item);
+    validate(root, item, { quiet: json });
   }
 
   if (dryRun) {
     const names = pendingPackages.map((item) => item.manifest.name);
 
-    console.log(
-      names.length
-        ? `\nRelease checks passed for ${names.join(", ")}. Nothing was published.`
-        : "\nAll selected package versions are already published. Nothing to validate or publish.",
-    );
+    if (!json) {
+      console.log(
+        names.length
+          ? `\nRelease checks passed for ${names.join(", ")}. Nothing was published.`
+          : "\nAll selected package versions are already published. Nothing to validate or publish.",
+      );
+    }
 
-    return;
+    return {
+      operation: "publish",
+      status: "preview",
+      dryRun: true,
+      ...serializePublishPlan(plan, { registry, tag, access }),
+    };
   }
+
+  const results = [];
 
   for (const { pkg: item, registries } of plan) {
     for (const destination of destinations(registry)) {
       if (registries[destination] === "published") {
-        console.log(
-          `Skipping ${item.manifest.name}@${item.manifest.version} on ${destination}: already published.`,
-        );
-
+        if (!json) {
+          console.log(
+            `Skipping ${item.manifest.name}@${item.manifest.version} on ${destination}: already published.`,
+          );
+        }
+        results.push({
+          package: item.manifest.name,
+          version: item.manifest.version,
+          registry: destination,
+          status: "skipped",
+          reason: "already-published",
+        });
         continue;
       }
 
-      publishOne(root, item, destination, tag, access);
+      publishOne(root, item, destination, tag, access, { quiet: json });
+      results.push({
+        package: item.manifest.name,
+        version: item.manifest.version,
+        registry: destination,
+        status: destination === "npm" ? "staged" : "published",
+      });
     }
   }
+
+  return {
+    operation: "publish",
+    status: "success",
+    dryRun: false,
+    registry,
+    tag,
+    access,
+    results,
+    packages: serializePublishPlan(plan, { registry, tag, access }).packages,
+  };
 }
 
 /**
@@ -610,7 +653,7 @@ export function publishWorkspacePackage(selector, options) {
     return;
   }
 
-  publish({
+  const result = publish({
     selector: selectedPackage,
     registry: options.registry,
     tag: options.tag,
@@ -620,6 +663,12 @@ export function publishWorkspacePackage(selector, options) {
     json: options.json,
     withDependencies: options.withDependencies,
   });
+
+  if (options.json && result) {
+    process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+  }
+
+  return result;
 }
 
 /**
