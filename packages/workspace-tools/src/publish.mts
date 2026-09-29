@@ -10,9 +10,6 @@ import {
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
-import { pathToFileURL } from "node:url";
-
-import { Argument, Option, program } from "commander";
 
 import {
   packageInfo,
@@ -580,7 +577,7 @@ export function packageFromTag(tagName) {
  * @param {PublishOptions} options
  * @returns {void}
  */
-function publishWorkspacePackage(selector, options) {
+export function publishWorkspacePackage(selector, options) {
   const root = repositoryRoot();
 
   const selectedPackage =
@@ -614,56 +611,4 @@ function isMainModule() {
   }
 
   return import.meta.url === pathToFileURL(resolve(process.argv[1])).href;
-}
-
-program
-  .name("workspace-publish")
-  .description("Validate and publish workspace packages.")
-  .addArgument(
-    new Argument("[package]", "Package name, directory, or workspace selector"),
-  )
-  .addOption(
-    new Option("-r, --registry <registry>", "Registry to publish to")
-      .choices(["github", "npm", "both"])
-      .default("github"),
-  )
-  .addOption(
-    new Option("-t, --tag <tag>", "npm distribution tag").default("latest"),
-  )
-  .addOption(
-    new Option("-a, --access <access>", "Package access level")
-      .choices(["public", "restricted"])
-      .default("public"),
-  )
-  .option("-d, --dry-run", "Run release checks without publishing")
-  .option("-l, --list", "Print the publish plan without publishing")
-  .option(
-    "-w, --with-dependencies",
-    "Include publishable workspace dependencies",
-  )
-  .addHelpText(
-    "after",
-    `
-Examples:
-  $ workspace-publish
-  $ workspace-publish workspace-tools
-  $ workspace-publish workspace-tools --dry-run
-  $ workspace-publish workspace-tools --list
-  $ workspace-publish workspace-tools --registry npm
-  $ workspace-publish workspace-tools --registry both
-  $ workspace-publish workspace-tools --tag next
-  $ workspace-publish workspace-tools --with-dependencies
-  $ workspace-publish --dry-run
-
-Interactive selection:
-  Running workspace-publish without a package opens an fzf package picker.
-
-  $ workspace-publish
-  Package > @moyarich/workspace-tools
-`,
-  )
-  .action(publishWorkspacePackage);
-
-if (isMainModule()) {
-  await program.parseAsync();
 }
