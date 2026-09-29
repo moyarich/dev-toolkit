@@ -1,4 +1,4 @@
-name: "Package Tests (Reusable)"
+name: "Reusable · Package Tests"
 
 on:
   workflow_dispatch:
