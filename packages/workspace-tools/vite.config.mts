@@ -8,15 +8,15 @@ export default defineConfig({
     emptyOutDir: true,
     lib: {
       entry: {
-        "workspace-release": resolve(import.meta.dirname, "src/release.mts"),
-        "workspace-publish": resolve(import.meta.dirname, "src/publish.mts"),
+        "workspace-release": resolve(import.meta.dirname, "src/cli/workspace-release.mts"),
+        "workspace-publish": resolve(import.meta.dirname, "src/cli/workspace-publish.mts"),
         "workspace-dependency-check": resolve(
           import.meta.dirname,
-          "src/dependency-check.mts",
+          "src/cli/workspace-dependency-check.mts",
         ),
         "discover-test-packages": resolve(
           import.meta.dirname,
-          "src/discover-test-packages.mts",
+          "src/cli/discover-test-packages.mts",
         ),
       },
       formats: ["es"],
