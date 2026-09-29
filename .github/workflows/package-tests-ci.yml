@@ -11,5 +11,4 @@ jobs:
   packages:
     uses: ./.github/workflows/reusable_package-tests.yml
     with:
-      node-version: "24"
       packages-directory: packages
