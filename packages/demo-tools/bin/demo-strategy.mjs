@@ -2,7 +2,7 @@
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { program } from 'commander';
-import { runDemoStrategy } from "../src/index.mjs";
+import { runDemoStrategy } from "../src/index.mts";
 
 program
   .name("demo-strategy")
