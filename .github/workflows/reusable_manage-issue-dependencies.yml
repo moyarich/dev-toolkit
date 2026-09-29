@@ -1,4 +1,4 @@
-name: -[Reusable] Manage issue dependencies
+name: Reusable ·  Manage issue dependencies
 
 on:
   workflow_dispatch:
