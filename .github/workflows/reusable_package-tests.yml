@@ -1,4 +1,4 @@
-name: "[Reusable] Package Tests"
+name: "Package Tests (Reusable)"
 
 on:
   workflow_dispatch:
@@ -28,6 +28,7 @@ on:
 
 jobs:
   discover-packages:
+    name: "Discover packages"
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.packages.outputs.matrix }}
@@ -66,6 +67,7 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
   test-packages:
+    name: "Test packages"
     needs: discover
     env:
       FORCE_COLOR: "1"
