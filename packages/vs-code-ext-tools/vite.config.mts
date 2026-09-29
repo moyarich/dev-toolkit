@@ -9,14 +9,15 @@ export default defineConfig({
     sourcemap: true,
     minify: false,
     lib: {
-      entry: {        "vs-code-publish": resolve(import.meta.dirname, "src/cli/vs-code-publish.mts"),
+      entry: {
+        "vs-code-publish": resolve(import.meta.dirname, "src/cli/vs-code-publish.mts"),
         "run-extension-dev": resolve(import.meta.dirname, "src/cli/run-extension-dev.mts"),
       },
       formats: ["es"],
       fileName: (_format, entryName) => `${entryName}.mjs`,
     },
     rollupOptions: {
-      external: [/^node:/],
+      external: [/^node:/, /^@inquirer\//, "chalk", "commander"],
       output: {
         banner: "#!/usr/bin/env node",
       },
