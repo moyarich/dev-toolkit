@@ -60,3 +60,16 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit -m "chore(workspaces): update package lockfile"
           git push origin "HEAD:$GITHUB_REF_NAME"
+
+      - name: Lockfile summary
+        if: ${{ always() }}
+        run: |
+          {
+            echo "## Workspace lockfile"
+            echo
+            echo "| Setting | Value |"
+            echo "| --- | --- |"
+            echo "| Node.js | \`${{ inputs.node-version }}\` |"
+            echo "| Commit changes | **${{ inputs.commit }}** |"
+            echo "| Result | **${{ job.status }}** |"
+          } >> "$GITHUB_STEP_SUMMARY"
