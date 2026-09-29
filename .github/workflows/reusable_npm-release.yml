@@ -423,6 +423,33 @@ jobs:
             DRY_RUN_FLAG="--dry-run"
           fi
 
+          RELEASE_JSON="$(
+            node packages/workspace-tools/bin/workspace-release.mjs \
+              "${{ inputs.package }}=$VERSION_REQUEST" \
+              --mode="$VERSION_MODE" \
+              --version="$VERSION_REQUEST" \
+              $DRY_RUN_FLAG \
+              --json
+          )"
+
+          echo "$RELEASE_JSON" | jq -e '
+            type == "object" and
+            .operation == "release" and
+            (.package.name | type == "string" and length > 0) and
+            (.currentVersion | type == "string" and length > 0) and
+            (.nextVersion | type == "string" and length > 0)
+          ' >/dev/null
+
+          PACKAGE_NAME="$(jq -r '.package.name' <<< "$RELEASE_JSON")"
+          PACKAGE_SELECTOR="$(jq -r '.package.selector' <<< "$RELEASE_JSON")"
+          PACKAGE_VERSION="$(jq -r '.currentVersion' <<< "$RELEASE_JSON")"
+
+          {
+            echo "PACKAGE_NAME=$PACKAGE_NAME"
+            echo "PACKAGE_SELECTOR=$PACKAGE_SELECTOR"
+            echo "PACKAGE_VERSION=$PACKAGE_VERSION"
+          } >> "$GITHUB_ENV"
+
           {
             echo "# Package release"
             echo
@@ -466,23 +493,9 @@ jobs:
             echo
             echo "## Release details"
             echo
-            echo '```text'
-
-            if [ -f packages/workspace-tools/bin/workspace-release.mjs ]; then
-              node packages/workspace-tools/bin/workspace-release.mjs \
-                "$PACKAGE_SELECTOR=$VERSION_REQUEST" \
-                --mode="$VERSION_MODE" \
-                --version="$VERSION_REQUEST" \
-                $DRY_RUN_FLAG
-            else
-              npx --yes @moyarich/workspace-tools workspace-release \
-                "$PACKAGE_SELECTOR=$VERSION_REQUEST" \
-                --mode="$VERSION_MODE" \
-                --version="$VERSION_REQUEST" \
-                $DRY_RUN_FLAG
-            fi
-
-            echo '```'
+            echo '~~~json'
+            echo "$RELEASE_JSON" | jq .
+            echo '~~~'
           } | tee -a "$GITHUB_STEP_SUMMARY"
 
       - name: Verify dry run made no repository changes
