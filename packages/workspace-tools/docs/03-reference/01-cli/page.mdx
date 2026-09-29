@@ -4,12 +4,19 @@
 
 ```sh
 workspace-release <package>=<version|major|minor|patch|premajor|preminor|prepatch|prerelease>
+workspace-release <package> --mode=package-json
 ```
+
+Release modes are `bump`, `exact`, and `package-json`. `package-json` reads the current manifest version and tags `HEAD` without invoking `npm version`.
+
+`--dry-run` reports registry and exact Git-tag conflicts without modifying repository state.
 
 ## workspace-publish
 
 ```sh
-workspace-publish [package] [--registry=github|npm|both] [--tag=latest] [--access=public|restricted] [--dry-run]
+workspace-publish [package] [--registry=github|npm|both] [--tag=latest] [--access=public|restricted] [--dry-run] [--no-verify-git-tag]
 ```
 
-With `--dry-run` and no package selector, every publishable package beneath `packages/*` is validated. Without `--dry-run`, a package selector is required.
+Matching Git release tag verification defaults to enabled. A real publish requires `<selector>@<package.json.version>` to point to `HEAD`. Use `--no-verify-git-tag` to explicitly disable this condition.
+
+When verification fails during `--dry-run`, the command returns warning/readiness metadata rather than failing because of the tag state.
