@@ -36,7 +36,24 @@ jobs:
       - id: packages
         name: Discover packages with tests
         shell: bash
-        run: echo "packages=$(node scripts/discover-test-packages.mjs "${{ inputs.packages-directory }}")" >> "$GITHUB_OUTPUT"
+        run: |
+          PACKAGES="$(node scripts/discover-test-packages.mjs "${{ inputs.packages-directory }}")"
+          echo "packages=$PACKAGES" >> "$GITHUB_OUTPUT"
+
+          {
+            echo "## Package test discovery"
+            echo
+            echo "| Setting | Value |"
+            echo "| --- | --- |"
+            echo "| Packages directory | \`${{ inputs.packages-directory }}\` |"
+            echo "| Node.js | \`${{ inputs.node-version }}\` |"
+            echo
+            echo "### Discovered packages"
+            echo
+            echo '~~~json'
+            echo "$PACKAGES" | jq .
+            echo '~~~'
+          } >> "$GITHUB_STEP_SUMMARY"
 
   test:
     needs: discover
@@ -55,3 +72,17 @@ jobs:
       - run: npm install --ignore-scripts
       - name: Run package tests
         run: npm test --workspace "${{ matrix.package.name }}"
+
+      - name: Package test summary
+        if: ${{ always() }}
+        run: |
+          {
+            echo "## Package tests"
+            echo
+            echo "| Setting | Value |"
+            echo "| --- | --- |"
+            echo "| Package | \`${{ matrix.package.name }}\` |"
+            echo "| Directory | \`${{ matrix.package.directory }}\` |"
+            echo "| Node.js | \`${{ inputs.node-version }}\` |"
+            echo "| Result | **${{ job.status }}** |"
+          } >> "$GITHUB_STEP_SUMMARY"
