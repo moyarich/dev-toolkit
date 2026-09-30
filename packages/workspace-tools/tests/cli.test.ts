@@ -22,7 +22,7 @@ function invoke(script: string, ...args: string[]) {
 for (const command of [
   "packages/workspace-tools/bin/workspace-release.mjs",
   "packages/workspace-tools/bin/workspace-publish.mjs",
-  "packages/workspace-tools/bin/discover-test-packages.mjs",
+  "packages/workspace-tools/bin/discover-packages.mjs",
 ]) {
   describe(command, () => {
     test("shows help without running its action", () => {
@@ -42,10 +42,10 @@ for (const command of [
 
 test("package discovery preserves its default directory and JSON output", () => {
   const implicit = invoke(
-    "packages/workspace-tools/bin/discover-test-packages.mjs",
+    "packages/workspace-tools/bin/discover-packages.mjs",
   );
   const explicit = invoke(
-    "packages/workspace-tools/bin/discover-test-packages.mjs",
+    "packages/workspace-tools/bin/discover-packages.mjs",
     "packages",
   );
   expect(implicit.status).toBe(0);

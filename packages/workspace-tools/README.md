@@ -4,6 +4,17 @@ Workspace-aware release and publishing commands used by the reusable workflows i
 
 ## Commands
 
+
+### `discover-packages`
+
+Discover direct-child workspace packages and emit metadata used by reusable workflows.
+
+```sh
+discover-packages [packages-directory] [--json] [--include-private] [--require-publish-config] [--require-test-script] [--require-build-script]
+```
+
+The JSON output includes each package's directory, name, version, privacy, publishability, and build/test capabilities. GitHub Actions should consume package inventory through `.github/workflows/reusable_discover-packages.yml` rather than maintaining package lists in workflow YAML.
+
 ### `workspace-release`
 
 Create or preview a package release from a package under `packages/*`.

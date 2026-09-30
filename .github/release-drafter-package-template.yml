@@ -1,5 +1,9 @@
-name-template: "v$RESOLVED_VERSION"
-tag-template: "v$RESOLVED_VERSION"
+name-template: "{{PACKAGE_NAME}} v$RESOLVED_VERSION"
+tag-template: "{{PACKAGE_DIRECTORY}}@$RESOLVED_VERSION"
+tag-prefix: "{{PACKAGE_DIRECTORY}}@"
+
+include-paths:
+  - "{{PACKAGE_DIRECTORY}}/**"
 
 categories:
   - title: "Features"

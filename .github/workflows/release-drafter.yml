@@ -1,7 +1,29 @@
-name: Draft release
+name: Draft package releases
+
+run-name: >-
+  Draft package releases · ${{ github.event_name == 'workflow_dispatch' && inputs.package || 'all' }}
 
 on:
   workflow_dispatch:
+    inputs:
+      package:
+        description: Package selector (all, package name, or packages/<directory>)
+        required: true
+        default: all
+        type: string
+
+      version:
+        description: Optional explicit release version (for first release, use 0.1.0)
+        required: false
+        default: ""
+        type: string
+
+      from:
+        description: Optional comparison baseline ref; empty + explicit version uses the first commit on main
+        required: false
+        default: ""
+        type: string
+
   push:
     branches:
       - main
@@ -11,25 +33,159 @@ permissions:
   pull-requests: read
 
 jobs:
-  draft-release:
-    name: Prepare draft release
+  discover-packages:
+    name: "Discover publishable packages"
+    uses: ./.github/workflows/reusable_discover-packages.yml
+    with:
+      packages-directory: packages
+      require-publish-config: true
+      node-version: "24"
+
+  validate-selection:
+    name: "Validate package selector"
+    needs: discover-packages
     runs-on: ubuntu-latest
-    outputs:
-      id: ${{ steps.drafter.outputs.id }}
-      name: ${{ steps.drafter.outputs.name }}
-      tag-name: ${{ steps.drafter.outputs.tag_name }}
-      html-url: ${{ steps.drafter.outputs.html_url }}
+    steps:
+      - name: Validate selected package
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        env:
+          INPUT_PACKAGE: ${{ inputs.package }}
+          PACKAGES_JSON: ${{ needs.discover-packages.outputs.packages }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ "$INPUT_PACKAGE" = "all" ]; then
+            exit 0
+          fi
+
+          if jq -e --arg selector "$INPUT_PACKAGE" '
+            any(.[]; .name == $selector or .directory == $selector)
+          ' <<< "$PACKAGES_JSON" >/dev/null; then
+            exit 0
+          fi
+
+          echo "::error::Unknown package selector: $INPUT_PACKAGE"
+          echo "Available selectors:"
+          jq -r '.[] | "  - \(.name)  [\(.directory)]"' <<< "$PACKAGES_JSON"
+          exit 1
+
+  draft-release:
+    name: "package: ${{ matrix.name }} | dir: ${{ matrix.directory }}"
+    needs:
+      - discover-packages
+      - validate-selection
+    if: >-
+      ${{ needs.discover-packages.result == 'success' &&
+          needs.discover-packages.outputs.has-packages == 'true' &&
+          (github.event_name != 'workflow_dispatch' ||
+           needs.validate-selection.result == 'success') }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.discover-packages.outputs.matrix || '{"include":[]}') }}
 
     steps:
+      - name: Decide whether package is selected
+        id: selected
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_PACKAGE: ${{ inputs.package }}
+          PACKAGE_NAME: ${{ matrix.name }}
+          PACKAGE_DIRECTORY: ${{ matrix.directory }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ "$EVENT_NAME" != "workflow_dispatch" ] ||
+             [ "$INPUT_PACKAGE" = "all" ] ||
+             [ "$INPUT_PACKAGE" = "$PACKAGE_NAME" ] ||
+             [ "$INPUT_PACKAGE" = "$PACKAGE_DIRECTORY" ]; then
+            echo "value=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout main history
+        if: ${{ steps.selected.outputs.value == 'true' }}
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Generate package Release Drafter config
+        if: ${{ steps.selected.outputs.value == 'true' }}
+        env:
+          PACKAGE_NAME: ${{ matrix.name }}
+          PACKAGE_DIRECTORY: ${{ matrix.directory }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          node --input-type=module <<'NODE'
+          import { readFileSync, writeFileSync } from "node:fs";
+
+          const template = readFileSync(
+            ".github/release-drafter-package-template.yml",
+            "utf8",
+          );
+
+          const config = template
+            .replaceAll("{{PACKAGE_NAME}}", process.env.PACKAGE_NAME)
+            .replaceAll("{{PACKAGE_DIRECTORY}}", process.env.PACKAGE_DIRECTORY);
+
+          writeFileSync(
+            ".github/release-drafter-package-generated.yml",
+            config,
+          );
+          NODE
+
+      - name: Resolve comparison baseline
+        id: baseline
+        if: ${{ steps.selected.outputs.value == 'true' }}
+        env:
+          INPUT_FROM: ${{ inputs.from }}
+          INPUT_VERSION: ${{ inputs.version }}
+          EVENT_NAME: ${{ github.event_name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ "$EVENT_NAME" != "workflow_dispatch" ]; then
+            BASELINE=""
+            SOURCE="previous published package release"
+          elif [ -n "$INPUT_FROM" ]; then
+            BASELINE="$INPUT_FROM"
+            SOURCE="input"
+          elif [ -n "$INPUT_VERSION" ]; then
+            BASELINE="$(git rev-list --max-parents=0 HEAD | tail -n 1)"
+            SOURCE="first commit on main"
+          else
+            BASELINE=""
+            SOURCE="previous published package release"
+          fi
+
+          {
+            echo "from=$BASELINE"
+            echo "source=$SOURCE"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Initialize workflow summary
-        if: ${{ always() }}
+        if: ${{ steps.selected.outputs.value == 'true' }}
         shell: bash
         run: |
           {
-            echo "# Draft release"
+            echo "# Package release draft"
             echo
             echo "| Execution | Value |"
             echo "| --- | --- |"
+            echo "| Package | \`${{ matrix.name }}\` |"
+            echo "| Directory | \`${{ matrix.directory }}\` |"
+            echo "| Current package version | \`${{ matrix.version }}\` |"
+            echo "| Requested release version | \`${{ inputs.version || 'auto' }}\` |"
+            echo "| Comparison baseline | \`${{ steps.baseline.outputs.from || 'previous published package release' }}\` |"
+            echo "| Baseline source | \`${{ steps.baseline.outputs.source }}\` |"
             echo "| Repository | \`${{ github.repository }}\` |"
             echo "| Ref | \`${{ github.ref_name }}\` |"
             echo "| Trigger | \`${{ github.event_name }}\` |"
@@ -37,13 +193,20 @@ jobs:
             echo
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Create or update draft release
+      - name: Create or update package draft release
         id: drafter
+        if: ${{ steps.selected.outputs.value == 'true' }}
         uses: release-drafter/release-drafter@v7.7.0
+        with:
+          config-name: file:release-drafter-package-generated.yml
+          commitish: main
+          version: ${{ github.event_name == 'workflow_dispatch' && inputs.version || '' }}
+          from: ${{ steps.baseline.outputs.from }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Draft summary
+        if: ${{ steps.selected.outputs.value == 'true' }}
         shell: bash
         run: |
           {
@@ -51,37 +214,9 @@ jobs:
             echo
             echo "| Release | Value |"
             echo "| --- | --- |"
+            echo "| Package | \`${{ matrix.name }}\` |"
             echo "| Name | \`${{ steps.drafter.outputs.name }}\` |"
             echo "| Tag | \`${{ steps.drafter.outputs.tag_name }}\` |"
-            echo "| Draft | [Open and edit the draft release](${{ steps.drafter.outputs.html_url }}) |"
-            echo
-            echo "> Review and edit the draft release in GitHub before approving the next job."
+            echo "| Draft | [Open package draft release](${{ steps.drafter.outputs.html_url }}) |"
           } >> "$GITHUB_STEP_SUMMARY"
 
-  approve-release:
-    name: Approve reviewed draft
-    if: ${{ github.event_name == 'workflow_dispatch' }}
-    needs: draft-release
-    runs-on: ubuntu-latest
-
-    # Configure the "release" environment with required reviewers in:
-    # Settings → Environments → release → Required reviewers.
-    environment:
-      name: release
-      url: ${{ needs.draft-release.outputs.html-url }}
-
-    steps:
-      - name: Record approval
-        shell: bash
-        run: |
-          {
-            echo "# Release draft approved"
-            echo
-            echo "The draft release passed the \`release\` environment approval gate."
-            echo
-            echo "- Draft: [${{ needs.draft-release.outputs.name }}](${{ needs.draft-release.outputs.html-url }})"
-            echo "- Tag: \`${{ needs.draft-release.outputs.tag-name }}\`"
-            echo
-            echo "> This workflow does not publish the GitHub Release or npm package."
-            echo "> Existing release and publish workflows remain responsible for irreversible release operations."
-          } >> "$GITHUB_STEP_SUMMARY"
