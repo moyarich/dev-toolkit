@@ -1,10 +1,16 @@
 import type { DemoStrategy, DemoStrategyContext } from "../types.ts";
 
-export function defineDemoStrategy<T>(strategy: DemoStrategy<T>): Readonly<DemoStrategy<T>> {
-  if (!strategy || typeof strategy !== "object") throw new TypeError("A demo strategy must be an object.");
-  if (!strategy.name || typeof strategy.name !== "string") throw new TypeError("A demo strategy requires a name.");
-  if (typeof strategy.run !== "function") throw new TypeError(`Demo strategy "${strategy.name}" requires a run() function.`);
-  return Object.freeze({ ...strategy, tags: Object.freeze([...(strategy.tags ?? [])]) });
+export function assertDemoStrategy(value: unknown): asserts value is DemoStrategy {
+  if (!value || typeof value !== "object") {
+    throw new TypeError("A demo strategy must be an object.");
+  }
+  const strategy = value as Partial<DemoStrategy>;
+  if (!strategy.name || typeof strategy.name !== "string") {
+    throw new TypeError("A demo strategy requires a name.");
+  }
+  if (typeof strategy.run !== "function") {
+    throw new TypeError(`Demo strategy "${strategy.name}" requires a run() function.`);
+  }
 }
 
 export function isMainModule(moduleUrl?: string): boolean {
@@ -25,7 +31,7 @@ export async function runDemoStrategy<T>({
   artifactsDirectory,
   context = {},
 }: RunDemoStrategyOptions<T>): Promise<T> {
-  if (!strategy) throw new TypeError("runDemoStrategy requires a strategy.");
+  assertDemoStrategy(strategy);
   const { mkdir } = await import("node:fs/promises");
   const path = await import("node:path");
   const { fileURLToPath } = await import("node:url");
@@ -45,11 +51,10 @@ export function executableDemoStrategy<T>(
   strategy: DemoStrategy<T>,
   moduleUrl: string,
   options: Omit<RunDemoStrategyOptions<T>, "strategy" | "moduleUrl"> = {},
-): Readonly<DemoStrategy<T>> {
-  const defined = defineDemoStrategy(strategy);
-  void runDemoStrategyModule({ strategy: defined, moduleUrl, ...options }).catch((error: unknown) => {
+): DemoStrategy<T> {
+  void runDemoStrategyModule({ strategy, moduleUrl, ...options }).catch((error: unknown) => {
     console.error(error);
     process.exitCode = 1;
   });
-  return defined;
+  return strategy;
 }
