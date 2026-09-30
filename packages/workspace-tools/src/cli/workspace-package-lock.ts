@@ -14,6 +14,8 @@ program
   .option("-j, --json", "Print the operation result as JSON")
   .option("-c, --commit", "Commit and push package-lock.json when it changes")
   .option("--branch <branch>", "Explicit branch to push when --commit is used")
-  .action((options) => runPackageLock(options));
+  .action((options) => {
+    runPackageLock(options);
+  });
 
 await program.parseAsync();
