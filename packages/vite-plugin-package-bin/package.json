@@ -15,7 +15,7 @@
     "node": ">=24"
   },
   "scripts": {
-    "test": "node --test tests/*.test.ts",
+    "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json"
   },
   "peerDependencies": {
@@ -24,7 +24,8 @@
   "devDependencies": {
     "@types/node": "^24.0.0",
     "typescript": "^5.9.3",
-    "vite": "^7.1.7"
+    "vite": "^7.1.7",
+    "vitest": "^3.2.4"
   },
   "repository": {
     "type": "git",
