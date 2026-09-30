@@ -1,11 +1,13 @@
 # Strategies
 
-A strategy is the unit of demo ownership. It owns the story and can be run directly.
+A strategy is the unit of demo ownership. TypeScript authors should describe the
+object directly and use `satisfies DemoStrategy` rather than an authoring wrapper.
 
-```js
+```ts
 import { executableDemoStrategy } from "@moyarich/demo-tools";
+import type { DemoStrategy } from "@moyarich/demo-tools";
 
-export default executableDemoStrategy({
+const strategy = {
   name: "basic-colors",
   description: "Demonstrate CSS color parsing.",
   tags: ["browser", "colors"],
@@ -13,27 +15,36 @@ export default executableDemoStrategy({
   async run({ strategyDirectory, artifactsDirectory }) {
     // Explicit environment setup and demo steps.
   },
-}, import.meta.url);
+} satisfies DemoStrategy;
+
+export default executableDemoStrategy(strategy, import.meta.url);
 ```
 
-Run it without the CLI:
+`DemoStrategy` provides compile-time checking. When discovery or
+`demo-strategy` dynamically imports a module, demo-tools validates the exported
+value with its runtime strategy assertion before execution.
+
+Run compiled output without the CLI:
 
 ```sh
-node demo/strategies/basic-colors/index.mjs
+node demo/strategies/basic-colors/index.js
 ```
 
 Or through the installed executable:
 
 ```sh
-demo-strategy demo/strategies/basic-colors/index.mjs
+demo-strategy demo/strategies/basic-colors/index.js
 ```
 
 ## Discovery
 
-Discovery recursively recognizes `index.mjs` and `*.strategy.mjs`. The declared `name` is the stable strategy ID; directory names are organizational. Hidden directories, `node_modules`, and `artifacts` are ignored. Duplicate names are rejected.
-
-Importing a directly executable strategy for discovery does not intentionally run its demo.
+Discovery recursively recognizes `index.mjs` and `*.strategy.mjs`. The declared
+`name` is the stable strategy ID; directory names are organizational. Hidden
+directories, `node_modules`, and `artifacts` are ignored. Duplicate names are
+rejected.
 
 ## Ownership
 
-Keep fixtures, strategy-specific helpers, assertions, and product-specific behavior beside the strategy. Import shared helpers only when the behavior is genuinely reusable.
+Keep fixtures, strategy-specific helpers, assertions, and product-specific
+behavior beside the strategy. Import shared helpers only when the behavior is
+genuinely reusable.
