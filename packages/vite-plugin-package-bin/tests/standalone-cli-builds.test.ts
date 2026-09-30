@@ -25,7 +25,7 @@ test("creates one independent build per CLI entry", () => {
 
     const output = config.build?.rollupOptions?.output;
     assert.ok(output && !Array.isArray(output));
-    assert.equal(output.inlineDynamicImports, true);
+    assert.equal(output.codeSplitting, false);
     assert.equal(output.entryFileNames, `${name}.mjs`);
     assert.equal("chunkFileNames" in output, false);
   }

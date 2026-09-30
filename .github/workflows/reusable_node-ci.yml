@@ -11,6 +11,7 @@ on:
         options:
           - packages/demo-tools
           - packages/readme-screenshots
+          - packages/vite-plugin-package-bin
           - packages/vs-code-ext-tools
           - packages/web-components
           - packages/workspace-tools
@@ -31,10 +32,19 @@ on:
         required: false
         type: string
         default: "24"
+      prepared-artifact:
+        description: Same-run Linux workspace archive from the preparation job
+        required: false
+        type: string
+        default: ""
     secrets:
       package-token:
         description: Token used to install packages from GitHub Packages
         required: false
+
+permissions:
+  contents: read
+  packages: read
 
 jobs:
   check-node-project:
@@ -61,21 +71,26 @@ jobs:
       - uses: actions/setup-node@v7 # v7
         with:
           node-version: ${{ inputs.node-version }}
+          cache: ${{ inputs.prepared-artifact == '' && 'npm' || '' }}
           registry-url: https://npm.pkg.github.com
           scope: "@moyarich"
+      - name: Download prepared workspace
+        if: ${{ inputs.prepared-artifact != '' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.prepared-artifact }}
+          path: ${{ runner.temp }}/prepared-workspace
+      - name: Restore prepared workspace
+        if: ${{ inputs.prepared-artifact != '' }}
+        run: tar -xzf "$RUNNER_TEMP/prepared-workspace/prepared-workspace.tar.gz"
       - name: Install workspace dependencies
-        run: npm ci
+        if: ${{ inputs.prepared-artifact == '' }}
+        run: npm ci --prefer-offline --no-audit --no-fund
         env:
           NODE_AUTH_TOKEN: ${{ secrets.package-token || github.token }}
-      - name: Build
-        env:
-          WORKSPACE: ${{ inputs.package-directory }}
-        run: |
-          if [ "$WORKSPACE" = "." ]; then
-            npm run build --if-present
-          else
-            npm run build --workspace "$WORKSPACE" --if-present
-          fi
+      - name: Build all local packages
+        if: ${{ inputs.prepared-artifact == '' }}
+        run: npm run build --if-present
 
       - name: Test
         env:

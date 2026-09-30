@@ -22,12 +22,35 @@ import {
 type Registry = "github" | "npm";
 type RegistrySelection = Registry | "both";
 type PackageAccess = "public" | "restricted";
-interface RegistryConfig { url: string; host: string; token?: string; }
-interface PublishOptions { registry?: RegistrySelection; tag?: string; access?: PackageAccess; dryRun?: boolean; list?: boolean; json?: boolean; withDependencies?: boolean; verifyGitTag?: boolean; }
+interface RegistryConfig {
+  url: string;
+  host: string;
+  token?: string;
+}
+interface PublishOptions {
+  registry?: RegistrySelection;
+  tag?: string;
+  access?: PackageAccess;
+  dryRun?: boolean;
+  list?: boolean;
+  json?: boolean;
+  withDependencies?: boolean;
+  verifyGitTag?: boolean;
+}
 type PackageIdentity = Pick<WorkspacePackage, "directory" | "manifest">;
-interface PublishPlanItem { pkg: WorkspacePackage; registries: Partial<Record<Registry, "published" | "missing">>; }
-interface SerializablePublishPlanItem { pkg: PackageIdentity; registries: Record<string, string>; }
-interface PublishSettings { registry: RegistrySelection; tag: string; access: PackageAccess; }
+interface PublishPlanItem {
+  pkg: WorkspacePackage;
+  registries: Partial<Record<Registry, "published" | "missing">>;
+}
+interface SerializablePublishPlanItem {
+  pkg: PackageIdentity;
+  registries: Record<string, string>;
+}
+interface PublishSettings {
+  registry: RegistrySelection;
+  tag: string;
+  access: PackageAccess;
+}
 
 import {
   assertDependencies,
@@ -78,14 +101,17 @@ function registryConfig(registry: Registry): RegistryConfig {
       return {
         url: "https://npm.pkg.github.com",
         host: "npm.pkg.github.com",
-        token: process.env["_GITHUB_" + "TOKEN"] || process.env["NODE_AUTH_" + "TOKEN"],
+        token:
+          process.env["_GITHUB_" + "TOKEN"] ||
+          process.env["NODE_AUTH_" + "TOKEN"],
       };
 
     case "npm":
       return {
         url: "https://registry.npmjs.org",
         host: "registry.npmjs.org",
-        token: process.env["_NPM_" + "TOKEN"] || process.env["NODE_AUTH_" + "TOKEN"],
+        token:
+          process.env["_NPM_" + "TOKEN"] || process.env["NODE_AUTH_" + "TOKEN"],
       };
 
     default:
@@ -221,7 +247,10 @@ function selectPackageWithFzf(root: string): string | undefined {
  * @param {Registry} registry
  * @returns {"published" | "missing"}
  */
-export function packageRegistryState(pkg: WorkspacePackage, registry: Registry) {
+export function packageRegistryState(
+  pkg: WorkspacePackage,
+  registry: Registry,
+) {
   const config = registryConfig(registry);
 
   const args = [
@@ -249,7 +278,10 @@ export function packageRegistryState(pkg: WorkspacePackage, registry: Registry) 
 
     return "published";
   } catch (error) {
-    const commandError = error as Error & { stdout?: string | Buffer; stderr?: string | Buffer };
+    const commandError = error as Error & {
+      stdout?: string | Buffer;
+      stderr?: string | Buffer;
+    };
     const output = [
       commandError.stdout ?? "",
       commandError.stderr ?? "",
@@ -317,7 +349,10 @@ export function packageGitTagState(root: string, pkg: PackageIdentity) {
  *   registries: Record<string, "published" | "missing">
  * }>}
  */
-function publishPlan(packages: WorkspacePackage[], registry: RegistrySelection): PublishPlanItem[] {
+function publishPlan(
+  packages: WorkspacePackage[],
+  registry: RegistrySelection,
+): PublishPlanItem[] {
   return packages.map((pkg) => ({
     pkg,
 
@@ -348,7 +383,10 @@ function printPlan(plan: PublishPlanItem[]): void {
   }
 }
 
-export function serializePublishPlan(plan: SerializablePublishPlanItem[], { registry, tag, access }: PublishSettings) {
+export function serializePublishPlan(
+  plan: SerializablePublishPlanItem[],
+  { registry, tag, access }: PublishSettings,
+) {
   return {
     registry,
     tag,
@@ -370,7 +408,11 @@ export function serializePublishPlan(plan: SerializablePublishPlanItem[], { regi
  * @param {ReturnType<typeof packageInfo>} pkg
  * @returns {void}
  */
-function validate(root: string, pkg: WorkspacePackage, { quiet = false }: { quiet?: boolean } = {}): void {
+function validate(
+  root: string,
+  pkg: WorkspacePackage,
+  { quiet = false }: { quiet?: boolean } = {},
+): void {
   if (!quiet) {
     console.log(
       `\nValidating ${pkg.manifest.name}@${pkg.manifest.version} (${pkg.directory})`,
@@ -410,7 +452,14 @@ function validate(root: string, pkg: WorkspacePackage, { quiet = false }: { quie
  * @param {PackageAccess} access
  * @returns {void}
  */
-function publishOne(root: string, pkg: WorkspacePackage, registry: Registry, tag: string, access: PackageAccess, { quiet = false }: { quiet?: boolean } = {}): void {
+function publishOne(
+  root: string,
+  pkg: WorkspacePackage,
+  registry: Registry,
+  tag: string,
+  access: PackageAccess,
+  { quiet = false }: { quiet?: boolean } = {},
+): void {
   const config = registryConfig(registry);
 
   if (!config.token) {
@@ -511,8 +560,15 @@ export function publish({
   withDependencies = false,
   verifyGitTag = true,
 }: {
-  selector?: string; registry?: RegistrySelection; tag?: string; access?: PackageAccess;
-  dryRun?: boolean; list?: boolean; json?: boolean; withDependencies?: boolean; verifyGitTag?: boolean;
+  selector?: string;
+  registry?: RegistrySelection;
+  tag?: string;
+  access?: PackageAccess;
+  dryRun?: boolean;
+  list?: boolean;
+  json?: boolean;
+  withDependencies?: boolean;
+  verifyGitTag?: boolean;
 }) {
   if (!/^[A-Za-z][A-Za-z0-9._-]*$/.test(tag)) {
     throw new Error("Invalid npm distribution tag.");
@@ -782,7 +838,10 @@ export function packageFromTag(tagName: string) {
  * @param {PublishOptions} options
  * @returns {void}
  */
-export function publishWorkspacePackage(selector: string | undefined, options: PublishOptions) {
+export function publishWorkspacePackage(
+  selector: string | undefined,
+  options: PublishOptions,
+) {
   const root = repositoryRoot();
 
   const selectedPackage =

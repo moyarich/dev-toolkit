@@ -19,7 +19,6 @@ export interface WorkspacePackage {
   manifest: WorkspaceManifest & { name: string; version: string };
 }
 
-
 export function workspacePatterns(root: string): string[] {
   const manifest = JSON.parse(
     readFileSync(resolve(root, "package.json"), "utf8"),
@@ -54,7 +53,9 @@ export function workspacePackages(root: string): WorkspacePackage[] {
   return [...new Set(directories)]
     .map((directory) => {
       const file = resolve(root, directory, "package.json");
-      const manifest = JSON.parse(readFileSync(file, "utf8")) as WorkspaceManifest;
+      const manifest = JSON.parse(
+        readFileSync(file, "utf8"),
+      ) as WorkspaceManifest;
       return { directory, file, manifest };
     })
     .filter(
@@ -95,7 +96,10 @@ export function repositoryRoot(): string {
   }).trim();
 }
 
-export function workspaceDependencies(root: string, pkg: WorkspacePackage): WorkspacePackage[] {
+export function workspaceDependencies(
+  root: string,
+  pkg: WorkspacePackage,
+): WorkspacePackage[] {
   const byName = new Map(
     workspacePackages(root).map((item) => [item.manifest.name, item]),
   );
@@ -108,7 +112,10 @@ export function workspaceDependencies(root: string, pkg: WorkspacePackage): Work
     .filter((pkg): pkg is WorkspacePackage => pkg !== undefined);
 }
 
-export function workspacePublishOrder(root: string, pkg: WorkspacePackage): WorkspacePackage[] {
+export function workspacePublishOrder(
+  root: string,
+  pkg: WorkspacePackage,
+): WorkspacePackage[] {
   const order: WorkspacePackage[] = [];
   const visiting = new Set<string>();
   const visited = new Set<string>();

@@ -1,7 +1,8 @@
 import { beforeEach, expect, test, vi } from "vitest";
 
-const { build, glob, readFile, rm } = vi.hoisted(() => ({
+const { build, chmod, glob, readFile, rm } = vi.hoisted(() => ({
   build: vi.fn(),
+  chmod: vi.fn(),
   glob: vi.fn(),
   readFile: vi.fn(),
   rm: vi.fn(),
@@ -9,6 +10,7 @@ const { build, glob, readFile, rm } = vi.hoisted(() => ({
 
 vi.mock("node:fs/promises", async (importOriginal) => ({
   ...(await importOriginal<typeof import("node:fs/promises")>()),
+  chmod,
   glob,
   readFile,
   rm,
@@ -59,10 +61,13 @@ test("builds package bins using mocked filesystem and Vite modules", async () =>
       ? plugin.configResolved
       : plugin.configResolved?.handler;
   expect(configResolved).toBeTypeOf("function");
-  await configResolved?.call({} as never, {
-    root: "/repo",
-    logLevel: "silent",
-  } as ResolvedConfig);
+  await configResolved?.call(
+    {} as never,
+    {
+      root: "/repo",
+      logLevel: "silent",
+    } as ResolvedConfig,
+  );
 
   const buildStart =
     typeof plugin.buildStart === "function"
@@ -77,6 +82,7 @@ test("builds package bins using mocked filesystem and Vite modules", async () =>
     force: true,
   });
   expect(build).toHaveBeenCalledTimes(1);
+  expect(chmod).toHaveBeenCalledWith("/repo/bin/release.mjs", 0o755);
   expect(build).toHaveBeenCalledWith(
     expect.objectContaining({
       logLevel: "silent",

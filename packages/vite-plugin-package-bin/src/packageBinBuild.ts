@@ -1,4 +1,4 @@
-import { glob, readFile, rm } from "node:fs/promises";
+import { chmod, glob, readFile, rm } from "node:fs/promises";
 import { basename, extname, resolve } from "node:path";
 
 import type { InlineConfig, Plugin, ResolvedConfig } from "vite";
@@ -128,7 +128,7 @@ export function standaloneCliBuilds(
               return source.startsWith("#!") ? "" : "#!/usr/bin/env node";
             },
             entryFileNames: `${name}.mjs`,
-            inlineDynamicImports: true,
+            codeSplitting: false,
           },
         },
       },
@@ -213,12 +213,13 @@ export function packageBinBuild(options: PackageBinBuildOptions): Plugin {
         emptyOutDir: _emptyOutDir,
         ...buildOptions
       } = options;
-      for (const { config } of standaloneCliBuilds(
+      for (const { name, config } of standaloneCliBuilds(
         entries,
         buildOptions,
         root,
       )) {
         await build({ ...config, logLevel: resolvedConfig.logLevel });
+        await chmod(resolve(root, outDir, `${name}.mjs`), 0o755);
       }
     },
 

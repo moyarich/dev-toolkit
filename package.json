@@ -9,7 +9,7 @@
   ],
   "scripts": {
     "build": "npm run build --workspaces --if-present",
-    "test": "npm test --workspaces --if-present",
+    "test": "npm run test:workflows && npm test --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "demo": "demo",
@@ -17,7 +17,9 @@
     "test:playground": "node --test tests/playground/*.test.mjs",
     "package-lock:update": "npm install --package-lock-only --include=optional",
     "format:check": "prettier . --check",
-    "format": "prettier . --write"
+    "format": "prettier . --write",
+    "prebuild": "npm run build --workspace @moyarich/vite-plugin-package-bin && npm run build --workspace @moyarich/web-components",
+    "test:workflows": "node --test tests/workflows/*.test.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

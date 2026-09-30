@@ -12,7 +12,13 @@ import {
   workspacePublishOrder,
 } from "../src/workspace.ts";
 
-function fixture(workspaces: string[] | { packages: string[] } = ["packages/*", "apps/*", "tools/special"]) {
+function fixture(
+  workspaces: string[] | { packages: string[] } = [
+    "packages/*",
+    "apps/*",
+    "tools/special",
+  ],
+) {
   const root = mkdtempSync(join(tmpdir(), "workspace-tools-"));
   writeFileSync(
     join(root, "package.json"),
@@ -109,7 +115,9 @@ test("workspacePublishOrder puts dependencies before the selected package", () =
     const playground = packageInfo(root, "playground");
     const special = packageInfo(root, "special");
     playground.manifest.dependencies = { [library.manifest.name]: "^1.0.0" };
-    library.manifest.optionalDependencies = { [special.manifest.name]: "^1.0.0" };
+    library.manifest.optionalDependencies = {
+      [special.manifest.name]: "^1.0.0",
+    };
     writeFileSync(playground.file, JSON.stringify(playground.manifest));
     writeFileSync(library.file, JSON.stringify(library.manifest));
 

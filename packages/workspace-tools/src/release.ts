@@ -1,7 +1,11 @@
 #!/usr/bin/env node
 
 import { existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
-import { execFileSync, spawnSync, type ExecFileSyncOptions } from "node:child_process";
+import {
+  execFileSync,
+  spawnSync,
+  type ExecFileSyncOptions,
+} from "node:child_process";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
@@ -116,7 +120,10 @@ interface ReleaseOptions {
  * @returns {string}
  * Resolved next version.
  */
-export function resolveNextVersion(currentVersion: string, versionSpec: string): string {
+export function resolveNextVersion(
+  currentVersion: string,
+  versionSpec: string,
+): string {
   if (!SEMVER.test(currentVersion)) {
     throw new Error(`Invalid current SemVer: ${currentVersion}`);
   }
@@ -187,7 +194,10 @@ export function resolveNextVersion(currentVersion: string, versionSpec: string):
  * }}
  * Parsed release specification.
  */
-export function parseReleaseArgument(argument: string, options: ReleaseOptions = {}) {
+export function parseReleaseArgument(
+  argument: string,
+  options: ReleaseOptions = {},
+) {
   if (!argument) {
     throw new Error("A package selector is required.");
   }
@@ -310,7 +320,10 @@ export function releaseNotes(messages: string[]) {
  * @returns {string}
  * Markdown changelog section.
  */
-export function changelogSection(version: string, notes: Record<string, string[]>): string {
+export function changelogSection(
+  version: string,
+  notes: Record<string, string[]>,
+): string {
   const sections = Object.entries(notes)
     .filter(([, entries]) => entries.length)
     .map(
@@ -354,7 +367,11 @@ function registryFor(pkg: ReturnType<typeof packageInfo>): string {
  * }}
  * Registry state.
  */
-function registryVersion(root: string, pkg: ReturnType<typeof packageInfo>, version?: string) {
+function registryVersion(
+  root: string,
+  pkg: ReturnType<typeof packageInfo>,
+  version?: string,
+) {
   const registry = registryFor(pkg);
 
   const spec = version ? `${pkg.manifest.name}@${version}` : pkg.manifest.name;
@@ -375,7 +392,10 @@ function registryVersion(root: string, pkg: ReturnType<typeof packageInfo>, vers
       version: publishedVersion,
     };
   } catch (error) {
-    const commandError = error as Error & { stderr?: string | Buffer; stdout?: string | Buffer };
+    const commandError = error as Error & {
+      stderr?: string | Buffer;
+      stdout?: string | Buffer;
+    };
     const stderr = String(commandError.stderr || "");
 
     const stdout = String(commandError.stdout || "");
@@ -488,7 +508,11 @@ function previousReleaseRef(root: string, selector: string): string | null {
  * @returns {string[]}
  * Commit messages.
  */
-function packageChanges(root: string, pkg: ReturnType<typeof packageInfo>, previousRef: string | null): string[] {
+function packageChanges(
+  root: string,
+  pkg: ReturnType<typeof packageInfo>,
+  previousRef: string | null,
+): string[] {
   const range = previousRef ? `${previousRef}..HEAD` : "HEAD";
 
   const log = execFileSync(
@@ -527,7 +551,12 @@ function packageChanges(root: string, pkg: ReturnType<typeof packageInfo>, previ
  * @returns {string}
  * Changelog path.
  */
-function updateChangelog(root: string, pkg: ReturnType<typeof packageInfo>, version: string, selector: string): string {
+function updateChangelog(
+  root: string,
+  pkg: ReturnType<typeof packageInfo>,
+  version: string,
+  selector: string,
+): string {
   const changelog = resolve(root, pkg.directory, "CHANGELOG.md");
 
   const previous = previousReleaseRef(root, selector);
@@ -815,21 +844,23 @@ ${section}`);
   }
 
   execFileSync(
-      "npm",
-      [
-        "version",
-        versionSpec!,
-        "--workspace",
-        pkg.manifest.name,
-        "--git-tag-version=false",
-      ],
-      {
-        cwd: root,
-        ...operationRunOptions,
-      },
-    );
+    "npm",
+    [
+      "version",
+      versionSpec!,
+      "--workspace",
+      pkg.manifest.name,
+      "--git-tag-version=false",
+    ],
+    {
+      cwd: root,
+      ...operationRunOptions,
+    },
+  );
 
-  const version = (JSON.parse(readFileSync(pkg.file, "utf8")) as { version: string }).version;
+  const version = (
+    JSON.parse(readFileSync(pkg.file, "utf8")) as { version: string }
+  ).version;
 
   if (registryVersion(root, pkg, version).status === "published") {
     execFileSync("git", ["checkout", "--", pkg.file, "package-lock.json"], {
@@ -1072,7 +1103,10 @@ function selectVersionBumpWithFzf(): string | undefined {
  * @returns {string | undefined}
  * Normalized `<package>=<version>` release specification.
  */
-function resolveCliReleaseArgument(argument: string | undefined, options: ReleaseOptions): string | undefined {
+function resolveCliReleaseArgument(
+  argument: string | undefined,
+  options: ReleaseOptions,
+): string | undefined {
   if (argument?.includes("=")) {
     return argument;
   }
@@ -1122,7 +1156,10 @@ function resolveCliReleaseArgument(argument: string | undefined, options: Releas
  *
  * @returns {void}
  */
-export function releaseWorkspacePackage(argument: string | undefined, options: ReleaseOptions): void {
+export function releaseWorkspacePackage(
+  argument: string | undefined,
+  options: ReleaseOptions,
+): void {
   const releaseArgument = resolveCliReleaseArgument(argument, options);
 
   if (!releaseArgument) {

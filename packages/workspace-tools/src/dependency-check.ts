@@ -5,16 +5,43 @@ import { existsSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
-import { packageInfo, repositoryRoot, workspacePackages, type WorkspacePackage } from "./workspace.ts";
+import {
+  packageInfo,
+  repositoryRoot,
+  workspacePackages,
+  type WorkspacePackage,
+} from "./workspace.ts";
 
 type DependencyCheckLevel = "fail" | "warn";
 type DependencyCheckStatus = "ok" | "warn" | "fail";
 type OutputFormat = "text" | "json";
-interface OutdatedDependency { current?: string | null; wanted?: string | null; latest?: string | null; }
-interface DependencyCheckResult { name: string; current?: string | null; wanted?: string | null; latest?: string | null; declared?: string; workspace?: string; level: DependencyCheckLevel; reason: string; }
-interface PackageDependencyReport { package: string; version: string; status: DependencyCheckStatus; results: DependencyCheckResult[]; }
-interface DependencyCheckCliOptions { all?: boolean; json?: boolean; assert?: boolean; fzf?: boolean; }
-
+interface OutdatedDependency {
+  current?: string | null;
+  wanted?: string | null;
+  latest?: string | null;
+}
+interface DependencyCheckResult {
+  name: string;
+  current?: string | null;
+  wanted?: string | null;
+  latest?: string | null;
+  declared?: string;
+  workspace?: string;
+  level: DependencyCheckLevel;
+  reason: string;
+}
+interface PackageDependencyReport {
+  package: string;
+  version: string;
+  status: DependencyCheckStatus;
+  results: DependencyCheckResult[];
+}
+interface DependencyCheckCliOptions {
+  all?: boolean;
+  json?: boolean;
+  assert?: boolean;
+  fzf?: boolean;
+}
 
 /**
  * @typedef {"fail" | "warn"} DependencyCheckLevel
@@ -112,7 +139,9 @@ export function parseOutdated(raw: string): Record<string, OutdatedDependency> {
  * @returns {DependencyCheckResult[]}
  * Classified dependency results.
  */
-export function classifyOutdated(outdated: Record<string, OutdatedDependency>): DependencyCheckResult[] {
+export function classifyOutdated(
+  outdated: Record<string, OutdatedDependency>,
+): DependencyCheckResult[] {
   return Object.entries(outdated).map(([name, info]) => {
     const current = info.current ?? null;
 
@@ -147,7 +176,10 @@ export function classifyOutdated(outdated: Record<string, OutdatedDependency>): 
  * @returns {DependencyCheckResult[]}
  * Dependency issues.
  */
-export function dependencyCheck(root: string, pkg: WorkspacePackage): DependencyCheckResult[] {
+export function dependencyCheck(
+  root: string,
+  pkg: WorkspacePackage,
+): DependencyCheckResult[] {
   let outdated: Record<string, OutdatedDependency> = {};
 
   const outdatedResult = spawnSync(
@@ -272,7 +304,9 @@ export function assertDependencies(results: DependencyCheckResult[]): void {
  * @returns {DependencyCheckStatus}
  * Overall status.
  */
-function dependencyStatus(results: DependencyCheckResult[]): DependencyCheckStatus {
+function dependencyStatus(
+  results: DependencyCheckResult[],
+): DependencyCheckStatus {
   if (results.some((item) => item.level === "fail")) {
     return "fail";
   }
@@ -296,7 +330,10 @@ function dependencyStatus(results: DependencyCheckResult[]): DependencyCheckStat
  * @returns {PackageDependencyReport}
  * Package report.
  */
-function packageReport(pkg: WorkspacePackage, results: DependencyCheckResult[]): PackageDependencyReport {
+function packageReport(
+  pkg: WorkspacePackage,
+  results: DependencyCheckResult[],
+): PackageDependencyReport {
   return {
     package: pkg.manifest.name,
     version: pkg.manifest.version,
@@ -361,7 +398,10 @@ function canUseFzf(options: DependencyCheckCliOptions = {}): boolean {
  * @returns {string | undefined}
  * Selected value.
  */
-function selectWithFzf<T extends string>(choices: T[], prompt: string): T | undefined {
+function selectWithFzf<T extends string>(
+  choices: T[],
+  prompt: string,
+): T | undefined {
   if (!choices.length) {
     return undefined;
   }
@@ -489,7 +529,10 @@ function selectOutputFormatWithFzf(): OutputFormat | undefined {
  * }}
  * Package and dependency results.
  */
-function inspectPackage(root: string, selector: string): { pkg: WorkspacePackage; results: DependencyCheckResult[] } {
+function inspectPackage(
+  root: string,
+  selector: string,
+): { pkg: WorkspacePackage; results: DependencyCheckResult[] } {
   const pkg = packageInfo(root, selector);
 
   return {
@@ -509,7 +552,10 @@ function inspectPackage(root: string, selector: string): { pkg: WorkspacePackage
  *
  * @returns {void}
  */
-function printPackageReport(report: PackageDependencyReport, format: OutputFormat): void {
+function printPackageReport(
+  report: PackageDependencyReport,
+  format: OutputFormat,
+): void {
   if (format === "json") {
     console.log(JSON.stringify(report, null, 2));
 
@@ -547,7 +593,12 @@ function printPackageReport(report: PackageDependencyReport, format: OutputForma
  * @returns {PackageDependencyReport}
  * Package report.
  */
-function checkPackage(root: string, selector: string, format: OutputFormat, options: DependencyCheckCliOptions): PackageDependencyReport {
+function checkPackage(
+  root: string,
+  selector: string,
+  format: OutputFormat,
+  options: DependencyCheckCliOptions,
+): PackageDependencyReport {
   const { pkg, results } = inspectPackage(root, selector);
 
   const report = packageReport(pkg, results);
@@ -576,7 +627,11 @@ function checkPackage(root: string, selector: string, format: OutputFormat, opti
  * @returns {PackageDependencyReport[]}
  * Package reports.
  */
-function checkAllPackages(root: string, format: OutputFormat, options: DependencyCheckCliOptions): PackageDependencyReport[] {
+function checkAllPackages(
+  root: string,
+  format: OutputFormat,
+  options: DependencyCheckCliOptions,
+): PackageDependencyReport[] {
   const packages = dependencyCheckPackages(root);
 
   if (!packages.length) {
@@ -642,7 +697,11 @@ function checkAllPackages(root: string, format: OutputFormat, options: Dependenc
  * @returns {string | undefined}
  * Resolved selector.
  */
-function resolvePackageSelector(root: string, selector: string | undefined, options: DependencyCheckCliOptions): string | undefined {
+function resolvePackageSelector(
+  root: string,
+  selector: string | undefined,
+  options: DependencyCheckCliOptions,
+): string | undefined {
   if (selector) {
     return selector;
   }
@@ -668,7 +727,9 @@ function resolvePackageSelector(root: string, selector: string | undefined, opti
  * @returns {OutputFormat | undefined}
  * Output format.
  */
-function resolveOutputFormat(options: DependencyCheckCliOptions): OutputFormat | undefined {
+function resolveOutputFormat(
+  options: DependencyCheckCliOptions,
+): OutputFormat | undefined {
   if (options.json) {
     return "json";
   }
@@ -698,7 +759,10 @@ function resolveOutputFormat(options: DependencyCheckCliOptions): OutputFormat |
  *
  * @returns {void}
  */
-export function runDependencyCheck(selector: string | undefined, options: DependencyCheckCliOptions): void {
+export function runDependencyCheck(
+  selector: string | undefined,
+  options: DependencyCheckCliOptions,
+): void {
   const root = repositoryRoot();
 
   /*

@@ -30,7 +30,7 @@ on:
       playwright-version:
         description: Playwright version
         required: true
-        default: "1.55.0"
+        default: "latest"
         type: string
       commit-message:
         description: Commit message for changed screenshots
@@ -64,7 +64,7 @@ on:
         type: string
       playwright-version:
         required: false
-        default: "1.55.0"
+        default: "latest"
         type: string
       commit-message:
         required: false
@@ -73,6 +73,7 @@ on:
 
 permissions:
   contents: write
+  packages: read
 
 jobs:
   update-readme-screenshots:
@@ -101,12 +102,30 @@ jobs:
       - uses: actions/setup-node@v7 # v7
         with:
           node-version: ${{ inputs.node-version }}
+          registry-url: https://npm.pkg.github.com
+          scope: "@moyarich"
           cache: npm
       - run: npm ci --include=optional
-      - name: Install screenshot tooling
+        env:
+          NODE_AUTH_TOKEN: ${{ github.token }}
+      - name: Resolve screenshot tooling
+        env:
+          NODE_AUTH_TOKEN: ${{ github.token }}
+          PLAYWRIGHT_VERSION: ${{ inputs.playwright-version }}
         run: |
-          npm install --no-save --package-lock=false playwright@${{ inputs.playwright-version }} @moyarich/readme-screenshots
-          npx playwright install --with-deps chromium
+          set -euo pipefail
+          if [ -f packages/readme-screenshots/package.json ]; then
+            npm run build
+            TOOL_PACKAGE_ROOT="$(cd packages/readme-screenshots && pwd -P)"
+            npx playwright install --with-deps chromium
+          else
+            TOOL_ROOT="$(mktemp -d "$RUNNER_TEMP/screenshot-tools.XXXXXX")"
+            npm install --prefix "$TOOL_ROOT" --no-save --package-lock=false "playwright@$PLAYWRIGHT_VERSION" @moyarich/readme-screenshots@latest
+            TOOL_PACKAGE_ROOT="$TOOL_ROOT/node_modules/@moyarich/readme-screenshots"
+            "$TOOL_ROOT/node_modules/.bin/playwright" install --with-deps chromium
+          fi
+          test -f "$TOOL_PACKAGE_ROOT/bin/readme-screenshots.mjs"
+          echo "SCREENSHOT_TOOLS_ROOT=$TOOL_PACKAGE_ROOT" >> "$GITHUB_ENV"
       - name: Start site
         env:
           START_COMMAND: ${{ inputs.start-command }}
@@ -125,8 +144,8 @@ jobs:
           DEMO_OUTPUT_DIR: ${{ inputs.output-directory }}
         run: |
           case "${{ inputs.config }}" in
-            "") npx readme-screenshots ;;
-            *) npx readme-screenshots "${{ inputs.config }}" ;;
+            "") node "$SCREENSHOT_TOOLS_ROOT/bin/readme-screenshots.mjs" ;;
+            *) node "$SCREENSHOT_TOOLS_ROOT/bin/readme-screenshots.mjs" "${{ inputs.config }}" ;;
           esac
       - name: Commit screenshots when changed
         env:

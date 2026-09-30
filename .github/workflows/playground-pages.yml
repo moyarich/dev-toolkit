@@ -23,7 +23,7 @@ jobs:
   pages:
     uses: ./.github/workflows/reusable_github-pages.yml
     with:
-      build-command: npm run build --workspace @moyarich/demo-tools-playground
+      build-command: npm run build
       output-directory: apps/playground/dist
       install-command: npm ci --include=optional
       working-directory: "."

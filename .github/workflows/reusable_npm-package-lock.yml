@@ -60,8 +60,22 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.package-token || github.token }}
         run: npm ci --ignore-scripts
 
-      - name: Build workspace tools
-        run: npm run build --workspace @moyarich/workspace-tools
+      - name: Resolve workspace tools CLI
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.package-token || github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -f packages/workspace-tools/package.json ]; then
+            npm run build
+            TOOL_PACKAGE_ROOT="$(cd packages/workspace-tools && pwd -P)"
+          else
+            TOOL_ROOT="$(mktemp -d "$RUNNER_TEMP/workspace-tools.XXXXXX")"
+            npm install --prefix "$TOOL_ROOT" --package-lock=false --ignore-scripts @moyarich/workspace-tools@latest
+            TOOL_PACKAGE_ROOT="$TOOL_ROOT/node_modules/@moyarich/workspace-tools"
+          fi
+          test -f "$TOOL_PACKAGE_ROOT/bin/workspace-package-lock.mjs"
+          echo "WORKSPACE_TOOLS_ROOT=$TOOL_PACKAGE_ROOT" >> "$GITHUB_ENV"
 
       - name: Recreate package-lock.json
         id: lockfile
@@ -79,7 +93,7 @@ jobs:
             args+=(--dry-run)
           fi
 
-          workspace-package-lock "${args[@]}" | tee /tmp/package-lock-result.json
+          node "$WORKSPACE_TOOLS_ROOT/bin/workspace-package-lock.mjs" "${args[@]}" | tee /tmp/package-lock-result.json
 
       - name: Package-lock summary
         if: ${{ always() }}

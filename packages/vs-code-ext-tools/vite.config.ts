@@ -8,7 +8,6 @@ export default defineConfig({
         pattern: "src/cli/**/*.ts",
       },
       emptyOutDir: true,
-      sourcemap: true,
       external: [/^@inquirer\//, "chalk", "commander"],
     }),
   ],

@@ -4,9 +4,13 @@
   "description": "Vite plugin for building package.json bin entries as standalone Node.js executables.",
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./dist/index.mjs"
+    }
   },
   "files": [
+    "dist",
     "src",
     "docs",
     "README.md"
@@ -15,6 +19,7 @@
     "node": ">=24"
   },
   "scripts": {
+    "build": "vite build --config vite.config.ts",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json"
   },

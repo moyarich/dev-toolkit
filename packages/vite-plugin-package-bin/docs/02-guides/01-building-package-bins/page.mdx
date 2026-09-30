@@ -40,7 +40,7 @@ src/publish/publish.ts
 
 while leaving `doctor.sh` untouched.
 
-The plugin validates that each managed Node.js bin has exactly one matching source, externalizes Node built-ins, and uses `inlineDynamicImports` so commands do not share runtime chunks.
+The plugin validates that each managed Node.js bin has exactly one matching source, externalizes Node built-ins, and uses `codeSplitting: false` so commands do not share runtime chunks.
 
 ## Shebangs
 

@@ -71,7 +71,10 @@ function validateMarketplaceEnvironment(marketplace: Marketplace): boolean {
   return false;
 }
 
-export async function publishExtension(marketplaceId: MarketplaceId, publishArgs: string[] = []): Promise<void> {
+export async function publishExtension(
+  marketplaceId: MarketplaceId,
+  publishArgs: string[] = [],
+): Promise<void> {
   const marketplace = marketplaces[marketplaceId];
 
   console.log("Recording demos and generating current README GIFs...");
