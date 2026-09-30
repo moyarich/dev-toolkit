@@ -1,6 +1,6 @@
 {
   "name": "@moyarich/web-components",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Reusable web components for demos and developer tooling.",
   "type": "module",
   "exports": {
