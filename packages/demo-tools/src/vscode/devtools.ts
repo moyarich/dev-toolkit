@@ -8,7 +8,7 @@ export async function waitForVSCodeDevTools({ remoteDebuggingPort, timeout = 30_
   const endpoint = `http://127.0.0.1:${remoteDebuggingPort}`;
   const deadline = Date.now() + timeout;
   while (Date.now() < deadline) {
-    try { const response = await fetch(`${endpoint}/json/version`); if (response.ok) return endpoint; } catch {}
+    try { const response = await fetch(`${endpoint}/json/version`); if (response.ok) return endpoint; } catch { /* VS Code may not be listening yet. */ }
     await new Promise<void>((resolve) => setTimeout(resolve, 250));
   }
   throw new Error("Timed out waiting for the VS Code demo window.");
@@ -17,7 +17,7 @@ export async function findVSCodeWorkbenchPage(browser: CDPBrowser, { timeout = 3
   const deadline = Date.now() + timeout;
   while (Date.now() < deadline) {
     const pages = browser.contexts().flatMap((context) => context.pages());
-    const page = pages.find((candidate) => (candidate as BrowserPage & { url?: () => string }).url?.().includes("workbench"));
+    const page = pages.find((candidate) => candidate.url().includes("workbench"));
     if (page) { await page.locator(".monaco-workbench").waitFor({ timeout }); return page; }
     await new Promise<void>((resolve) => setTimeout(resolve, 250));
   }
