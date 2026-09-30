@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { execFileSync } from "node:child_process";
+import { spawnSync } from "node:child_process";
 import { existsSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 
@@ -144,27 +144,27 @@ export function classifyOutdated(outdated) {
 export function dependencyCheck(root, pkg) {
   let outdated = {};
 
-  try {
-    outdated = parseOutdated(
-      execFileSync(
-        "npm",
-        ["outdated", "--workspace", pkg.manifest.name, "--json"],
-        {
-          cwd: root,
-          encoding: "utf8",
-          stdio: ["ignore", "pipe", "pipe"],
-        },
-      ).trim(),
-    );
-  } catch (error) {
-    const raw = String(error?.stdout ?? "").trim();
+  const outdatedResult = spawnSync(
+    "npm",
+    ["outdated", "--workspace", pkg.manifest.name, "--json"],
+    {
+      cwd: root,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "pipe"],
+    },
+  );
 
-    if (raw) {
-      outdated = parseOutdated(raw);
-    } else {
-      throw error;
-    }
+  const outdatedOutput = outdatedResult.stdout.trim();
+
+  if (outdatedResult.error) {
+    throw outdatedResult.error;
   }
+
+  if (outdatedResult.status !== 0 && outdatedResult.status !== 1 && !outdatedOutput) {
+    throw new Error(outdatedResult.stderr.trim() || "npm outdated failed.");
+  }
+
+  outdated = parseOutdated(outdatedOutput);
 
   const internal = new Map(
     workspacePackages(root).map((item) => [item.manifest.name, item]),
@@ -307,15 +307,11 @@ function packageReport(pkg, results) {
 function commandExists(command) {
   const lookupCommand = process.platform === "win32" ? "where" : "which";
 
-  try {
-    execFileSync(lookupCommand, [command], {
-      stdio: "ignore",
-    });
+  const result = spawnSync(lookupCommand, [command], {
+    stdio: "ignore",
+  });
 
-    return true;
-  } catch {
-    return false;
-  }
+  return result.status === 0;
 }
 
 /**
@@ -368,8 +364,8 @@ function selectWithFzf(choices, prompt) {
     throw new Error("fzf is not available on PATH.");
   }
 
-  try {
-    const selected = execFileSync(
+  const result = spawnSync(
+
       "fzf",
       [
         "--prompt",
@@ -389,14 +385,21 @@ function selectWithFzf(choices, prompt) {
       },
     ).trim();
 
-    return selected || undefined;
-  } catch (error) {
-    if (error?.status === 1 || error?.status === 130) {
-      return undefined;
-    }
-
-    throw error;
+  if (result.error) {
+    throw result.error;
   }
+
+  if (result.status === 1 || result.status === 130) {
+    return undefined;
+  }
+
+  if (result.status !== 0) {
+    throw new Error(`fzf exited with status ${result.status}.`);
+  }
+
+  const selected = result.stdout.trim();
+
+  return selected || undefined;
 }
 
 /**
