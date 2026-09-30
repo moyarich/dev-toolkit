@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
-import { packageInfo, workspacePackages, workspacePatterns } from "../src/workspace.mts";
+import { packageInfo, workspacePackages, workspacePatterns } from "../src/workspace.ts";
 
 function fixture(workspaces = ["packages/*", "apps/*", "tools/special"]) {
   const root = mkdtempSync(join(tmpdir(), "workspace-tools-"));
