@@ -2,7 +2,24 @@ import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 
-export function workspacePatterns(root) {
+export interface WorkspaceManifest {
+  name?: string;
+  version?: string;
+  private?: boolean;
+  workspaces?: string[] | { packages?: string[] };
+  dependencies?: Record<string, string>;
+  optionalDependencies?: Record<string, string>;
+  publishConfig?: { registry?: string };
+}
+
+export interface WorkspacePackage {
+  directory: string;
+  file: string;
+  manifest: WorkspaceManifest & { name: string };
+}
+
+
+export function workspacePatterns(root: string): string[] {
   const manifest = JSON.parse(
     readFileSync(resolve(root, "package.json"), "utf8"),
   );
@@ -13,7 +30,7 @@ export function workspacePatterns(root) {
   return workspaces;
 }
 
-export function workspacePackages(root) {
+export function workspacePackages(root: string): WorkspacePackage[] {
   const directories = workspacePatterns(root).flatMap((pattern) => {
     const normalized = pattern.replace(/^\.\//, "").replace(/\/$/, "");
     if (!normalized.endsWith("/*")) {
@@ -36,13 +53,13 @@ export function workspacePackages(root) {
   return [...new Set(directories)]
     .map((directory) => {
       const file = resolve(root, directory, "package.json");
-      const manifest = JSON.parse(readFileSync(file, "utf8"));
+      const manifest = JSON.parse(readFileSync(file, "utf8")) as WorkspaceManifest;
       return { directory, file, manifest };
     })
     .filter((pkg) => pkg.manifest.name);
 }
 
-export function packageInfo(root, selector) {
+export function packageInfo(root: string, selector: string): WorkspacePackage {
   const packages = workspacePackages(root);
   const normalized = selector?.replace(/^\.\//, "");
   if (
@@ -66,14 +83,14 @@ export function packageInfo(root, selector) {
   return pkg;
 }
 
-export function repositoryRoot() {
+export function repositoryRoot(): string {
   return execFileSync("git", ["rev-parse", "--show-toplevel"], {
     encoding: "utf8",
     stdio: ["ignore", "pipe", "pipe"],
   }).trim();
 }
 
-export function workspaceDependencies(root, pkg) {
+export function workspaceDependencies(root: string, pkg: WorkspacePackage): WorkspacePackage[] {
   const byName = new Map(
     workspacePackages(root).map((item) => [item.manifest.name, item]),
   );
@@ -84,12 +101,12 @@ export function workspaceDependencies(root, pkg) {
   return [...dependencyNames].map((name) => byName.get(name)).filter(Boolean);
 }
 
-export function workspacePublishOrder(root, pkg) {
-  const order = [];
-  const visiting = new Set();
-  const visited = new Set();
+export function workspacePublishOrder(root: string, pkg: WorkspacePackage): WorkspacePackage[] {
+  const order: WorkspacePackage[] = [];
+  const visiting = new Set<string>();
+  const visited = new Set<string>();
 
-  function visit(current) {
+  function visit(current: WorkspacePackage): void {
     if (visited.has(current.manifest.name)) return;
     if (visiting.has(current.manifest.name)) {
       throw new Error(
