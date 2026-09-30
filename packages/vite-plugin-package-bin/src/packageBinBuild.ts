@@ -43,7 +43,7 @@ async function readManagedPackageBins(root: string): Promise<PackageBins> {
 }
 
 export async function discoverCliEntries(
-  include: PackageBinBuildOptions["include"],
+  entryOptions: PackageBinBuildOptions["entries"],
   root = process.cwd(),
   bins?: PackageBins,
 ): Promise<Record<string, string>> {
@@ -56,7 +56,7 @@ export async function discoverCliEntries(
   for (const includeRule of includes) {
     for await (const entry of glob(includeRule.glob, { cwd: root })) {
       const name = basename(entry).replace(/\.[^.]+$/, "");
-      const expectedBin = includeRule.bin.replaceAll("{name}", name);
+      const expectedBin = entryRule.bin.replaceAll("{name}", name);
       if (managedBins[name] !== expectedBin) continue;
 
       const matches = candidates.get(name) ?? [];
@@ -84,7 +84,7 @@ export async function discoverCliEntries(
 
 export function standaloneCliBuilds(
   entries: Record<string, string>,
-  options: Omit<PackageBinBuildOptions, "include" | "emptyOutDir"> = {},
+  options: Omit<PackageBinBuildOptions, "entries" | "emptyOutDir"> = {},
   root = process.cwd(),
 ): StandaloneCliBuild[] {
   const {
@@ -185,7 +185,7 @@ export function packageBinBuild(options: PackageBinBuildOptions): Plugin {
     async buildStart() {
       const root = resolvedConfig.root;
       const bins = await readManagedPackageBins(root);
-      const entries = await discoverCliEntries(options.include, root, bins);
+      const entries = await discoverCliEntries(options.entries, root, bins);
 
       if (Object.keys(entries).length === 0) {
         throw new Error("No managed Node.js package bins were found");
@@ -196,7 +196,7 @@ export function packageBinBuild(options: PackageBinBuildOptions): Plugin {
         await rm(resolve(root, outDir), { recursive: true, force: true });
       }
 
-      const { include: _include, emptyOutDir: _emptyOutDir, ...buildOptions } = options;
+      const { entries: _entries, emptyOutDir: _emptyOutDir, ...buildOptions } = options;
       for (const { config } of standaloneCliBuilds(entries, buildOptions, root)) {
         await build({ ...config, logLevel: resolvedConfig.logLevel });
       }
