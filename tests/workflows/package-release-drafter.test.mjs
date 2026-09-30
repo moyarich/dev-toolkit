@@ -39,10 +39,13 @@ test("release drafter workflow uses package matrix configs", () => {
     assert.match(workflow, new RegExp(escapeRegex(name)));
   }
 
-  assert.match(workflow, /disable-autolabeler: true/);
   assert.match(workflow, /commitish: main/);
   assert.match(workflow, /version:\s+\$\{\{ github\.event_name == 'workflow_dispatch' && inputs\.version \|\| '' \}\}/);
+  assert.match(workflow, /from:\s+\$\{\{ github\.event_name == 'workflow_dispatch' && steps\.baseline\.outputs\.from \|\| '' \}\}/);
+  assert.match(workflow, /git rev-list --max-parents=0 HEAD \| tail -n 1/);
   assert.match(workflow, /description: Optional explicit release version \(for first release, use 0\.1\.0\)/);
+  assert.match(workflow, /description: Optional comparison baseline ref; empty \+ explicit version uses the first commit on main/);
+  assert.doesNotMatch(workflow, /disable-autolabeler:/);
 });
 
 test("each package release config filters by package path and tag namespace", () => {
