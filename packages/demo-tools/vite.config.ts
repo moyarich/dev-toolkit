@@ -1,9 +1,9 @@
 import { defineConfig } from "vite";
-import { cliBuild } from "../workspace-tools/vite/cliBuild.ts";
+import { packageBinBuild } from "../workspace-tools/vite/packageBinBuild.ts";
 
 export default defineConfig({
   plugins: [
-    cliBuild({
+    packageBinBuild({
       include: "src/cli/*.ts",
       sourcemap: true,
       external: ["@vscode/test-electron", "playwright-core"],
