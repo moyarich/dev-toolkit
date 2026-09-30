@@ -1,2 +1,4 @@
 #!/usr/bin/env node
-import "../publish_ext.ts";
+import { publishProgram } from "../publish_ext.ts";
+
+await publishProgram.parseAsync();
