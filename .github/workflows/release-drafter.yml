@@ -26,6 +26,12 @@ on:
         default: ""
         type: string
 
+      from:
+        description: Optional comparison baseline ref; empty + explicit version uses the first commit on main
+        required: false
+        default: ""
+        type: string
+
   push:
     branches:
       - main
@@ -62,6 +68,44 @@ jobs:
             config: release-drafter-workspace-tools.yml
 
     steps:
+      - name: Checkout main history
+        if: >-
+          ${{ github.event_name == 'workflow_dispatch' &&
+              (inputs.package == 'all' || inputs.package == matrix.directory) }}
+        uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Resolve comparison baseline
+        id: baseline
+        if: >-
+          ${{ github.event_name == 'workflow_dispatch' &&
+              (inputs.package == 'all' || inputs.package == matrix.directory) }}
+        env:
+          INPUT_FROM: ${{ inputs.from }}
+          INPUT_VERSION: ${{ inputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ -n "$INPUT_FROM" ]; then
+            BASELINE="$INPUT_FROM"
+            SOURCE="input"
+          elif [ -n "$INPUT_VERSION" ]; then
+            BASELINE="$(git rev-list --max-parents=0 HEAD | tail -n 1)"
+            SOURCE="first commit on main"
+          else
+            BASELINE=""
+            SOURCE="previous published package release"
+          fi
+
+          {
+            echo "from=$BASELINE"
+            echo "source=$SOURCE"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Initialize workflow summary
         if: >-
           ${{ github.event_name != 'workflow_dispatch' ||
@@ -78,6 +122,8 @@ jobs:
             echo "| Directory | \`packages/${{ matrix.directory }}\` |"
             echo "| Config | \`${{ matrix.config }}\` |"
             echo "| Requested version | \`${{ inputs.version || 'auto' }}\` |"
+            echo "| Comparison baseline | \`${{ steps.baseline.outputs.from || 'previous published package release' }}\` |"
+            echo "| Baseline source | \`${{ steps.baseline.outputs.source || 'automatic' }}\` |"
             echo "| Repository | \`${{ github.repository }}\` |"
             echo "| Ref | \`${{ github.ref_name }}\` |"
             echo "| Trigger | \`${{ github.event_name }}\` |"
@@ -94,9 +140,9 @@ jobs:
         uses: release-drafter/release-drafter@v7.7.0
         with:
           config-name: ${{ matrix.config }}
-          disable-autolabeler: true
           commitish: main
           version: ${{ github.event_name == 'workflow_dispatch' && inputs.version || '' }}
+          from: ${{ github.event_name == 'workflow_dispatch' && steps.baseline.outputs.from || '' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
