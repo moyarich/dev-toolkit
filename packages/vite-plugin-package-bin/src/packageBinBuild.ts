@@ -4,13 +4,13 @@ import { basename, extname, resolve } from "node:path";
 import type { InlineConfig, Plugin, ResolvedConfig } from "vite";
 import { build } from "vite";
 
-export interface PackageBinInclude {
-  glob: string;
+export interface PackageBinEntry {
+  pattern: string;
   bin?: string;
 }
 
 export interface PackageBinBuildOptions {
-  include: string | PackageBinInclude | Array<string | PackageBinInclude>;
+  entries?: PackageBinEntry | PackageBinEntry[];
   emptyOutDir: boolean;
   outDir?: string;
   target?: string;
