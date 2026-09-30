@@ -132,3 +132,30 @@ test("standaloneCliBuilds adds a Node shebang only when the source is missing on
     await rm(root, { recursive: true, force: true });
   }
 });
+
+
+test("discoverCliEntries reports source collisions with troubleshooting guidance", async () => {
+  const root = await mkdtemp(join(tmpdir(), "package-bin-build-"));
+
+  try {
+    await mkdir(join(root, "src/cli"), { recursive: true });
+    await writeFile(join(root, "src/release.ts"), "export {};");
+    await writeFile(join(root, "src/cli/release.ts"), "export {};");
+
+    await assert.rejects(
+      () =>
+        discoverCliEntries({ pattern: "src/**/*.ts" }, root, {
+          release: "./bin/release.mjs",
+        }),
+      (error: Error) => {
+        assert.match(error.message, /Package bin source collision for "release"/);
+        assert.match(error.message, /src\/release\.ts/);
+        assert.match(error.message, /src\/cli\/release\.ts/);
+        assert.match(error.message, /src\/cli\/\*\*\/\*\.ts/);
+        return true;
+      },
+    );
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
