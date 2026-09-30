@@ -24,13 +24,10 @@ export interface DemoStrategyEntry<T = unknown> {
   strategy: DemoStrategy<T>;
 }
 
-export type {
-  Browser,
-  BrowserContext,
-  BrowserType as Chromium,
-  CDPSession,
-  Frame as BrowserFrame,
-  Locator as BrowserLocator,
-  Page as BrowserPage,
-} from "playwright";
-
+export type Browser = import("playwright").Browser;
+export type BrowserContext = import("playwright").BrowserContext;
+export type Chromium = import("playwright").BrowserType;
+export type CDPSession = import("playwright").CDPSession;
+export type BrowserFrame = import("playwright").Frame;
+export type BrowserLocator = import("playwright").Locator;
+export type BrowserPage = import("playwright").Page;
