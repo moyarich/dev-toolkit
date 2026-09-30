@@ -7,7 +7,9 @@ interface RecorderContext {
   _enableRecorder?(options: { language: string; mode: string; testIdAttributeName: string; outputFile: string; handleSIGINT: boolean }): Promise<void>;
   _disableRecorder?(): Promise<void>;
 }
-type RecorderPage = BrowserPage & { context(): RecorderContext; once(event: "close", listener: () => void): unknown };
+type RecorderPage = Omit<BrowserPage, "context"> & {
+  context(): RecorderContext;
+};
 export interface CaptureDemoStrategyOptions {
   page: RecorderPage;
   name: string;
