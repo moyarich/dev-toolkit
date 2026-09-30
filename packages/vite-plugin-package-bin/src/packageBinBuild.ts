@@ -4,19 +4,6 @@ import { basename, extname, resolve } from "node:path";
 import type { InlineConfig, Plugin, ResolvedConfig } from "vite";
 import { build } from "vite";
 
-type Glob = typeof glob;
-type ReadFile = typeof readFile;
-type Remove = typeof rm;
-type Build = typeof build;
-
-export interface PackageBinBuildDependencies {
-  glob?: Glob;
-  readFile?: ReadFile;
-  rm?: Remove;
-  build?: Build;
-}
-
-const defaultDependencies = { glob, readFile, rm, build };
 
 export interface PackageBinEntry {
   pattern: string;
@@ -42,11 +29,8 @@ type PackageBins = Record<string, string>;
 
 const managedBinExtensions = new Set([".js", ".mjs", ".cjs"]);
 
-async function readManagedPackageBins(
-  root: string,
-  readFileDependency: ReadFile = readFile,
-): Promise<PackageBins> {
-  const pkg = JSON.parse(await readFileDependency(resolve(root, "package.json"), "utf8")) as {
+async function readManagedPackageBins(root: string): Promise<PackageBins> {
+  const pkg = JSON.parse(await readFile(resolve(root, "package.json"), "utf8")) as {
     bin?: string | PackageBins;
   };
 
@@ -63,16 +47,15 @@ export async function discoverCliEntries(
   entryOptions: PackageBinBuildOptions["entries"] = { pattern: "src/**/*.ts" },
   root = process.cwd(),
   bins?: PackageBins,
-  dependencies: Pick<Required<PackageBinBuildDependencies>, "glob" | "readFile"> = defaultDependencies,
 ): Promise<Record<string, string>> {
   const entryRules = (Array.isArray(entryOptions) ? entryOptions : [entryOptions]).map(
     (entry) => ({ bin: "./bin/{name}.mjs", ...entry }),
   );
-  const managedBins = bins ?? (await readManagedPackageBins(root, dependencies.readFile));
+  const managedBins = bins ?? (await readManagedPackageBins(root));
   const candidates = new Map<string, string[]>();
 
   for (const entryRule of entryRules) {
-    for await (const entry of dependencies.glob(entryRule.pattern, { cwd: root })) {
+    for await (const entry of glob(entryRule.pattern, { cwd: root })) {
       const name = basename(entry).replace(/\.[^.]+$/, "");
       const expectedBin = entryRule.bin.replaceAll("{name}", name);
       if (managedBins[name] !== expectedBin) continue;
@@ -111,7 +94,6 @@ export function standaloneCliBuilds(
   entries: Record<string, string>,
   options: Omit<PackageBinBuildOptions, "entries" | "emptyOutDir"> = {},
   root = process.cwd(),
-  readFileDependency: ReadFile = readFile,
 ): StandaloneCliBuild[] {
   const {
     outDir = "bin",
@@ -141,7 +123,7 @@ export function standaloneCliBuilds(
           external: [/^node:/, ...external],
           output: {
             async banner() {
-              const source = await readFileDependency(entry, "utf8");
+              const source = await readFile(entry, "utf8");
               return source.startsWith("#!") ? "" : "#!/usr/bin/env node";
             },
             entryFileNames: `${name}.mjs`,
@@ -172,11 +154,7 @@ function validateManagedPackageBins(
  * Vite plugin that builds managed package bins as independent Node.js
  * executables with no shared runtime chunks.
  */
-export function packageBinBuild(
-  options: PackageBinBuildOptions,
-  dependencies: PackageBinBuildDependencies = {},
-): Plugin {
-  const deps = { ...defaultDependencies, ...dependencies };
+export function packageBinBuild(options: PackageBinBuildOptions): Plugin {
   const virtualEntry = "\0moyarich:package-bin-build";
   let resolvedConfig: ResolvedConfig;
 
@@ -217,8 +195,8 @@ export function packageBinBuild(
 
     async buildStart() {
       const root = resolvedConfig.root;
-      const bins = await readManagedPackageBins(root, deps.readFile);
-      const entries = await discoverCliEntries(options.entries, root, bins, deps);
+      const bins = await readManagedPackageBins(root);
+      const entries = await discoverCliEntries(options.entries, root, bins);
 
       if (Object.keys(entries).length === 0) {
         throw new Error("No managed Node.js package bins were found");
@@ -226,12 +204,12 @@ export function packageBinBuild(
 
       const outDir = options.outDir ?? "bin";
       if (options.emptyOutDir) {
-        await deps.rm(resolve(root, outDir), { recursive: true, force: true });
+        await rm(resolve(root, outDir), { recursive: true, force: true });
       }
 
       const { entries: _entries, emptyOutDir: _emptyOutDir, ...buildOptions } = options;
-      for (const { config } of standaloneCliBuilds(entries, buildOptions, root, deps.readFile)) {
-        await deps.build({ ...config, logLevel: resolvedConfig.logLevel });
+      for (const { config } of standaloneCliBuilds(entries, buildOptions, root)) {
+        await build({ ...config, logLevel: resolvedConfig.logLevel });
       }
     },
 
