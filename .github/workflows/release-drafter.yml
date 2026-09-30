@@ -1,7 +1,25 @@
-name: Draft release
+name: Draft package releases
+
+run-name: >-
+  Draft package releases · ${{ github.event_name == 'workflow_dispatch' && inputs.package || 'all' }}
 
 on:
   workflow_dispatch:
+    inputs:
+      package:
+        description: Package draft to refresh
+        required: true
+        default: all
+        type: choice
+        options:
+          - all
+          - demo-tools
+          - readme-screenshots
+          - vite-plugin-package-bin
+          - vs-code-ext-tools
+          - web-components
+          - workspace-tools
+
   push:
     branches:
       - main
@@ -12,24 +30,47 @@ permissions:
 
 jobs:
   draft-release:
-    name: Prepare draft release
+    name: "package: ${{ matrix.name }} | dir: packages/${{ matrix.directory }}"
     runs-on: ubuntu-latest
-    outputs:
-      id: ${{ steps.drafter.outputs.id }}
-      name: ${{ steps.drafter.outputs.name }}
-      tag-name: ${{ steps.drafter.outputs.tag_name }}
-      html-url: ${{ steps.drafter.outputs.html_url }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - directory: demo-tools
+            name: "@moyarich/demo-tools"
+            config: release-drafter-demo-tools.yml
+          - directory: readme-screenshots
+            name: "@moyarich/readme-screenshots"
+            config: release-drafter-readme-screenshots.yml
+          - directory: vite-plugin-package-bin
+            name: "@moyarich/vite-plugin-package-bin"
+            config: release-drafter-vite-plugin-package-bin.yml
+          - directory: vs-code-ext-tools
+            name: "@moyarich/vs-code-ext-tools"
+            config: release-drafter-vs-code-ext-tools.yml
+          - directory: web-components
+            name: "@moyarich/web-components"
+            config: release-drafter-web-components.yml
+          - directory: workspace-tools
+            name: "@moyarich/workspace-tools"
+            config: release-drafter-workspace-tools.yml
 
     steps:
       - name: Initialize workflow summary
-        if: ${{ always() }}
+        if: >-
+          ${{ github.event_name != 'workflow_dispatch' ||
+              inputs.package == 'all' ||
+              inputs.package == matrix.directory }}
         shell: bash
         run: |
           {
-            echo "# Draft release"
+            echo "# Package release draft"
             echo
             echo "| Execution | Value |"
             echo "| --- | --- |"
+            echo "| Package | \`${{ matrix.name }}\` |"
+            echo "| Directory | \`packages/${{ matrix.directory }}\` |"
+            echo "| Config | \`${{ matrix.config }}\` |"
             echo "| Repository | \`${{ github.repository }}\` |"
             echo "| Ref | \`${{ github.ref_name }}\` |"
             echo "| Trigger | \`${{ github.event_name }}\` |"
@@ -37,13 +78,25 @@ jobs:
             echo
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Create or update draft release
+      - name: Create or update package draft release
         id: drafter
+        if: >-
+          ${{ github.event_name != 'workflow_dispatch' ||
+              inputs.package == 'all' ||
+              inputs.package == matrix.directory }}
         uses: release-drafter/release-drafter@v7.7.0
+        with:
+          config-name: ${{ matrix.config }}
+          disable-autolabeler: true
+          commitish: main
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Draft summary
+        if: >-
+          ${{ github.event_name != 'workflow_dispatch' ||
+              inputs.package == 'all' ||
+              inputs.package == matrix.directory }}
         shell: bash
         run: |
           {
@@ -51,37 +104,29 @@ jobs:
             echo
             echo "| Release | Value |"
             echo "| --- | --- |"
+            echo "| Package | \`${{ matrix.name }}\` |"
             echo "| Name | \`${{ steps.drafter.outputs.name }}\` |"
             echo "| Tag | \`${{ steps.drafter.outputs.tag_name }}\` |"
-            echo "| Draft | [Open and edit the draft release](${{ steps.drafter.outputs.html_url }}) |"
-            echo
-            echo "> Review and edit the draft release in GitHub before approving the next job."
+            echo "| Draft | [Open package draft release](${{ steps.drafter.outputs.html_url }}) |"
           } >> "$GITHUB_STEP_SUMMARY"
 
   approve-release:
-    name: Approve reviewed draft
+    name: Approve reviewed package drafts
     if: ${{ github.event_name == 'workflow_dispatch' }}
     needs: draft-release
     runs-on: ubuntu-latest
-
-    # Configure the "release" environment with required reviewers in:
-    # Settings → Environments → release → Required reviewers.
     environment:
       name: release
-      url: ${{ needs.draft-release.outputs.html-url }}
 
     steps:
       - name: Record approval
         shell: bash
         run: |
           {
-            echo "# Release draft approved"
+            echo "# Package release drafts approved"
             echo
-            echo "The draft release passed the \`release\` environment approval gate."
+            echo "The selected package draft release workflow passed the \`release\` environment approval gate."
             echo
-            echo "- Draft: [${{ needs.draft-release.outputs.name }}](${{ needs.draft-release.outputs.html-url }})"
-            echo "- Tag: \`${{ needs.draft-release.outputs.tag-name }}\`"
-            echo
-            echo "> This workflow does not publish the GitHub Release or npm package."
-            echo "> Existing release and publish workflows remain responsible for irreversible release operations."
+            echo "> This workflow does not publish GitHub Releases or npm packages."
+            echo "> Existing package release and publish workflows remain responsible for irreversible release operations."
           } >> "$GITHUB_STEP_SUMMARY"
