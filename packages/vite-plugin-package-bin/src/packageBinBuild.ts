@@ -4,8 +4,13 @@ import { basename, extname, resolve } from "node:path";
 import type { InlineConfig, Plugin, ResolvedConfig } from "vite";
 import { build } from "vite";
 
+export interface PackageBinInclude {
+  glob: string;
+  bin?: string;
+}
+
 export interface PackageBinBuildOptions {
-  include: string | string[];
+  include: string | PackageBinInclude | Array<string | PackageBinInclude>;
   emptyOutDir: boolean;
   outDir?: string;
   target?: string;
@@ -38,18 +43,21 @@ async function readManagedPackageBins(root: string): Promise<PackageBins> {
 }
 
 export async function discoverCliEntries(
-  include: string | string[],
+  include: PackageBinBuildOptions["include"],
   root = process.cwd(),
   bins?: PackageBins,
 ): Promise<Record<string, string>> {
-  const patterns = Array.isArray(include) ? include : [include];
+  const includes = (Array.isArray(include) ? include : [include]).map((value) =>
+    typeof value === "string" ? { glob: value, bin: "./bin/{name}.mjs" } : { bin: "./bin/{name}.mjs", ...value },
+  );
   const managedBins = bins ?? (await readManagedPackageBins(root));
   const candidates = new Map<string, string[]>();
 
-  for (const pattern of patterns) {
-    for await (const entry of glob(pattern, { cwd: root })) {
+  for (const includeRule of includes) {
+    for await (const entry of glob(includeRule.glob, { cwd: root })) {
       const name = basename(entry).replace(/\.[^.]+$/, "");
-      if (!(name in managedBins)) continue;
+      const expectedBin = includeRule.bin.replaceAll("{name}", name);
+      if (managedBins[name] !== expectedBin) continue;
 
       const matches = candidates.get(name) ?? [];
       matches.push(resolve(root, entry));
@@ -184,8 +192,6 @@ export function packageBinBuild(options: PackageBinBuildOptions): Plugin {
       }
 
       const outDir = options.outDir ?? "bin";
-      validateManagedPackageBins(entries, bins, outDir);
-
       if (options.emptyOutDir) {
         await rm(resolve(root, outDir), { recursive: true, force: true });
       }
