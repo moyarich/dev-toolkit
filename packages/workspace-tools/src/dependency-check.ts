@@ -361,7 +361,7 @@ function canUseFzf(options: DependencyCheckCliOptions = {}): boolean {
  * @returns {string | undefined}
  * Selected value.
  */
-function selectWithFzf(choices: string[], prompt: string): string | undefined {
+function selectWithFzf<T extends string>(choices: T[], prompt: string): T | undefined {
   if (!choices.length) {
     return undefined;
   }
@@ -408,7 +408,7 @@ function selectWithFzf(choices: string[], prompt: string): string | undefined {
 
   const selected = result.stdout.trim();
 
-  return selected || undefined;
+  return (selected as T) || undefined;
 }
 
 /**
