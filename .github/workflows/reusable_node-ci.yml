@@ -36,7 +36,7 @@ permissions:
 
 jobs:
   check-node-project:
-    name: "Check ${{ inputs.package-directory }}"
+    name: "Checks"
     runs-on: ubuntu-latest
     steps:
       - name: Initialize workflow summary
