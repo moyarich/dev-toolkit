@@ -10,10 +10,11 @@ export interface CliPluginOptions {
 }
 
 /**
- * Configure Vite for standalone Node.js command-line entry points.
+ * Configure Vite for Node.js command-line entry points.
  *
- * Each entry is emitted as a self-contained .mjs executable. Shared source is
- * bundled into each CLI instead of creating runtime _chunks dependencies.
+ * Entry files and shared chunks use deterministic names so repeated builds do
+ * not leave hash-named artifacts behind. Source maps are opt-in for published
+ * CLI packages.
  */
 export function cli(options: CliPluginOptions): Plugin {
   const {
@@ -24,11 +25,6 @@ export function cli(options: CliPluginOptions): Plugin {
     minify = false,
     external = [],
   } = options;
-
-  const entryList = Object.entries(entries);
-  if (entryList.length === 0) {
-    throw new TypeError("cli() requires at least one entry.");
-  }
 
   return {
     name: "moyarich:cli",
@@ -42,17 +38,18 @@ export function cli(options: CliPluginOptions): Plugin {
           emptyOutDir: true,
           sourcemap,
           minify,
+          lib: {
+            entry: entries,
+            formats: ["es"],
+            fileName: (_format, entryName) => `${entryName}.mjs`,
+          },
           rollupOptions: {
             external: [/^node:/, ...external],
-            input: Object.fromEntries(entryList),
-            output: entryList.map(([name]) => ({
+            output: {
               banner: "#!/usr/bin/env node",
-              entryFileNames: (chunkInfo) =>
-                chunkInfo.name === name ? `${name}.mjs` : `_unused/${name}-[name].mjs`,
-              chunkFileNames: `_unused/${name}-[name].mjs`,
-              assetFileNames: `_unused/${name}-[name][extname]`,
-              manualChunks: () => name,
-            })),
+              entryFileNames: "[name].mjs",
+              chunkFileNames: "_chunks/[name].mjs",
+            },
           },
         },
       };
