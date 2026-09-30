@@ -41,6 +41,8 @@ test("release drafter workflow uses package matrix configs", () => {
 
   assert.match(workflow, /disable-autolabeler: true/);
   assert.match(workflow, /commitish: main/);
+  assert.match(workflow, /version:\s+\$\{\{ github\.event_name == 'workflow_dispatch' && inputs\.version \|\| '' \}\}/);
+  assert.match(workflow, /description: Optional explicit release version \(for first release, use 0\.1\.0\)/);
 });
 
 test("each package release config filters by package path and tag namespace", () => {
