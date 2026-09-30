@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { standaloneCliBuilds } from "../vite/cliBuild.ts";
+import { standaloneCliBuilds } from "../vite/packageBinBuild.ts";
 
 test("standaloneCliBuilds creates one independent build per CLI entry", () => {
   const builds = standaloneCliBuilds(
