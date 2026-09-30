@@ -2,20 +2,21 @@ import { execFileSync } from "node:child_process";
 import { resolve } from "node:path";
 import { describe, expect, test } from "vitest";
 
-const root = resolve(import.meta.dirname, "..");
+const packageRoot = resolve(import.meta.dirname, "..");
+const repositoryRoot = resolve(packageRoot, "../..");
 
 function invoke(script: string, ...args: string[]) {
   try {
-    return { status: 0, stdout: execFileSync(process.execPath, [script, ...args], { cwd: root, encoding: "utf8" }), stderr: "" };
+    return { status: 0, stdout: execFileSync(process.execPath, [script, ...args], { cwd: repositoryRoot, encoding: "utf8" }), stderr: "" };
   } catch (error: any) {
     return { status: error.status, stdout: error.stdout ?? "", stderr: error.stderr ?? "" };
   }
 }
 
 for (const command of [
-  "bin/workspace-release.mjs",
-  "bin/workspace-publish.mjs",
-  "bin/discover-test-packages.mjs",
+  "packages/workspace-tools/bin/workspace-release.mjs",
+  "packages/workspace-tools/bin/workspace-publish.mjs",
+  "packages/workspace-tools/bin/discover-test-packages.mjs",
 ]) {
   describe(command, () => {
     test("shows help without running its action", () => {
@@ -34,8 +35,8 @@ for (const command of [
 }
 
 test("package discovery preserves its default directory and JSON output", () => {
-  const implicit = invoke("bin/discover-test-packages.mjs");
-  const explicit = invoke("bin/discover-test-packages.mjs", "packages");
+  const implicit = invoke("packages/workspace-tools/bin/discover-test-packages.mjs");
+  const explicit = invoke("packages/workspace-tools/bin/discover-test-packages.mjs", "packages");
   expect(implicit.status).toBe(0);
   expect(explicit.status).toBe(0);
   expect(JSON.parse(implicit.stdout)).toEqual(JSON.parse(explicit.stdout));
@@ -50,7 +51,7 @@ test("release accepts both separated and equals option values", () => {
     ["--mode", "exact", "--version", "invalid"],
   ]) {
     const result = invoke(
-      "bin/workspace-release.mjs",
+      "packages/workspace-tools/bin/workspace-release.mjs",
       "workspace-tools=patch",
       "--dry-run",
       ...args,
@@ -61,7 +62,7 @@ test("release accepts both separated and equals option values", () => {
 });
 
 test("publish rejects values assigned to boolean flags", () => {
-  const result = invoke("bin/workspace-publish.mjs", "--dry-run=invalid");
+  const result = invoke("packages/workspace-tools/bin/workspace-publish.mjs", "--dry-run=invalid");
   expect(result.status).toBe(1);
   expect(result.stderr).toMatch(/unknown option '--dry-run=invalid'/);
 });
