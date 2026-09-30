@@ -3,8 +3,18 @@
 import { spawnSync } from "node:child_process";
 import { existsSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 
-import { packageInfo, repositoryRoot, workspacePackages } from "./workspace.ts";
+import { packageInfo, repositoryRoot, workspacePackages, type WorkspacePackage } from "./workspace.ts";
+
+type DependencyCheckLevel = "fail" | "warn";
+type DependencyCheckStatus = "ok" | "warn" | "fail";
+type OutputFormat = "text" | "json";
+interface OutdatedDependency { current?: string | null; wanted?: string | null; latest?: string | null; }
+interface DependencyCheckResult { name: string; current?: string | null; wanted?: string | null; latest?: string | null; declared?: string; workspace?: string; level: DependencyCheckLevel; reason: string; }
+interface PackageDependencyReport { package: string; version: string; status: DependencyCheckStatus; results: DependencyCheckResult[]; }
+interface DependencyCheckCliOptions { all?: boolean; json?: boolean; assert?: boolean; fzf?: boolean; }
+
 
 /**
  * @typedef {"fail" | "warn"} DependencyCheckLevel
@@ -81,7 +91,7 @@ import { packageInfo, repositoryRoot, workspacePackages } from "./workspace.ts";
  * @returns {Record<string, OutdatedDependency>}
  * Parsed outdated dependency information.
  */
-export function parseOutdated(raw) {
+export function parseOutdated(raw: string): Record<string, OutdatedDependency> {
   if (!raw) {
     return {};
   }
@@ -102,7 +112,7 @@ export function parseOutdated(raw) {
  * @returns {DependencyCheckResult[]}
  * Classified dependency results.
  */
-export function classifyOutdated(outdated) {
+export function classifyOutdated(outdated: Record<string, OutdatedDependency>): DependencyCheckResult[] {
   return Object.entries(outdated).map(([name, info]) => {
     const current = info.current ?? null;
 
@@ -137,8 +147,8 @@ export function classifyOutdated(outdated) {
  * @returns {DependencyCheckResult[]}
  * Dependency issues.
  */
-export function dependencyCheck(root, pkg) {
-  let outdated = {};
+export function dependencyCheck(root: string, pkg: WorkspacePackage): DependencyCheckResult[] {
+  let outdated: Record<string, OutdatedDependency> = {};
 
   const outdatedResult = spawnSync(
     "npm",
@@ -213,7 +223,7 @@ export function dependencyCheck(root, pkg) {
  *
  * @returns {void}
  */
-export function printDependencyCheck(results) {
+export function printDependencyCheck(results: DependencyCheckResult[]): void {
   if (!results.length) {
     return;
   }
@@ -241,7 +251,7 @@ export function printDependencyCheck(results) {
  *
  * @returns {void}
  */
-export function assertDependencies(results) {
+export function assertDependencies(results: DependencyCheckResult[]): void {
   const failures = results.filter((item) => item.level === "fail");
 
   if (failures.length) {
@@ -262,7 +272,7 @@ export function assertDependencies(results) {
  * @returns {DependencyCheckStatus}
  * Overall status.
  */
-function dependencyStatus(results) {
+function dependencyStatus(results: DependencyCheckResult[]): DependencyCheckStatus {
   if (results.some((item) => item.level === "fail")) {
     return "fail";
   }
@@ -286,7 +296,7 @@ function dependencyStatus(results) {
  * @returns {PackageDependencyReport}
  * Package report.
  */
-function packageReport(pkg, results) {
+function packageReport(pkg: WorkspacePackage, results: DependencyCheckResult[]): PackageDependencyReport {
   return {
     package: pkg.manifest.name,
     version: pkg.manifest.version,
@@ -304,7 +314,7 @@ function packageReport(pkg, results) {
  * @returns {boolean}
  * Whether the command exists.
  */
-function commandExists(command) {
+function commandExists(command: string): boolean {
   const lookupCommand = process.platform === "win32" ? "where" : "which";
 
   const result = spawnSync(lookupCommand, [command], {
@@ -320,7 +330,7 @@ function commandExists(command) {
  * @returns {boolean}
  * Whether the process is interactive.
  */
-function isInteractiveTerminal() {
+function isInteractiveTerminal(): boolean {
   return Boolean(process.stdin.isTTY && process.stdout.isTTY);
 }
 
@@ -333,7 +343,7 @@ function isInteractiveTerminal() {
  * @returns {boolean}
  * Whether fzf is available.
  */
-function canUseFzf(options = {}) {
+function canUseFzf(options: DependencyCheckCliOptions = {}): boolean {
   return Boolean(
     options.fzf !== false && isInteractiveTerminal() && commandExists("fzf"),
   );
@@ -351,7 +361,7 @@ function canUseFzf(options = {}) {
  * @returns {string | undefined}
  * Selected value.
  */
-function selectWithFzf(choices, prompt) {
+function selectWithFzf(choices: string[], prompt: string): string | undefined {
   if (!choices.length) {
     return undefined;
   }
@@ -410,7 +420,7 @@ function selectWithFzf(choices, prompt) {
  * @returns {ReturnType<typeof packageInfo>[]}
  * Workspace packages.
  */
-function dependencyCheckPackages(root) {
+function dependencyCheckPackages(root: string): WorkspacePackage[] {
   const packagesDirectory = resolve(root, "packages");
 
   if (!existsSync(packagesDirectory)) {
@@ -438,7 +448,7 @@ function dependencyCheckPackages(root) {
  * @returns {string | undefined}
  * Selected package.
  */
-function selectPackageWithFzf(root) {
+function selectPackageWithFzf(root: string): string | undefined {
   const packages = dependencyCheckPackages(root);
 
   if (!packages.length) {
@@ -457,7 +467,7 @@ function selectPackageWithFzf(root) {
  * @returns {OutputFormat | undefined}
  * Selected output format.
  */
-function selectOutputFormatWithFzf() {
+function selectOutputFormatWithFzf(): OutputFormat | undefined {
   return /** @type {OutputFormat | undefined} */ selectWithFzf(
     ["text", "json"],
     "Output",
@@ -479,7 +489,7 @@ function selectOutputFormatWithFzf() {
  * }}
  * Package and dependency results.
  */
-function inspectPackage(root, selector) {
+function inspectPackage(root: string, selector: string): { pkg: WorkspacePackage; results: DependencyCheckResult[] } {
   const pkg = packageInfo(root, selector);
 
   return {
@@ -499,7 +509,7 @@ function inspectPackage(root, selector) {
  *
  * @returns {void}
  */
-function printPackageReport(report, format) {
+function printPackageReport(report: PackageDependencyReport, format: OutputFormat): void {
   if (format === "json") {
     console.log(JSON.stringify(report, null, 2));
 
@@ -537,7 +547,7 @@ function printPackageReport(report, format) {
  * @returns {PackageDependencyReport}
  * Package report.
  */
-function checkPackage(root, selector, format, options) {
+function checkPackage(root: string, selector: string, format: OutputFormat, options: DependencyCheckCliOptions): PackageDependencyReport {
   const { pkg, results } = inspectPackage(root, selector);
 
   const report = packageReport(pkg, results);
@@ -566,7 +576,7 @@ function checkPackage(root, selector, format, options) {
  * @returns {PackageDependencyReport[]}
  * Package reports.
  */
-function checkAllPackages(root, format, options) {
+function checkAllPackages(root: string, format: OutputFormat, options: DependencyCheckCliOptions): PackageDependencyReport[] {
   const packages = dependencyCheckPackages(root);
 
   if (!packages.length) {
@@ -632,7 +642,7 @@ function checkAllPackages(root, format, options) {
  * @returns {string | undefined}
  * Resolved selector.
  */
-function resolvePackageSelector(root, selector, options) {
+function resolvePackageSelector(root: string, selector: string | undefined, options: DependencyCheckCliOptions): string | undefined {
   if (selector) {
     return selector;
   }
@@ -658,7 +668,7 @@ function resolvePackageSelector(root, selector, options) {
  * @returns {OutputFormat | undefined}
  * Output format.
  */
-function resolveOutputFormat(options) {
+function resolveOutputFormat(options: DependencyCheckCliOptions): OutputFormat | undefined {
   if (options.json) {
     return "json";
   }
@@ -688,7 +698,7 @@ function resolveOutputFormat(options) {
  *
  * @returns {void}
  */
-export function runDependencyCheck(selector, options) {
+export function runDependencyCheck(selector: string | undefined, options: DependencyCheckCliOptions): void {
   const root = repositoryRoot();
 
   /*
@@ -752,7 +762,7 @@ export function runDependencyCheck(selector, options) {
  * @returns {boolean}
  * Whether this module was executed directly.
  */
-function isMainModule() {
+function isMainModule(): boolean {
   if (!process.argv[1]) {
     return false;
   }
