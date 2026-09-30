@@ -10,7 +10,7 @@ export async function importHTMLElement({ page, tagName, componentUrl }: ImportH
   const [componentSource, styleSource] = await Promise.all([readFile(componentUrl, "utf8"), readFile(styleUrl, "utf8")]);
   const relativeStyleUrl = `./${styleUrl.pathname.split("/").at(-1)}`;
   const embeddedStyleUrl = `data:text/css;base64,${Buffer.from(styleSource).toString("base64")}`;
-  const escapedRelativePath = relativeStyleUrl.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&");
+  const escapedRelativePath = relativeStyleUrl.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&");
   const importRegex = new RegExp(`(['"])${escapedRelativePath}\\1`, "g");
   const browserModuleSource = componentSource.replace(importRegex, `"${embeddedStyleUrl}"`);
   const browserModuleUrl = `data:text/javascript;base64,${Buffer.from(browserModuleSource).toString("base64")}`;
