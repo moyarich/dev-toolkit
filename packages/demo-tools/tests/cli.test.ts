@@ -1,15 +1,21 @@
-import { execFileSync } from "node:child_process";
+import { spawnSync } from "node:child_process";
 import { resolve } from "node:path";
 import { describe, expect, test } from "vitest";
 
 const root = resolve(import.meta.dirname, "..");
 
 function invoke(script: string, ...args: string[]) {
-  try {
-    return { status: 0, stdout: execFileSync(process.execPath, [script, ...args], { cwd: root, encoding: "utf8" }), stderr: "" };
-  } catch (error: any) {
-    return { status: error.status, stdout: error.stdout ?? "", stderr: error.stderr ?? "" };
-  }
+  const result = spawnSync(process.execPath, [script, ...args], {
+    cwd: root,
+    encoding: "utf8",
+    stdio: "pipe",
+  });
+
+  return {
+    status: result.status,
+    stdout: result.stdout ?? "",
+    stderr: result.stderr ?? "",
+  };
 }
 
 for (const command of ["bin/demo.mjs", "bin/demo-strategy.mjs"]) {
