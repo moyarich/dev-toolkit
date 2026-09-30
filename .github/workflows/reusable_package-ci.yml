@@ -131,7 +131,7 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
   check-packages:
-    name: "Check ${{ matrix.name }}"
+    name: "${{ matrix.name }}"
     needs: discover-packages
     if: ${{ needs.discover-packages.result == 'success' && needs.discover-packages.outputs.has-packages == 'true' }}
     strategy:
