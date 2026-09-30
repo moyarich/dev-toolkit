@@ -1,7 +1,7 @@
 import { glob, readFile, rm } from "node:fs/promises";
 import { basename, resolve } from "node:path";
 
-import type { InlineConfig } from "vite";
+import type { InlineConfig, Plugin, ResolvedConfig } from "vite";
 import { build } from "vite";
 
 export interface CliBuildOptions {
@@ -96,24 +96,39 @@ async function validatePackageBins(
 }
 
 /**
- * Build every CLI matching include as an independent executable with no
- * shared runtime chunks. The source filename becomes the package bin name.
+ * Vite plugin that builds every CLI matching include as an independent
+ * executable with no shared runtime chunks.
  */
-export async function cliBuild(
-  options: CliBuildOptions,
-  root = process.cwd(),
-): Promise<void> {
-  const entries = await discoverCliEntries(options.include, root);
-  if (Object.keys(entries).length === 0) {
-    throw new Error(`No CLI entries matched "${options.include}"`);
-  }
+export function cliBuild(options: CliBuildOptions): Plugin {
+  let resolvedConfig: ResolvedConfig;
 
-  const outDir = options.outDir ?? "bin";
-  await validatePackageBins(entries, outDir, root);
-  await rm(resolve(root, outDir), { recursive: true, force: true });
+  return {
+    name: "moyarich:cli-build",
+    enforce: "pre",
 
-  const { include: _include, ...buildOptions } = options;
-  for (const { config } of standaloneCliBuilds(entries, buildOptions, root)) {
-    await build(config);
-  }
+    configResolved(config) {
+      resolvedConfig = config;
+    },
+
+    async buildStart() {
+      const root = resolvedConfig.root;
+      const entries = await discoverCliEntries(options.include, root);
+      if (Object.keys(entries).length === 0) {
+        throw new Error(`No CLI entries matched "${options.include}"`);
+      }
+
+      const outDir = options.outDir ?? "bin";
+      await validatePackageBins(entries, outDir, root);
+      await rm(resolve(root, outDir), { recursive: true, force: true });
+
+      const { include: _include, ...buildOptions } = options;
+      for (const { config } of standaloneCliBuilds(entries, buildOptions, root)) {
+        await build({ ...config, logLevel: resolvedConfig.logLevel });
+      }
+    },
+
+    generateBundle(_outputOptions, bundle) {
+      for (const fileName of Object.keys(bundle)) delete bundle[fileName];
+    },
+  };
 }
