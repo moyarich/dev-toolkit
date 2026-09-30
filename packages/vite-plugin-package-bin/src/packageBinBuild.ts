@@ -43,7 +43,7 @@ async function readManagedPackageBins(root: string): Promise<PackageBins> {
 }
 
 export async function discoverCliEntries(
-  entryOptions: PackageBinBuildOptions["entries"],
+  entryOptions: PackageBinBuildOptions["entries"] = { pattern: "src/**/*.ts" },
   root = process.cwd(),
   bins?: PackageBins,
 ): Promise<Record<string, string>> {
