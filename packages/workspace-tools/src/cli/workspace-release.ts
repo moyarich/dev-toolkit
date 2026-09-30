@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import { Argument, Option, program } from "commander";
 import { releaseWorkspacePackage } from "../release.ts";
 
