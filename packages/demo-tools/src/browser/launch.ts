@@ -30,7 +30,7 @@ export async function launchBrowserDemo({
     throw new TypeError("launchBrowserDemo requires a Playwright chromium implementation.");
   const browser = await chromium.launch(launchOptions);
   const context = await browser.newContext({ viewport, ...contextOptions });
-  const page = await context.newPage(pageOptions);
+  const page = await context.newPage();
   if (url) await page.goto(url, { waitUntil });
   return {
     browser,
