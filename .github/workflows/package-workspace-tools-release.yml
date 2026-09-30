@@ -1,4 +1,4 @@
-name: Release workspace-tools
+name: Package . Workspace Tools . Release
 
 on:
   workflow_dispatch:
