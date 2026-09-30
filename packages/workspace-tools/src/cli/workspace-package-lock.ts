@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import { program } from "commander";
 import { runPackageLock } from "../package-lock.ts";
 
