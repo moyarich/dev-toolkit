@@ -1,4 +1,4 @@
-import type { BrowserPage, Chromium } from "../types.mts";
+import type { BrowserPage, Chromium } from "../types.ts";
 
 interface CDPBrowser {
   contexts(): Array<{ pages(): BrowserPage[] }>;

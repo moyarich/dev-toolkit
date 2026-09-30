@@ -1,4 +1,4 @@
-import type { BrowserPage } from "../types.mts";
+import type { BrowserPage } from "../types.ts";
 
 export function getCommandPaletteShortcut(platform: NodeJS.Platform = process.platform): string {
   return platform === "darwin" ? "Meta+Shift+P" : "Control+Shift+P";
