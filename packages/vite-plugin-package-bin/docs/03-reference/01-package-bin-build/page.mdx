@@ -1,15 +1,22 @@
 # `packageBinBuild`
 
-Creates a Vite plugin that builds package binary entry points as independent Node.js executables.
+Creates a Vite plugin that builds managed Node.js package binary entry points as independent executables.
 
 ## Options
 
 ### `include`
 
-**Type:** `string`  
+**Type:** `string | string[]`  
 **Required:** yes
 
-Glob used to discover CLI source files relative to the Vite root.
+One or more globs used to discover source files relative to the Vite root. Matching files may live in different source directories.
+
+### `emptyOutDir`
+
+**Type:** `boolean`  
+**Required:** yes
+
+When `true`, removes `outDir` once before any package bins are built. Individual bin builds never empty the directory, so later builds cannot delete earlier executables.
 
 ### `outDir`
 
@@ -30,7 +37,7 @@ Vite/esbuild build target.
 **Type:** `boolean`  
 **Default:** `false`
 
-Enables source maps for generated executables.
+Enables source maps.
 
 ### `minify`
 
@@ -46,15 +53,19 @@ Enables minification.
 
 Additional Rollup externals. Node built-ins matching `node:` are always external.
 
-## Package bin validation
+## Managed package bins
 
-For object-form `package.json#bin`, every discovered source must have a matching command and output path.
+The plugin manages object-form `package.json#bin` entries whose target extension is `.js`, `.mjs`, or `.cjs`. Other executable types are left alone.
 
-For example:
-
-```text
-src/cli/workspace-release.ts
-→ ./bin/workspace-release.mjs
+```json
+{
+  "bin": {
+    "release": "./bin/release.mjs",
+    "doctor": "./bin/doctor.sh"
+  }
+}
 ```
 
-The comparison is independent of property order in `package.json`.
+Here `release` is managed by the plugin and `doctor.sh` is ignored.
+
+Source discovery matches the command name to the source basename. A managed bin must have exactly one matching source across all `include` patterns; missing or ambiguous matches fail the build.
