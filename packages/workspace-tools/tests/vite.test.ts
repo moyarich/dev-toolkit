@@ -6,11 +6,10 @@ import { standaloneCliBuilds } from "../vite/cli.ts";
 test("standaloneCliBuilds creates one independent build per CLI entry", () => {
   const builds = standaloneCliBuilds(
     {
-      entries: {
-        alpha: "/repo/src/cli/alpha.ts",
-        beta: "/repo/src/cli/beta.ts",
-      },
+      alpha: "/repo/src/cli/alpha.ts",
+      beta: "/repo/src/cli/beta.ts",
     },
+    {},
     "/repo",
   );
 
@@ -31,8 +30,8 @@ test("standaloneCliBuilds creates one independent build per CLI entry", () => {
 
 test("standaloneCliBuilds preserves CLI build options", () => {
   const [build] = standaloneCliBuilds(
+    { demo: "/repo/demo.ts" },
     {
-      entries: { demo: "/repo/demo.ts" },
       outDir: "dist/bin",
       target: "node24",
       sourcemap: true,
