@@ -1,26 +1,54 @@
 name: Package . Workspace Tools . Publish
 
+run-name: >-
+  Workspace Tools Publish · ${{ inputs.registry }} · ${{ inputs.tag }} ·
+  dry-run=${{ inputs.dry-run }}
+
 on:
   workflow_dispatch:
     inputs:
+      dry-run:
+        description: Publish — preview without publishing
+        required: true
+        default: true
+        type: boolean
+
       version:
-        description: Exact version; empty uses package.json
+        description: Version — exact version to verify; empty uses package.json
         required: false
         default: ""
         type: string
+
       registry:
-        description: Package registry
+        description: Publish — package registry
         required: true
         default: github
         type: choice
         options:
           - github
           - npm
+
       tag:
-        description: Distribution tag
+        description: Publish — distribution tag
         required: true
         default: latest
         type: string
+
+      verify-git-tag:
+        description: Safety — require the matching package release Git tag
+        required: true
+        default: true
+        type: boolean
+
+      node-version:
+        description: Advanced — Node.js version
+        required: true
+        default: "24"
+        type: string
+
+concurrency:
+  group: workspace-tools-package-mutation
+  cancel-in-progress: false
 
 permissions:
   contents: read
@@ -28,12 +56,16 @@ permissions:
 
 jobs:
   publish:
+    name: Publish @moyarich/workspace-tools
     uses: ./.github/workflows/reusable_npm-publish.yml
     with:
       package-directory: packages/workspace-tools
+      dry-run: ${{ inputs.dry-run }}
       version: ${{ inputs.version }}
       registry: ${{ inputs.registry }}
       tag: ${{ inputs.tag }}
+      verify-git-tag: ${{ inputs.verify-git-tag }}
+      node-version: ${{ inputs.node-version }}
     secrets:
       github-token: ${{ secrets._GITHUB_TOKEN }}
       npm-token: ${{ secrets._NPM_TOKEN }}
