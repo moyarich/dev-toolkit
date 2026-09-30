@@ -5,7 +5,7 @@ import type { DemoStrategyContext } from "../types.ts";
 
 export interface RunDemoStrategiesOptions {
   directory?: string;
-  selected?: "all" | string | string[];
+  selected?: string | string[];
   artifactsDirectory?: string;
   context?: Partial<DemoStrategyContext>;
 }
