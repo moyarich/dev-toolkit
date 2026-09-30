@@ -1,12 +1,8 @@
-import { resolve } from "node:path";
-import { buildCli } from "../workspace-tools/vite/cli.ts";
+import { cli } from "../workspace-tools/vite/cli.ts";
 
-await buildCli(
+await cli(
   {
-    entries: {
-      demo: resolve(import.meta.dirname, "src/cli/demo.ts"),
-      "demo-strategy": resolve(import.meta.dirname, "src/cli/demo-strategy.ts"),
-    },
+    include: "src/cli/*.ts",
     sourcemap: true,
     external: ["@vscode/test-electron", "playwright-core"],
   },
