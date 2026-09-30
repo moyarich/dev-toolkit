@@ -1,6 +1,6 @@
 {
   "name": "@moyarich/readme-screenshots",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Reusable Playwright README screenshot generator.",
   "type": "module",
   "bin": {
@@ -37,7 +37,7 @@
     "access": "public"
   },
   "devDependencies": {
-    "@moyarich/vite-plugin-package-bin": "0.1.0"
+    "@moyarich/vite-plugin-package-bin": "0.0.1"
   },
   "license": "MIT"
 }
