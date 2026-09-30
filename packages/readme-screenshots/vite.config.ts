@@ -1,11 +1,8 @@
-import { resolve } from "node:path";
-import { buildCli } from "../workspace-tools/vite/cli.ts";
+import { cli } from "../workspace-tools/vite/cli.ts";
 
-await buildCli(
+await cli(
   {
-    entries: {
-      "readme-screenshots": resolve(import.meta.dirname, "src/cli/readme-screenshots.ts"),
-    },
+    include: "src/cli/*.ts",
     sourcemap: true,
     external: ["playwright"],
   },
