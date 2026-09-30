@@ -25,7 +25,7 @@ type PackageAccess = "public" | "restricted";
 interface RegistryConfig { url: string; host: string; token?: string; }
 interface PublishOptions { registry?: RegistrySelection; tag?: string; access?: PackageAccess; dryRun?: boolean; list?: boolean; json?: boolean; withDependencies?: boolean; verifyGitTag?: boolean; }
 type PackageIdentity = Pick<WorkspacePackage, "directory" | "manifest">;
-interface PublishPlanItem { pkg: PackageIdentity; registries: Partial<Record<Registry, "published" | "missing">>; }
+interface PublishPlanItem { pkg: WorkspacePackage; registries: Partial<Record<Registry, "published" | "missing">>; }
 interface SerializablePublishPlanItem { pkg: PackageIdentity; registries: Record<string, string>; }
 interface PublishSettings { registry: RegistrySelection; tag: string; access: PackageAccess; }
 
