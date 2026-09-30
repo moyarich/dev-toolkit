@@ -34,7 +34,7 @@ export interface BrowserPage {
   evaluate<TArgument, TResult>(pageFunction: (argument: TArgument) => TResult | Promise<TResult>, argument: TArgument): Promise<TResult>;
   goto(url: string): Promise<unknown>;
   locator(selector: string): { waitFor(options?: { timeout?: number }): Promise<void> };
-  context(): unknown;
+  context(): BrowserContext;
   once(event: string, listener: () => void): unknown;
   url(): string;
   bringToFront?(): Promise<void>;
