@@ -1,8 +1,10 @@
+import { defineConfig } from "vite";
 import { cliBuild } from "./vite/cliBuild.ts";
 
-await cliBuild(
-  {
-    include: "src/cli/*.ts",
-  },
-  import.meta.dirname,
-);
+export default defineConfig({
+  plugins: [
+    cliBuild({
+      include: "src/cli/*.ts",
+    }),
+  ],
+});
