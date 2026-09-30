@@ -1,5 +1,5 @@
-import { pause } from "../utils/index.mts";
-import type { BrowserPage } from "../types.mts";
+import { pause } from "../utils/index.ts";
+import type { BrowserPage } from "../types.ts";
 
 export async function fillVisibleQuickInput({ page, value }: { page: BrowserPage; value: string }): Promise<void> {
   const input = page.locator(".quick-input-widget:visible input").first();

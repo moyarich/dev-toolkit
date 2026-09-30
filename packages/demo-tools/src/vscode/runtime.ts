@@ -1,10 +1,10 @@
 import { access, mkdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { createVSCodeEnvironment } from "./environment.mts";
-import { connectToVSCode } from "./devtools.mts";
-import { freePort, runProcess } from "../utils/index.mts";
-import type { BrowserPage, Chromium } from "../types.mts";
+import { createVSCodeEnvironment } from "./environment.ts";
+import { connectToVSCode } from "./devtools.ts";
+import { freePort, runProcess } from "../utils/index.ts";
+import type { BrowserPage, Chromium } from "../types.ts";
 
 const extensionHostPath = fileURLToPath(new URL("./extension-host.cjs", import.meta.url));
 export interface BuildCommand { command: string; args?: string[] }

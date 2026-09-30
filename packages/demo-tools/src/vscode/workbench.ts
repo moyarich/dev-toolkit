@@ -1,7 +1,7 @@
-import { pause } from "../utils/index.mts";
-import { getQuickOpenShortcut } from "./commands.mts";
-import { fillVisibleQuickInput } from "./quick-input.mts";
-import type { BrowserFrame, BrowserPage } from "../types.mts";
+import { pause } from "../utils/index.ts";
+import { getQuickOpenShortcut } from "./commands.ts";
+import { fillVisibleQuickInput } from "./quick-input.ts";
+import type { BrowserFrame, BrowserPage } from "../types.ts";
 
 export async function openWorkspaceFile({ page, fileName, openToSide = false }: { page: BrowserPage; fileName: string; openToSide?: boolean }): Promise<void> {
   await page.keyboard.press(getQuickOpenShortcut());
