@@ -109,11 +109,30 @@ async function validatePackageBins(
  * executable with no shared runtime chunks.
  */
 export function packageBinBuild(options: PackageBinBuildOptions): Plugin {
+  const virtualEntry = "\0moyarich:package-bin-build";
   let resolvedConfig: ResolvedConfig;
 
   return {
     name: "moyarich:package-bin-build",
     enforce: "pre",
+
+    config() {
+      return {
+        build: {
+          rollupOptions: {
+            input: virtualEntry,
+          },
+        },
+      };
+    },
+
+    resolveId(id) {
+      if (id === virtualEntry) return virtualEntry;
+    },
+
+    load(id) {
+      if (id === virtualEntry) return "export {}";
+    },
 
     configResolved(config) {
       resolvedConfig = config;
