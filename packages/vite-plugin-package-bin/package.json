@@ -21,12 +21,6 @@
   "peerDependencies": {
     "vite": "^7.1.7"
   },
-  "devDependencies": {
-    "@types/node": "^24.0.0",
-    "typescript": "^5.9.3",
-    "vite": "^7.1.7",
-    "vitest": "^3.2.4"
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/moyarich/dev-toolkit.git",
