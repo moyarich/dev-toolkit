@@ -4,17 +4,10 @@ on:
   workflow_dispatch:
     inputs:
       package-directory:
-        description: Package directory
+        description: Workspace path, directory name, or package name
         required: true
-        default: packages/workspace-tools
-        type: choice
-        options:
-          - packages/demo-tools
-          - packages/readme-screenshots
-          - packages/vite-plugin-package-bin
-          - packages/vs-code-ext-tools
-          - packages/web-components
-          - packages/workspace-tools
+        default: "."
+        type: string
       node-version:
         description: Node.js version used by CI
         required: true
@@ -64,7 +57,6 @@ jobs:
           node-version: ${{ inputs.node-version }}
           cache: npm
           registry-url: https://npm.pkg.github.com
-          scope: "@moyarich"
       - name: Install workspace dependencies
         run: npm ci --prefer-offline --no-audit --no-fund
         env:
