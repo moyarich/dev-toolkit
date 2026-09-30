@@ -67,24 +67,9 @@ jobs:
 
           if [ -f packages/workspace-tools/package.json ]; then
             npm run build --workspace @moyarich/workspace-tools
-            TOOL_BIN_DIR="$RUNNER_TEMP/workspace-tools-bin"
-            rm -rf "$TOOL_BIN_DIR"
-            mkdir -p "$TOOL_BIN_DIR"
-            npm pack \
-              --workspace @moyarich/workspace-tools \
-              --pack-destination "$TOOL_BIN_DIR"
-
-            TOOL_TARBALL="$(find "$TOOL_BIN_DIR" -maxdepth 1 -type f -name 'moyarich-workspace-tools-*.tgz' -print -quit)"
-            test -n "$TOOL_TARBALL"
-
-            npm install \
-              --prefix "$TOOL_BIN_DIR" \
-              --package-lock=false \
-              --include=optional \
-              --ignore-scripts \
-              "$TOOL_TARBALL"
-
-            echo "WORKSPACE_TOOLS_BIN=$TOOL_BIN_DIR/node_modules/.bin" >> "$GITHUB_ENV"
+            TOOL_BIN_DIR="$GITHUB_WORKSPACE/packages/workspace-tools/bin"
+            test -x "$TOOL_BIN_DIR/discover-test-packages.mjs" || chmod +x "$TOOL_BIN_DIR/"*.mjs
+            echo "WORKSPACE_TOOLS_BIN=$TOOL_BIN_DIR" >> "$GITHUB_ENV"
           else
             TOOL_ROOT="$RUNNER_TEMP/workspace-tools"
             rm -rf "$TOOL_ROOT"
@@ -103,7 +88,7 @@ jobs:
         name: Discover packages for CI
         shell: bash
         run: |
-          PACKAGES="$("$WORKSPACE_TOOLS_BIN/discover-test-packages" "${{ inputs.packages-directory }}" --json)"
+          PACKAGES="$("$WORKSPACE_TOOLS_BIN/discover-test-packages.mjs" "${{ inputs.packages-directory }}" --json)"
           echo "$PACKAGES" | jq -e 'type == "array"' >/dev/null
           MATRIX="$(jq -cn --argjson packages "$PACKAGES" '{include: $packages}')"
           echo "$MATRIX" | jq -e 'type == "object" and (.include | type == "array")' >/dev/null
