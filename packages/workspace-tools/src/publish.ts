@@ -24,7 +24,8 @@ type RegistrySelection = Registry | "both";
 type PackageAccess = "public" | "restricted";
 interface RegistryConfig { url: string; host: string; token?: string; }
 interface PublishOptions { registry?: RegistrySelection; tag?: string; access?: PackageAccess; dryRun?: boolean; list?: boolean; json?: boolean; withDependencies?: boolean; verifyGitTag?: boolean; }
-interface PublishPlanItem { pkg: WorkspacePackage; registries: Record<Registry, "published" | "missing">; }
+type PackageIdentity = Pick<WorkspacePackage, "directory" | "manifest">;
+interface PublishPlanItem { pkg: PackageIdentity; registries: Partial<Record<Registry, "published" | "missing">>; }
 interface PublishSettings { registry: RegistrySelection; tag: string; access: PackageAccess; }
 
 import {
@@ -271,7 +272,7 @@ export function packageRegistryState(pkg: WorkspacePackage, registry: Registry) 
  * @param {ReturnType<typeof packageInfo>} pkg
  * @returns {{name: string, exists: boolean, atHead: boolean, commit: string | null}}
  */
-export function packageGitTagState(root: string, pkg: WorkspacePackage) {
+export function packageGitTagState(root: string, pkg: PackageIdentity) {
   const selector = pkg.directory.split("/").at(-1);
   const name = `${selector}@${pkg.manifest.version}`;
 
@@ -324,7 +325,7 @@ function publishPlan(packages: WorkspacePackage[], registry: RegistrySelection):
         destination,
         packageRegistryState(pkg, destination),
       ]),
-    ) as Record<Registry, "published" | "missing">,
+    ) as Partial<Record<Registry, "published" | "missing">>,
   }));
 }
 
