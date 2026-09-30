@@ -302,7 +302,14 @@ jobs:
             TOOL_BIN_DIR="$RUNNER_TEMP/workspace-tools-bin"
             rm -rf "$TOOL_BIN_DIR"
             mkdir -p "$TOOL_BIN_DIR"
-            npm install               --prefix "$TOOL_BIN_DIR"               --package-lock=false               --ignore-scripts               "$GITHUB_WORKSPACE/packages/workspace-tools"
+            npm install \
+              --prefix "$TOOL_ROOT" \
+              --package-lock=false \
+              --prefix "$TOOL_BIN_DIR" \
+              --package-lock=false \
+              --ignore-scripts \
+              "$GITHUB_WORKSPACE/packages/workspace-tools"
+              
             echo "WORKSPACE_TOOLS_BIN=$TOOL_BIN_DIR/node_modules/.bin" >> "$GITHUB_ENV"
           else
             TOOL_ROOT="$RUNNER_TEMP/workspace-tools"
