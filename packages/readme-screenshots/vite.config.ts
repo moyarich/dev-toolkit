@@ -1,28 +1,13 @@
 import { resolve } from "node:path";
-import { defineConfig } from "vite";
+import { buildCli } from "../workspace-tools/vite/cli.ts";
 
-export default defineConfig({
-  build: {
-    target: "node24",
-    outDir: "bin",
-    emptyOutDir: true,
+await buildCli(
+  {
+    entries: {
+      "readme-screenshots": resolve(import.meta.dirname, "src/cli/readme-screenshots.ts"),
+    },
     sourcemap: true,
-    minify: false,
-    lib: {
-      entry: {
-        "readme-screenshots": resolve(
-          import.meta.dirname,
-          "src/cli/readme-screenshots.ts",
-        ),
-      },
-      formats: ["es"],
-      fileName: (_format, entryName) => `${entryName}.mjs`,
-    },
-    rollupOptions: {
-      external: [/^node:/, "playwright"],
-      output: {
-        banner: "#!/usr/bin/env node",
-      },
-    },
+    external: ["playwright"],
   },
-});
+  import.meta.dirname,
+);
