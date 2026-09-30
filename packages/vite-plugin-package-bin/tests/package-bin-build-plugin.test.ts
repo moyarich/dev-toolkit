@@ -54,13 +54,22 @@ beforeEach(() => {
 test("builds package bins using mocked filesystem and Vite modules", async () => {
   const plugin = packageBinBuild({ emptyOutDir: true });
 
-  plugin.configResolved?.({
+  const configResolved =
+    typeof plugin.configResolved === "function"
+      ? plugin.configResolved
+      : plugin.configResolved?.handler;
+  expect(configResolved).toBeTypeOf("function");
+  await configResolved?.call({} as never, {
     root: "/repo",
     logLevel: "silent",
   } as ResolvedConfig);
 
-  expect(typeof plugin.buildStart).toBe("function");
-  await plugin.buildStart.call({} as never, {} as never);
+  const buildStart =
+    typeof plugin.buildStart === "function"
+      ? plugin.buildStart
+      : plugin.buildStart?.handler;
+  expect(buildStart).toBeTypeOf("function");
+  await buildStart?.call({} as never, {} as never);
 
   expect(glob).toHaveBeenCalledWith("src/**/*.ts", { cwd: "/repo" });
   expect(rm).toHaveBeenCalledWith("/repo/bin", {
