@@ -1,6 +1,6 @@
 {
   "name": "@moyarich/workspace-tools",
-  "version": "0.1.2",
+  "version": "0.0.1",
   "description": "Reusable workspace release and publishing tools.",
   "type": "module",
   "bin": {
@@ -39,7 +39,7 @@
     "access": "public"
   },
   "devDependencies": {
-    "@moyarich/vite-plugin-package-bin": "0.1.0"
+    "@moyarich/vite-plugin-package-bin": "0.0.1"
   },
   "license": "MIT"
 }
