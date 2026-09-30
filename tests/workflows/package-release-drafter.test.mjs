@@ -80,3 +80,9 @@ test("shared discovery workflow exposes reusable package metadata", () => {
   assert.match(discovery, /require-test-script:/);
   assert.match(discovery, /require-build-script:/);
 });
+
+
+test("draft release workflow does not require the release environment", () => {
+  assert.doesNotMatch(workflow, /environment:\s*\n\s*name: release/);
+  assert.doesNotMatch(workflow, /approve-release:/);
+});
