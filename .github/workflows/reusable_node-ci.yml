@@ -56,12 +56,8 @@ jobs:
         shell: bash
         run: |
           {
-            echo "# Reusable · Node CI"
-            echo
             echo "| Execution | Value |"
             echo "| --- | --- |"
-            echo "| Workflow | \`Reusable · Node CI\` |"
-            echo "| Job | \`${{ github.job }}\` |"
             echo "| Repository | \`${{ github.repository }}\` |"
             echo "| Ref | \`${{ github.ref_name }}\` |"
             echo "| Run | \`#${{ github.run_number }}\` |"
@@ -116,7 +112,7 @@ jobs:
         if: ${{ always() }}
         run: |
           {
-            echo "## Node CI"
+            echo "## CI result"
             echo
             echo "| Setting | Value |"
             echo "| --- | --- |"
