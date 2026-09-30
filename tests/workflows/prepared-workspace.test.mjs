@@ -78,7 +78,7 @@ test("prepared workspace preserves CLI permissions, links, nested dependencies a
         GITHUB_RUN_ATTEMPT: "1",
       },
     });
-    execFileSync("tar", ["-xzf", join(temp, "prepared-workspace.tar.gz")], {
+    execFileSync("tar", ["-xf", join(temp, "prepared-workspace.tar")], {
       cwd: target,
     });
     assert.equal(
