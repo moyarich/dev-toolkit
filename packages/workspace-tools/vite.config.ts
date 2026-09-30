@@ -1,6 +1,6 @@
-import { cli } from "./vite/cli.ts";
+import { cliBuild } from "./vite/cliBuild.ts";
 
-await cli(
+await cliBuild(
   {
     include: "src/cli/*.ts",
   },
