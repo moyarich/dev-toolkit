@@ -1,5 +1,5 @@
 import { Argument, Option, program } from "commander";
-import { publishWorkspacePackage } from "../publish.mts";
+import { publishWorkspacePackage } from "../publish.ts";
 
 program
   .name("workspace-publish")

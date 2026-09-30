@@ -1,5 +1,5 @@
 import { Argument, Option, program } from "commander";
-import { releaseWorkspacePackage } from "../release.mts";
+import { releaseWorkspacePackage } from "../release.ts";
 
 program
   .name("workspace-release")

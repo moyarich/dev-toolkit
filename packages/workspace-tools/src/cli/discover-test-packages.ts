@@ -1,5 +1,5 @@
 import { Argument, Option, program } from "commander";
-import { discoverTestPackages } from "../discover-test-packages.mts";
+import { discoverTestPackages } from "../discover-test-packages.ts";
 
 program
   .name("discover-test-packages")

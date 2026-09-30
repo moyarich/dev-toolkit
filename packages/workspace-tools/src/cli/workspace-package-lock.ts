@@ -1,5 +1,5 @@
 import { program } from "commander";
-import { runPackageLock } from "../package-lock.mts";
+import { runPackageLock } from "../package-lock.ts";
 
 program
   .name("workspace-package-lock")

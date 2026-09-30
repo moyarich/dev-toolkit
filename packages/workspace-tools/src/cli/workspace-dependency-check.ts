@@ -1,5 +1,5 @@
 import { Argument, program } from "commander";
-import { runDependencyCheck } from "../dependency-check.mts";
+import { runDependencyCheck } from "../dependency-check.ts";
 
 program
   .name("workspace-dependency-check")
