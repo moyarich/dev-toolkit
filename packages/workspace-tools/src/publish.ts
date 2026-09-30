@@ -247,10 +247,11 @@ export function packageRegistryState(pkg: WorkspacePackage, registry: Registry) 
 
     return "published";
   } catch (error) {
+    const commandError = error as Error & { stdout?: string | Buffer; stderr?: string | Buffer };
     const output = [
-      error?.stdout ?? "",
-      error?.stderr ?? "",
-      error?.message ?? "",
+      commandError.stdout ?? "",
+      commandError.stderr ?? "",
+      commandError.message,
     ].join("\n");
 
     if (/E404|404 Not Found|is not in this registry/i.test(output)) {
@@ -258,7 +259,7 @@ export function packageRegistryState(pkg: WorkspacePackage, registry: Registry) 
     }
 
     throw new Error(
-      `Could not check ${pkg.manifest.name}@${pkg.manifest.version} on ${registry}: ${error.message}`,
+      `Could not check ${pkg.manifest.name}@${pkg.manifest.version} on ${registry}: ${commandError.message}`,
     );
   }
 }
@@ -323,7 +324,7 @@ function publishPlan(packages: WorkspacePackage[], registry: RegistrySelection):
         destination,
         packageRegistryState(pkg, destination),
       ]),
-    ),
+    ) as Record<Registry, "published" | "missing">,
   }));
 }
 
