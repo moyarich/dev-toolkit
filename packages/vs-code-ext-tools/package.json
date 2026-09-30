@@ -1,6 +1,6 @@
 {
   "name": "@moyarich/vs-code-ext-tools",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "description": "Reusable vs-code extension tools.",
   "type": "module",
   "bin": {
@@ -36,7 +36,7 @@
     "access": "public"
   },
   "devDependencies": {
-    "@moyarich/vite-plugin-package-bin": "0.1.0"
+    "@moyarich/vite-plugin-package-bin": "0.0.1"
   },
   "license": "MIT"
 }
