@@ -4,18 +4,10 @@ on:
   workflow_dispatch:
     inputs:
       package-directory:
-        description: Package to check
+        description: Package selector (all, package name, or packages/<directory>)
         required: true
         default: all
-        type: choice
-        options:
-          - all
-          - packages/demo-tools
-          - packages/readme-screenshots
-          - packages/vite-plugin-package-bin
-          - packages/vs-code-ext-tools
-          - packages/web-components
-          - packages/workspace-tools
+        type: string
 
       node-version:
         description: Node.js version used by CI
