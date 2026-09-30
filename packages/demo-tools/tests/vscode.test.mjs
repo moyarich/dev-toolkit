@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import test from "node:test";
+import { test } from "vitest";
 import { getCommandPaletteShortcut, getQuickOpenShortcut } from "../src/vscode/commands.ts";
 
 test("VS Code shortcuts are platform aware", () => {
