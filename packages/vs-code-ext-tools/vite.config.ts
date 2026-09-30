@@ -1,23 +1,14 @@
 import { resolve } from "node:path";
-import { defineConfig } from "vite";
+import { buildCli } from "../workspace-tools/vite/cli.ts";
 
-export default defineConfig({
-  build: {
-    target: "node24",
-    outDir: "bin",
-    emptyOutDir: true,
+await buildCli(
+  {
+    entries: {
+      "vs-code-publish": resolve(import.meta.dirname, "src/cli/vs-code-publish.ts"),
+      "run-extension-dev": resolve(import.meta.dirname, "src/cli/run-extension-dev.ts"),
+    },
     sourcemap: true,
-    minify: false,
-    lib: {
-      entry: {
-        "vs-code-publish": resolve(import.meta.dirname, "src/cli/vs-code-publish.ts"),
-        "run-extension-dev": resolve(import.meta.dirname, "src/cli/run-extension-dev.ts"),
-      },
-      formats: ["es"],
-      fileName: (_format, entryName) => `${entryName}.mjs`,
-    },
-    rollupOptions: {
-      external: [/^node:/, /^@inquirer\//, "chalk", "commander"],
-    },
+    external: [/^@inquirer\//, "chalk", "commander"],
   },
-});
+  import.meta.dirname,
+);
