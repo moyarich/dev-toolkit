@@ -1,7 +1,7 @@
 import { readdir } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import type { DemoStrategy, DemoStrategyEntry } from "../types.mts";
+import type { DemoStrategy, DemoStrategyEntry } from "../types.ts";
 
 interface StrategyModulePath { modulePath: string; relativePath: string }
 

@@ -1,4 +1,4 @@
-import type { DemoStrategy, DemoStrategyContext } from "../types.mts";
+import type { DemoStrategy, DemoStrategyContext } from "../types.ts";
 
 export function defineDemoStrategy<T>(strategy: DemoStrategy<T>): Readonly<DemoStrategy<T>> {
   if (!strategy || typeof strategy !== "object") throw new TypeError("A demo strategy must be an object.");

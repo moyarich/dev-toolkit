@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { discoverDemoStrategies } from "./discover.mts";
+import { discoverDemoStrategies } from "./discover.ts";
 
 export interface FzfOptions { prompt?: string; multi?: boolean; header?: string }
 

@@ -1,7 +1,7 @@
 import path from "node:path";
 import { mkdir } from "node:fs/promises";
-import { discoverDemoStrategies } from "./discover.mts";
-import type { DemoStrategyContext } from "../types.mts";
+import { discoverDemoStrategies } from "./discover.ts";
+import type { DemoStrategyContext } from "../types.ts";
 
 export interface RunDemoStrategiesOptions {
   directory?: string;
