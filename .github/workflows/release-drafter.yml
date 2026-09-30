@@ -41,12 +41,45 @@ jobs:
       require-publish-config: true
       node-version: "24"
 
+  validate-selection:
+    name: "Validate package selector"
+    needs: discover-packages
+    if: ${{ github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate selected package
+        env:
+          INPUT_PACKAGE: ${{ inputs.package }}
+          PACKAGES_JSON: ${{ needs.discover-packages.outputs.packages }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ "$INPUT_PACKAGE" = "all" ]; then
+            exit 0
+          fi
+
+          if jq -e --arg selector "$INPUT_PACKAGE" '
+            any(.[]; .name == $selector or .directory == $selector)
+          ' <<< "$PACKAGES_JSON" >/dev/null; then
+            exit 0
+          fi
+
+          echo "::error::Unknown package selector: $INPUT_PACKAGE"
+          echo "Available selectors:"
+          jq -r '.[] | "  - \(.name)  [\(.directory)]"' <<< "$PACKAGES_JSON"
+          exit 1
+
   draft-release:
     name: "package: ${{ matrix.name }} | dir: ${{ matrix.directory }}"
-    needs: discover-packages
+    needs:
+      - discover-packages
+      - validate-selection
     if: >-
       ${{ needs.discover-packages.result == 'success' &&
-          needs.discover-packages.outputs.has-packages == 'true' }}
+          needs.discover-packages.outputs.has-packages == 'true' &&
+          (github.event_name != 'workflow_dispatch' ||
+           needs.validate-selection.result == 'success') }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
