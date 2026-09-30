@@ -24,7 +24,6 @@ assertions, screenshots, recordings, and cleanup. It may explicitly import
 shared utilities when behavior is genuinely reusable.
 
 ```ts
-import { executableDemoStrategy } from "@moyarich/demo-tools";
 import type { DemoStrategy } from "@moyarich/demo-tools";
 import { pause } from "@moyarich/demo-tools/utils";
 
@@ -40,20 +39,14 @@ const strategy = {
   },
 } satisfies DemoStrategy;
 
-export default executableDemoStrategy(strategy, import.meta.url);
+export default strategy;
 ```
 
 `DemoStrategy` is the authoring contract. Use `satisfies DemoStrategy` for
 compile-time checking without wrapping or freezing the strategy. Dynamically
 loaded strategies are validated by demo-tools at the runtime boundary.
 
-Run a compiled JavaScript strategy directly:
-
-```sh
-node demo/strategies/overview/index.js
-```
-
-The CLI remains an optional convenience for batch execution.
+Strategies are executed through the CLI, which owns discovery, runtime validation, and execution.
 
 ```sh
 demo run
