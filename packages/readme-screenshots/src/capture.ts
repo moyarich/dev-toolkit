@@ -67,16 +67,19 @@ export async function captureScreenshots(
 
     for (const shot of screenshots) {
       if (!shot.name) throw new Error("Each screenshot requires a name.");
-      const target = shot.selector ? page.locator(shot.selector).first() : page;
-      if (shot.selector) await target.waitFor({ state: "visible" });
-      if (shot.scrollIntoView && shot.selector) {
-        await target.scrollIntoViewIfNeeded();
+      if (shot.selector) {
+        const target = page.locator(shot.selector).first();
+        await target.waitFor({ state: "visible" });
+        if (shot.scrollIntoView) await target.scrollIntoViewIfNeeded();
+        if (shot.waitForMs) await page.waitForTimeout(shot.waitForMs);
+        await target.screenshot({ path: resolve(outputDir, shot.name) });
+      } else {
+        if (shot.waitForMs) await page.waitForTimeout(shot.waitForMs);
+        await page.screenshot({
+          path: resolve(outputDir, shot.name),
+          fullPage: shot.fullPage ?? false,
+        });
       }
-      if (shot.waitForMs) await page.waitForTimeout(shot.waitForMs);
-      await target.screenshot({
-        path: resolve(outputDir, shot.name),
-        ...(shot.selector ? {} : { fullPage: shot.fullPage ?? false }),
-      });
     }
   } finally {
     await browser.close();
