@@ -1,9 +1,9 @@
 import { defineConfig } from "vite";
-import { cliBuild } from "./vite/cliBuild.ts";
+import { packageBinBuild } from "./vite/packageBinBuild.ts";
 
 export default defineConfig({
   plugins: [
-    cliBuild({
+    packageBinBuild({
       include: "src/cli/*.ts",
     }),
   ],
