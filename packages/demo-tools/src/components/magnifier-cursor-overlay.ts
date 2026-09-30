@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import type { BrowserLocator, BrowserPage } from "../types.mts";
+import type { BrowserLocator, BrowserPage } from "../types.ts";
 
 const MAGNIFIER_CURSOR_TAG_NAME = "moyarich-magnifier-cursor-overlay";
 const componentPath = fileURLToPath(import.meta.resolve("@moyarich/web-components/magnifier-cursor-overlay/element"));

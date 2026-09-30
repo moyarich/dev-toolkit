@@ -1,5 +1,5 @@
-import { importHTMLElement } from "./import-html-element.mts";
-import type { BrowserPage } from "../types.mts";
+import { importHTMLElement } from "./import-html-element.ts";
+import type { BrowserPage } from "../types.ts";
 
 const captionUrl = new URL(import.meta.resolve("@moyarich/web-components/caption/element"));
 const cursorUrl = new URL(import.meta.resolve("@moyarich/web-components/cursor-overlay/element"));

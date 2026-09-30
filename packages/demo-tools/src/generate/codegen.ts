@@ -1,7 +1,7 @@
 import { access, mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { createInterface } from "node:readline/promises";
-import type { BrowserPage, DemoStrategy } from "../types.mts";
+import type { BrowserPage, DemoStrategy } from "../types.ts";
 
 interface RecorderContext {
   _enableRecorder?(options: { language: string; mode: string; testIdAttributeName: string; outputFile: string; handleSIGINT: boolean }): Promise<void>;
