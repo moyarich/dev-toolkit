@@ -10,8 +10,8 @@ export default defineConfig({
     minify: false,
     lib: {
       entry: {
-        "vs-code-publish": resolve(import.meta.dirname, "src/cli/vs-code-publish.mts"),
-        "run-extension-dev": resolve(import.meta.dirname, "src/cli/run-extension-dev.mts"),
+        "vs-code-publish": resolve(import.meta.dirname, "src/cli/vs-code-publish.ts"),
+        "run-extension-dev": resolve(import.meta.dirname, "src/cli/run-extension-dev.ts"),
       },
       formats: ["es"],
       fileName: (_format, entryName) => `${entryName}.mjs`,
