@@ -1,6 +1,6 @@
 import path from "node:path";
 import { mkdir } from "node:fs/promises";
-import type { BrowserLocator, BrowserPage } from "../types.mts";
+import type { BrowserLocator, BrowserPage } from "../types.ts";
 
 export interface CaptureScreenshotOptions {
   page: BrowserPage;

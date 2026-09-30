@@ -1,5 +1,5 @@
 import path from "node:path";
-import { runProcess } from "../utils/process.mts";
+import { runProcess } from "../utils/process.ts";
 
 export async function ensureFfmpeg(): Promise<true> {
   try { await runProcess("ffmpeg", ["-version"], { stdio: "ignore" }); return true; }

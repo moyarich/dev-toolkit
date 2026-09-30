@@ -1,6 +1,6 @@
 import path from "node:path";
 import { mkdir, writeFile } from "node:fs/promises";
-import type { BrowserPage, CDPSession } from "../types.mts";
+import type { BrowserPage, CDPSession } from "../types.ts";
 
 export interface FrameRecorderOptions { page: BrowserPage; framesDirectory: string; frameRate?: number }
 export interface FrameRecorder { start(): Promise<void>; stop(): Promise<void>; readonly frameCount: number }
