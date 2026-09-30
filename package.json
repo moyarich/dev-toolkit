@@ -14,7 +14,8 @@
     "typecheck": "npm run typecheck --workspaces --if-present",
     "demo": "demo",
     "demo:list": "demo list",
-    "test:playground": "node --test tests/playground/*.test.mjs"
+    "test:playground": "node --test tests/playground/*.test.mjs",
+    "package-lock:update": "npm install --package-lock-only --include=optional"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
