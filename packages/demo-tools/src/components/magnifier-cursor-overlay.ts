@@ -23,9 +23,7 @@ export async function installMagnifierCursorOverlay({
   if (!isRegistered) {
     const session = await page.context().newCDPSession(page);
     try {
-      const result = await session.send<{
-        exceptionDetails?: { exception?: { description?: string }; text?: string };
-      }>("Runtime.evaluate", {
+      const result = await session.send("Runtime.evaluate", {
         expression: `{\n${(await componentSource).replace('import styleSheet from "./styles.css" with { type: "css" };', `const styleSheet = new CSSStyleSheet();\nstyleSheet.replaceSync(${JSON.stringify(await stylesheetSource)});`).replace("export class MagnifierCursorOverlay", "class MagnifierCursorOverlay")}\n}\n//# sourceURL=${componentPath}`,
         awaitPromise: true,
       });
