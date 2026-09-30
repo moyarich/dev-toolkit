@@ -12,7 +12,7 @@ test("standaloneCliBuilds creates one independent build per CLI entry", () => {
       alpha: "/repo/src/cli/alpha.ts",
       beta: "/repo/src/cli/beta.ts",
     },
-    { emptyOutDir: true },
+    {},
     "/repo",
   );
 
@@ -35,7 +35,6 @@ test("standaloneCliBuilds preserves CLI build options", () => {
   const [build] = standaloneCliBuilds(
     { demo: "/repo/demo.ts" },
     {
-      emptyOutDir: false,
       outDir: "dist/bin",
       target: "node24",
       sourcemap: true,
@@ -65,7 +64,7 @@ test("discoverCliEntries finds managed bins across multiple source locations", a
     await writeFile(join(root, "scripts/diagnostics/doctor.ts"), "export {};");
 
     const entries = await discoverCliEntries(
-      ["src/**/*.ts", "scripts/**/*.ts"],
+      [{ pattern: "src/**/*.ts" }, { pattern: "scripts/**/*.ts" }],
       root,
       {
         release: "./bin/release.mjs",
@@ -89,7 +88,7 @@ test("discoverCliEntries ignores source files that are not managed package bins"
     await writeFile(join(root, "src/release.ts"), "export {};");
     await writeFile(join(root, "src/helper.ts"), "export {};");
 
-    const entries = await discoverCliEntries("src/**/*.ts", root, {
+    const entries = await discoverCliEntries({ pattern: "src/**/*.ts" }, root, {
       release: "./bin/release.mjs",
     });
 
