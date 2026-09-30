@@ -1,20 +1,19 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { defineDemoStrategy, isMainModule, runDemoStrategy } from "../src/index.ts";
+import { assertDemoStrategy, isMainModule, runDemoStrategy } from "../src/index.ts";
 
-test("defineDemoStrategy preserves a valid strategy", () => {
-  const strategy = defineDemoStrategy({ name: "example", run() {} });
-  assert.equal(strategy.name, "example");
-  assert.equal(Object.isFrozen(strategy), true);
+test("assertDemoStrategy accepts a valid strategy", () => {
+  const strategy = { name: "example", run() {} };
+  assert.doesNotThrow(() => assertDemoStrategy(strategy));
 });
 
-test("defineDemoStrategy requires run", () => {
-  assert.throws(() => defineDemoStrategy({ name: "example" }), /run/);
+test("assertDemoStrategy requires run", () => {
+  assert.throws(() => assertDemoStrategy({ name: "example" }), /run/);
 });
 
 test("runDemoStrategy derives strategy context from its module URL", async () => {
   let received;
-  const strategy = defineDemoStrategy({ name: "example", run(context) { received = context; } });
+  const strategy = { name: "example", run(context) { received = context; } };
   await runDemoStrategy({ strategy, moduleUrl: import.meta.url });
   assert.equal(received.id, "example");
   assert.match(received.strategyDirectory, /tests$/);
