@@ -6,9 +6,9 @@
   "bin": {
     "workspace-release": "./bin/workspace-release.mjs",
     "workspace-publish": "./bin/workspace-publish.mjs",
-    "discover-test-packages": "./bin/discover-test-packages.mjs",
     "workspace-dependency-check": "./bin/workspace-dependency-check.mjs",
-    "workspace-package-lock": "./bin/workspace-package-lock.mjs"
+    "workspace-package-lock": "./bin/workspace-package-lock.mjs",
+    "discover-packages": "./bin/discover-packages.mjs"
   },
   "files": [
     "bin",
