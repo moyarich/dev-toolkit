@@ -70,12 +70,20 @@ jobs:
             TOOL_BIN_DIR="$RUNNER_TEMP/workspace-tools-bin"
             rm -rf "$TOOL_BIN_DIR"
             mkdir -p "$TOOL_BIN_DIR"
+            npm pack \
+              --workspace @moyarich/workspace-tools \
+              --pack-destination "$TOOL_BIN_DIR"
+
+            TOOL_TARBALL="$(find "$TOOL_BIN_DIR" -maxdepth 1 -type f -name 'moyarich-workspace-tools-*.tgz' -print -quit)"
+            test -n "$TOOL_TARBALL"
+
             npm install \
               --prefix "$TOOL_BIN_DIR" \
               --package-lock=false \
               --include=optional \
               --ignore-scripts \
-              "$GITHUB_WORKSPACE/packages/workspace-tools"
+              "$TOOL_TARBALL"
+
             echo "WORKSPACE_TOOLS_BIN=$TOOL_BIN_DIR/node_modules/.bin" >> "$GITHUB_ENV"
           else
             TOOL_ROOT="$RUNNER_TEMP/workspace-tools"
