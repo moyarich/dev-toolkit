@@ -9,13 +9,14 @@ export interface WorkspaceManifest {
   workspaces?: string[] | { packages?: string[] };
   dependencies?: Record<string, string>;
   optionalDependencies?: Record<string, string>;
+  devDependencies?: Record<string, string>;
   publishConfig?: { registry?: string };
 }
 
 export interface WorkspacePackage {
   directory: string;
   file: string;
-  manifest: WorkspaceManifest & { name: string };
+  manifest: WorkspaceManifest & { name: string; version: string };
 }
 
 
@@ -56,7 +57,11 @@ export function workspacePackages(root: string): WorkspacePackage[] {
       const manifest = JSON.parse(readFileSync(file, "utf8")) as WorkspaceManifest;
       return { directory, file, manifest };
     })
-    .filter((pkg) => pkg.manifest.name);
+    .filter(
+      (pkg): pkg is WorkspacePackage =>
+        typeof pkg.manifest.name === "string" &&
+        typeof pkg.manifest.version === "string",
+    );
 }
 
 export function packageInfo(root: string, selector: string): WorkspacePackage {
@@ -98,7 +103,9 @@ export function workspaceDependencies(root: string, pkg: WorkspacePackage): Work
     ...Object.keys(pkg.manifest.dependencies ?? {}),
     ...Object.keys(pkg.manifest.optionalDependencies ?? {}),
   ]);
-  return [...dependencyNames].map((name) => byName.get(name)).filter(Boolean);
+  return [...dependencyNames]
+    .map((name) => byName.get(name))
+    .filter((pkg): pkg is WorkspacePackage => pkg !== undefined);
 }
 
 export function workspacePublishOrder(root: string, pkg: WorkspacePackage): WorkspacePackage[] {
