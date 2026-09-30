@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
-import { execFileSync, spawnSync } from "node:child_process";
+import { execFileSync, spawnSync, type ExecFileSyncOptions } from "node:child_process";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
@@ -57,7 +57,7 @@ const COLOR = Boolean(process.stdout.isTTY && !process.env.NO_COLOR);
  * @returns {string}
  * Styled or unchanged value.
  */
-function ansi(code, value) {
+function ansi(code: string, value: string): string {
   return COLOR ? `\x1b[${code}m${value}\x1b[0m` : value;
 }
 
@@ -96,6 +96,14 @@ const style = {
  * Allow interactive fzf selection.
  */
 
+interface ReleaseOptions {
+  mode?: "bump" | "exact" | "package-json";
+  version?: string;
+  dryRun?: boolean;
+  json?: boolean;
+  fzf?: boolean;
+}
+
 /**
  * Calculate the next package version.
  *
@@ -108,7 +116,7 @@ const style = {
  * @returns {string}
  * Resolved next version.
  */
-export function resolveNextVersion(currentVersion, versionSpec) {
+export function resolveNextVersion(currentVersion: string, versionSpec: string): string {
   if (!SEMVER.test(currentVersion)) {
     throw new Error(`Invalid current SemVer: ${currentVersion}`);
   }
@@ -179,7 +187,7 @@ export function resolveNextVersion(currentVersion, versionSpec) {
  * }}
  * Parsed release specification.
  */
-export function parseReleaseArgument(argument, options = {}) {
+export function parseReleaseArgument(argument: string, options: ReleaseOptions = {}) {
   if (!argument) {
     throw new Error("A package selector is required.");
   }
@@ -235,7 +243,7 @@ export function parseReleaseArgument(argument, options = {}) {
  * }}
  * Grouped release notes.
  */
-export function releaseNotes(messages) {
+export function releaseNotes(messages: string[]) {
   const groups = {
     Added: [],
     Changed: [],
@@ -302,7 +310,7 @@ export function releaseNotes(messages) {
  * @returns {string}
  * Markdown changelog section.
  */
-export function changelogSection(version, notes) {
+export function changelogSection(version: string, notes: Record<string, string[]>): string {
   const sections = Object.entries(notes)
     .filter(([, entries]) => entries.length)
     .map(
@@ -324,7 +332,7 @@ export function changelogSection(version, notes) {
  * @returns {string}
  * Registry URL.
  */
-function registryFor(pkg) {
+function registryFor(pkg: ReturnType<typeof packageInfo>): string {
   return pkg.manifest.publishConfig?.registry || "https://registry.npmjs.org";
 }
 
@@ -346,7 +354,7 @@ function registryFor(pkg) {
  * }}
  * Registry state.
  */
-function registryVersion(root, pkg, version) {
+function registryVersion(root: string, pkg: ReturnType<typeof packageInfo>, version?: string) {
   const registry = registryFor(pkg);
 
   const spec = version ? `${pkg.manifest.name}@${version}` : pkg.manifest.name;
@@ -404,7 +412,7 @@ function registryVersion(root, pkg, version) {
  * @returns {string | null}
  * Previous tag or release commit.
  */
-function tagState(root, tag) {
+function tagState(root: string, tag: string) {
   const commit = execFileSync("git", ["rev-list", "-n", "1", tag], {
     cwd: root,
     encoding: "utf8",
@@ -434,7 +442,7 @@ function tagState(root, tag) {
   };
 }
 
-function previousReleaseRef(root, selector) {
+function previousReleaseRef(root: string, selector: string): string | null {
   const tags = execFileSync(
     "git",
     ["tag", "--list", `${selector}@*`, "--sort=-version:refname"],
@@ -479,7 +487,7 @@ function previousReleaseRef(root, selector) {
  * @returns {string[]}
  * Commit messages.
  */
-function packageChanges(root, pkg, previousRef) {
+function packageChanges(root: string, pkg: ReturnType<typeof packageInfo>, previousRef: string | null): string[] {
   const range = previousRef ? `${previousRef}..HEAD` : "HEAD";
 
   const log = execFileSync(
@@ -518,7 +526,7 @@ function packageChanges(root, pkg, previousRef) {
  * @returns {string}
  * Changelog path.
  */
-function updateChangelog(root, pkg, version, selector) {
+function updateChangelog(root: string, pkg: ReturnType<typeof packageInfo>, version: string, selector: string): string {
   const changelog = resolve(root, pkg.directory, "CHANGELOG.md");
 
   const previous = previousReleaseRef(root, selector);
@@ -562,7 +570,7 @@ function updateChangelog(root, pkg, version, selector) {
  * } | undefined}
  * Dry-run information when `dryRun` is enabled.
  */
-export function release(argument, options = {}) {
+export function release(argument: string, options: ReleaseOptions = {}) {
   const { selector, versionSpec: argumentVersionSpec } = parseReleaseArgument(
     argument,
     options,
@@ -740,7 +748,7 @@ ${section}`);
     };
   }
 
-  const operationRunOptions = options.json
+  const operationRunOptions: ExecFileSyncOptions = options.json
     ? { stdio: ["ignore", "ignore", "inherit"] }
     : { stdio: "inherit" };
 
@@ -897,7 +905,7 @@ Push the release commit and tag with:
  * @returns {boolean}
  * Whether the executable is available.
  */
-function commandExists(command) {
+function commandExists(command: string): boolean {
   const lookupCommand = process.platform === "win32" ? "where" : "which";
 
   const result = spawnSync(lookupCommand, [command], {
@@ -919,7 +927,7 @@ function commandExists(command) {
  * @returns {string | undefined}
  * Selected value, or `undefined` when selection is cancelled.
  */
-function selectWithFzf(choices, prompt) {
+function selectWithFzf(choices: string[], prompt: string): string | undefined {
   if (!process.stdin.isTTY) {
     throw new Error("Interactive selection requires a terminal.");
   }
@@ -983,7 +991,7 @@ function selectWithFzf(choices, prompt) {
  * @returns {ReturnType<typeof packageInfo>[]}
  * Releasable workspace packages.
  */
-function releasablePackages(root) {
+function releasablePackages(root: string): ReturnType<typeof packageInfo>[] {
   const packagesDirectory = resolve(root, "packages");
 
   if (!existsSync(packagesDirectory)) {
@@ -1012,7 +1020,7 @@ function releasablePackages(root) {
  * @returns {string | undefined}
  * Selected package name.
  */
-function selectPackageWithFzf(root) {
+function selectPackageWithFzf(root: string): string | undefined {
   const packages = releasablePackages(root);
 
   if (!packages.length) {
@@ -1031,7 +1039,7 @@ function selectPackageWithFzf(root) {
  * @returns {string | undefined}
  * Selected bump.
  */
-function selectVersionBumpWithFzf() {
+function selectVersionBumpWithFzf(): string | undefined {
   return selectWithFzf(
     [
       "patch",
@@ -1065,7 +1073,7 @@ function selectVersionBumpWithFzf() {
  * @returns {string | undefined}
  * Normalized `<package>=<version>` release specification.
  */
-function resolveCliReleaseArgument(argument, options) {
+function resolveCliReleaseArgument(argument: string | undefined, options: ReleaseOptions): string | undefined {
   if (argument?.includes("=")) {
     return argument;
   }
@@ -1115,7 +1123,7 @@ function resolveCliReleaseArgument(argument, options) {
  *
  * @returns {void}
  */
-export function releaseWorkspacePackage(argument, options) {
+export function releaseWorkspacePackage(argument: string | undefined, options: ReleaseOptions): void {
   const releaseArgument = resolveCliReleaseArgument(argument, options);
 
   if (!releaseArgument) {
@@ -1137,7 +1145,7 @@ export function releaseWorkspacePackage(argument, options) {
  * @returns {boolean}
  * Whether this module was executed directly.
  */
-function isMainModule() {
+function isMainModule(): boolean {
   if (!process.argv[1]) {
     return false;
   }
