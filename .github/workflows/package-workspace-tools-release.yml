@@ -86,8 +86,28 @@ permissions:
   packages: write
 
 jobs:
+  release-approval:
+    name: "job: Release approval"
+    if: ${{ !inputs.dry-run }}
+    runs-on: ubuntu-latest
+    environment:
+      name: release
+    steps:
+      - name: Record approval
+        shell: bash
+        run: |
+          {
+            echo "# Release approved"
+            echo
+            echo "A real package release was approved through the `release` environment."
+            echo
+            echo "> Dry runs do not require this approval."
+          } >> "$GITHUB_STEP_SUMMARY"
+
   release:
     name: "package: @moyarich/workspace-tools | dir: packages/workspace-tools"
+    needs: release-approval
+    if: ${{ always() && (inputs.dry-run || needs.release-approval.result == 'success') }}
     uses: ./.github/workflows/reusable_npm-release.yml
     with:
       package: packages/workspace-tools
