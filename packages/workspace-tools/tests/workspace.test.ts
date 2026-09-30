@@ -6,8 +6,10 @@ import { test } from "vitest";
 
 import {
   packageInfo,
+  workspaceDependencies,
   workspacePackages,
   workspacePatterns,
+  workspacePublishOrder,
 } from "../src/workspace.ts";
 
 function fixture(workspaces: string[] | { packages: string[] } = ["packages/*", "apps/*", "tools/special"]) {
@@ -78,6 +80,41 @@ test("workspacePatterns supports npm object form", () => {
   const root = fixture({ packages: ["packages/*"] });
   try {
     assert.deepEqual(workspacePatterns(root), ["packages/*"]);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("workspaceDependencies resolves local runtime dependencies only", () => {
+  const root = fixture();
+  try {
+    const library = packageInfo(root, "library");
+    const playground = packageInfo(root, "playground");
+    playground.manifest.dependencies = { [library.manifest.name]: "^1.0.0" };
+    playground.manifest.devDependencies = { "@example/special": "^1.0.0" };
+
+    assert.deepEqual(
+      workspaceDependencies(root, playground).map((pkg) => pkg.manifest.name),
+      ["@example/library"],
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("workspacePublishOrder puts dependencies before the selected package", () => {
+  const root = fixture();
+  try {
+    const library = packageInfo(root, "library");
+    const playground = packageInfo(root, "playground");
+    const special = packageInfo(root, "special");
+    playground.manifest.dependencies = { [library.manifest.name]: "^1.0.0" };
+    library.manifest.optionalDependencies = { [special.manifest.name]: "^1.0.0" };
+
+    assert.deepEqual(
+      workspacePublishOrder(root, playground).map((pkg) => pkg.manifest.name),
+      ["@example/special", "@example/library", "@example/playground"],
+    );
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
