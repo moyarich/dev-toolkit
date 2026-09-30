@@ -6,13 +6,13 @@ Install `@moyarich/demo-tools` and create a strategy beneath `demo/strategies`.
 demo/
 └── strategies/
     └── overview/
-        └── index.mjs
+        └── index.ts
 ```
 
-```js
-import { executableDemoStrategy } from "@moyarich/demo-tools";
+```ts
+import type { DemoStrategy } from "@moyarich/demo-tools";
 
-export default executableDemoStrategy({
+const strategy = {
   name: "overview",
   description: "Show the primary workflow.",
 
@@ -20,16 +20,16 @@ export default executableDemoStrategy({
     // Launch the environment explicitly, perform the demo, and write
     // screenshots or recordings to artifactsDirectory.
   },
-}, import.meta.url);
+} satisfies DemoStrategy;
+
+export default strategy;
 ```
 
-Run the strategy directly:
+`satisfies DemoStrategy` checks the strategy at compile time while preserving
+the object's inferred type. demo-tools validates dynamically loaded strategies
+again at the runtime boundary.
 
-```sh
-node demo/strategies/overview/index.mjs
-```
-
-Or use the installed CLI:
+Run it with the installed CLI:
 
 ```sh
 demo list

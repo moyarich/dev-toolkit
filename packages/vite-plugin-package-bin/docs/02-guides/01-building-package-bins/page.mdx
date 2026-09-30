@@ -1,0 +1,79 @@
+# Building package bins
+
+`packageBinBuild` discovers managed package bins across one or more source locations and runs a separate Vite library build for each entry.
+
+Without `entries`, discovery defaults to:
+
+```ts
+{ pattern: "src/**/*.ts", bin: "./bin/{name}.mjs" }
+```
+
+For multiple or custom source locations:
+
+```ts
+packageBinBuild({
+  entries: [{ pattern: "src/**/*.ts" }, { pattern: "scripts/**/*.ts" }],
+  emptyOutDir: true,
+  sourcemap: true,
+  external: ["commander"],
+});
+```
+
+Given:
+
+```json
+{
+  "bin": {
+    "release": "./bin/release.mjs",
+    "publish": "./bin/publish.mjs",
+    "doctor": "./bin/doctor.sh"
+  }
+}
+```
+
+the plugin can discover:
+
+```text
+src/release/release.ts
+src/publish/publish.ts
+```
+
+while leaving `doctor.sh` untouched.
+
+The plugin validates that each managed Node.js bin has exactly one matching source, externalizes Node built-ins, and uses `codeSplitting: false` so commands do not share runtime chunks.
+
+## Shebangs
+
+Generated Node.js executables always have a shebang. A source entry may include its own when it is also directly executable:
+
+```ts
+#!/usr/bin/env node
+```
+
+If the source starts with a shebang, the plugin does not add another. If it does not, the plugin adds `#!/usr/bin/env node` to the generated executable.
+
+## Troubleshooting source collisions
+
+Discovery matches a managed command name to source basenames. With the default `src/**/*.ts` pattern, this package contains a collision:
+
+```text
+src/release.ts
+src/cli/release.ts
+```
+
+Both files match a `package.json#bin` command named `release`. The plugin fails the build with a `Package bin source collision` error, lists all matching files, and suggests narrowing the source pattern.
+
+If `src/cli/` contains the executable entry points, configure:
+
+```ts
+packageBinBuild({
+  entries: {
+    pattern: "src/cli/**/*.ts",
+  },
+  emptyOutDir: true,
+});
+```
+
+Do not use the generated `bin/` directory as the discovery pattern. `entries.pattern` selects source entry points; `package.json#bin` describes their generated command targets.
+
+When `emptyOutDir` is `true`, the output directory is cleared once before the first command is built. It is never cleared between command builds.

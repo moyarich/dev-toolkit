@@ -298,12 +298,8 @@ jobs:
           set -euo pipefail
 
           if [ -f packages/workspace-tools/package.json ]; then
-            npm run build --workspace @moyarich/workspace-tools
-            TOOL_BIN_DIR="$RUNNER_TEMP/workspace-tools-bin"
-            rm -rf "$TOOL_BIN_DIR"
-            mkdir -p "$TOOL_BIN_DIR"
-            npm install               --prefix "$TOOL_BIN_DIR"               --package-lock=false               --ignore-scripts               "$GITHUB_WORKSPACE/packages/workspace-tools"
-            echo "WORKSPACE_TOOLS_BIN=$TOOL_BIN_DIR/node_modules/.bin" >> "$GITHUB_ENV"
+            npm run build
+            TOOL_PACKAGE_ROOT="$(cd packages/workspace-tools && pwd -P)"
           else
             TOOL_ROOT="$RUNNER_TEMP/workspace-tools"
             rm -rf "$TOOL_ROOT"
@@ -312,10 +308,12 @@ jobs:
               --prefix "$TOOL_ROOT" \
               --package-lock=false \
               --ignore-scripts \
-              --registry=https://npm.pkg.github.com \
-              @moyarich/workspace-tools
-            echo "WORKSPACE_TOOLS_BIN=$TOOL_ROOT/node_modules/.bin" >> "$GITHUB_ENV"
+              @moyarich/workspace-tools@latest
+            TOOL_PACKAGE_ROOT="$TOOL_ROOT/node_modules/@moyarich/workspace-tools"
           fi
+          test -f "$TOOL_PACKAGE_ROOT/bin/workspace-release.mjs"
+          test -f "$TOOL_PACKAGE_ROOT/bin/workspace-publish.mjs"
+          echo "WORKSPACE_TOOLS_ROOT=$TOOL_PACKAGE_ROOT" >> "$GITHUB_ENV"
 
       - name: Restore tracked files after build
         run: git restore --worktree -- .
@@ -511,7 +509,7 @@ jobs:
           fi
 
           RELEASE_JSON="$(
-            "$WORKSPACE_TOOLS_BIN/workspace-release" "${RELEASE_ARGS[@]}"
+            node "$WORKSPACE_TOOLS_ROOT/bin/workspace-release.mjs" "${RELEASE_ARGS[@]}"
           )"
 
           echo "$RELEASE_JSON" | jq -e '
@@ -674,7 +672,7 @@ jobs:
             echo '```text'
 
             PUBLISH_JSON="$(
-              "$WORKSPACE_TOOLS_BIN/workspace-publish" "${PUBLISH_ARGS[@]}"
+              node "$WORKSPACE_TOOLS_ROOT/bin/workspace-publish.mjs" "${PUBLISH_ARGS[@]}"
             )"
 
             echo "$PUBLISH_JSON" | jq -e '

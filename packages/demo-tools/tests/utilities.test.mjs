@@ -2,9 +2,9 @@ import assert from "node:assert/strict";
 import { access, mkdtemp, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import test from "node:test";
-import { prepareRecordingArtifacts } from "../src/capture/artifacts.mts";
-import { freePort } from "../src/utils/port.mts";
+import { test } from "vitest";
+import { prepareRecordingArtifacts } from "../src/capture/artifacts.ts";
+import { freePort } from "../src/utils/port.ts";
 
 test("prepareRecordingArtifacts creates paths and cleans stale frames", async () => {
   const root = await mkdtemp(path.join(tmpdir(), "demo-artifacts-"));

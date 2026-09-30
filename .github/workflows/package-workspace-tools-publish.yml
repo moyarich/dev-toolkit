@@ -1,4 +1,4 @@
-name: Publish workspace-tools
+name: Package . Workspace Tools . Publish
 
 on:
   workflow_dispatch:
@@ -34,7 +34,6 @@ jobs:
       version: ${{ inputs.version }}
       registry: ${{ inputs.registry }}
       tag: ${{ inputs.tag }}
-      node-version: "22"
     secrets:
       github-token: ${{ secrets._GITHUB_TOKEN }}
       npm-token: ${{ secrets._NPM_TOKEN }}

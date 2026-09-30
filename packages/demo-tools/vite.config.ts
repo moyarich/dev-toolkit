@@ -1,0 +1,12 @@
+import { defineConfig } from "vite";
+import { packageBinBuild } from "@moyarich/vite-plugin-package-bin";
+
+export default defineConfig({
+  plugins: [
+    packageBinBuild({
+      emptyOutDir: true,
+      sourcemap: true,
+      external: ["@vscode/test-electron", "playwright-core"],
+    }),
+  ],
+});

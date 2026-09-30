@@ -1,0 +1,87 @@
+name: Draft release
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  draft-release:
+    name: Prepare draft release
+    runs-on: ubuntu-latest
+    outputs:
+      id: ${{ steps.drafter.outputs.id }}
+      name: ${{ steps.drafter.outputs.name }}
+      tag-name: ${{ steps.drafter.outputs.tag_name }}
+      html-url: ${{ steps.drafter.outputs.html_url }}
+
+    steps:
+      - name: Initialize workflow summary
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          {
+            echo "# Draft release"
+            echo
+            echo "| Execution | Value |"
+            echo "| --- | --- |"
+            echo "| Repository | \`${{ github.repository }}\` |"
+            echo "| Ref | \`${{ github.ref_name }}\` |"
+            echo "| Trigger | \`${{ github.event_name }}\` |"
+            echo "| Run | \`#${{ github.run_number }}\` |"
+            echo
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Create or update draft release
+        id: drafter
+        uses: release-drafter/release-drafter@v7.7.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Draft summary
+        shell: bash
+        run: |
+          {
+            echo "## Draft prepared"
+            echo
+            echo "| Release | Value |"
+            echo "| --- | --- |"
+            echo "| Name | \`${{ steps.drafter.outputs.name }}\` |"
+            echo "| Tag | \`${{ steps.drafter.outputs.tag_name }}\` |"
+            echo "| Draft | [Open and edit the draft release](${{ steps.drafter.outputs.html_url }}) |"
+            echo
+            echo "> Review and edit the draft release in GitHub before approving the next job."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  approve-release:
+    name: Approve reviewed draft
+    if: ${{ github.event_name == 'workflow_dispatch' }}
+    needs: draft-release
+    runs-on: ubuntu-latest
+
+    # Configure the "release" environment with required reviewers in:
+    # Settings → Environments → release → Required reviewers.
+    environment:
+      name: release
+      url: ${{ needs.draft-release.outputs.html-url }}
+
+    steps:
+      - name: Record approval
+        shell: bash
+        run: |
+          {
+            echo "# Release draft approved"
+            echo
+            echo "The draft release passed the \`release\` environment approval gate."
+            echo
+            echo "- Draft: [${{ needs.draft-release.outputs.name }}](${{ needs.draft-release.outputs.html-url }})"
+            echo "- Tag: \`${{ needs.draft-release.outputs.tag-name }}\`"
+            echo
+            echo "> This workflow does not publish the GitHub Release or npm package."
+            echo "> Existing release and publish workflows remain responsible for irreversible release operations."
+          } >> "$GITHUB_STEP_SUMMARY"

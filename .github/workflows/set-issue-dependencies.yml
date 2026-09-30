@@ -6,7 +6,7 @@ on:
     branches:
       - main
     paths:
-      - '.github/workflows/set-issue-dependencies.yml'
+      - ".github/workflows/set-issue-dependencies.yml"
 
 permissions:
   contents: read

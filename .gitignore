@@ -144,3 +144,11 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# Generated workspace CLI bundles
+packages/*/bin/
+
+# Act Runner — secrets locais
+.secrets
+.env.local
+.env.production

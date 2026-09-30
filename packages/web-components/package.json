@@ -22,8 +22,9 @@
     "node": ">=24"
   },
   "scripts": {
-    "build": "vite build --config vite.config.mts",
-    "test": "node --check src/index.mjs && node --check src/caption/caption-overlay.mjs && node --check src/cursor-overlay/cursor-overlay-element.mjs && node --check src/magnifier-cursor-overlay/element.mjs"
+    "build": "vite build --config vite.config.ts",
+    "test": "node --check src/index.mjs && node --check src/caption/caption-overlay.mjs && node --check src/cursor-overlay/cursor-overlay-element.mjs && node --check src/magnifier-cursor-overlay/element.mjs",
+    "typecheck": "tsc -p tsconfig.json"
   },
   "repository": {
     "type": "git",
@@ -33,10 +34,6 @@
   "publishConfig": {
     "registry": "https://npm.pkg.github.com",
     "access": "public"
-  },
-  "devDependencies": {
-    "@types/node": "^24.0.0",
-    "vite": "^7.1.7"
   },
   "license": "MIT"
 }

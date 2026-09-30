@@ -1,0 +1,104 @@
+# `packageBinBuild`
+
+Creates a Vite plugin that builds managed Node.js package binary entry points as independent executables.
+
+## Options
+
+### `entries`
+
+**Type:** `PackageBinEntry | PackageBinEntry[]`  
+**Required:** no  
+**Default:** `{ pattern: "src/**/*.ts", bin: "./bin/{name}.mjs" }`
+
+One or more entry rules used to discover source files relative to the Vite root. Each rule has a `pattern` and an optional `bin` template. The rule's `bin` defaults to `./bin/{name}.mjs`.
+
+`entries.pattern` searches source files. It does not search the generated `bin/` directory.
+
+### `emptyOutDir`
+
+**Type:** `boolean`  
+**Required:** yes
+
+When `true`, removes `outDir` once before any package bins are built. Individual bin builds never empty the directory, so later builds cannot delete earlier executables.
+
+### `outDir`
+
+**Type:** `string`  
+**Default:** `"bin"`
+
+Directory for generated executables.
+
+### `target`
+
+**Type:** `string`  
+**Default:** `"node24"`
+
+Vite/esbuild build target.
+
+### `sourcemap`
+
+**Type:** `boolean`  
+**Default:** `false`
+
+Enables source maps.
+
+### `minify`
+
+**Type:** `boolean`  
+**Default:** `false`
+
+Enables minification.
+
+### `external`
+
+**Type:** `Array<string | RegExp>`  
+**Default:** `[]`
+
+Additional Rollup externals. Node built-ins matching `node:` are always external.
+
+## Managed package bins
+
+The plugin manages object-form `package.json#bin` entries whose target extension is `.js`, `.mjs`, or `.cjs`. Other executable types are left alone.
+
+```json
+{
+  "bin": {
+    "release": "./bin/release.mjs",
+    "doctor": "./bin/doctor.sh"
+  }
+}
+```
+
+Here `release` is managed by the plugin and `doctor.sh` is ignored.
+
+Source discovery matches the command name to the source basename. A managed bin must have exactly one matching source across all `entries` patterns.
+
+## Source collisions
+
+If multiple source files match the same managed command, the plugin throws a `Package bin source collision` error and reports every matching source.
+
+For example:
+
+```text
+src/release.ts
+src/cli/release.ts
+```
+
+both match a `release` bin under the default `src/**/*.ts` pattern. Narrow discovery when the executable entry points live in a dedicated directory:
+
+```ts
+packageBinBuild({
+  entries: {
+    pattern: "src/cli/**/*.ts",
+  },
+  emptyOutDir: true,
+});
+```
+
+## Shebang behavior
+
+Every generated Node.js executable has a shebang. If the source entry begins with a shebang, the plugin relies on the source shebang and does not add another. Otherwise the generated output receives:
+
+```text
+#!/usr/bin/env node
+```

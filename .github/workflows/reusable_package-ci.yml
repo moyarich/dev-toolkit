@@ -26,6 +26,10 @@ on:
         type: string
         default: "packages"
 
+permissions:
+  contents: read
+  packages: read
+
 jobs:
   discover-packages:
     name: "Discover packages"
@@ -55,9 +59,8 @@ jobs:
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: ${{ inputs.node-version }}
-      - name: Install dependencies
-        run: npm install --ignore-scripts
-
+          registry-url: https://npm.pkg.github.com
+          scope: "@moyarich"
       - name: Resolve workspace tools CLI
         shell: bash
         env:
@@ -65,13 +68,16 @@ jobs:
         run: |
           set -euo pipefail
 
-          if [ -f packages/workspace-tools/package.json ]; then
-            npm run build --workspace @moyarich/workspace-tools
-            TOOL_BIN_DIR="$RUNNER_TEMP/workspace-tools-bin"
-            rm -rf "$TOOL_BIN_DIR"
-            mkdir -p "$TOOL_BIN_DIR"
-            npm install               --prefix "$TOOL_BIN_DIR"               --package-lock=false               --ignore-scripts               "$GITHUB_WORKSPACE/packages/workspace-tools"
-            echo "WORKSPACE_TOOLS_BIN=$TOOL_BIN_DIR/node_modules/.bin" >> "$GITHUB_ENV"
+          if [ -f packages/workspace-tools/src/discover-test-packages.ts ]; then
+            TOOL_ROOT="$(mktemp -d "$RUNNER_TEMP/package-discovery.XXXXXX")"
+            DISCOVERY_CLI="$TOOL_ROOT/discover-test-packages.mjs"
+            node --input-type=module - "$DISCOVERY_CLI" <<'NODE'
+          import { readFileSync, writeFileSync } from "node:fs";
+          import { stripTypeScriptTypes } from "node:module";
+          const source = readFileSync("packages/workspace-tools/src/discover-test-packages.ts", "utf8");
+          const entry = '\nprocess.stdout.write(JSON.stringify(await discoverTestPackages(process.argv[2] ?? "packages")));\n';
+          writeFileSync(process.argv[2], stripTypeScriptTypes(source) + entry);
+          NODE
           else
             TOOL_ROOT="$RUNNER_TEMP/workspace-tools"
             rm -rf "$TOOL_ROOT"
@@ -79,17 +85,21 @@ jobs:
             npm install \
               --prefix "$TOOL_ROOT" \
               --package-lock=false \
+              --omit=dev --omit=optional --no-audit --no-fund \
               --ignore-scripts \
-              --registry=https://npm.pkg.github.com \
-              @moyarich/workspace-tools
-            echo "WORKSPACE_TOOLS_BIN=$TOOL_ROOT/node_modules/.bin" >> "$GITHUB_ENV"
+              @moyarich/workspace-tools@latest
+            DISCOVERY_CLI="$TOOL_ROOT/node_modules/@moyarich/workspace-tools/bin/discover-test-packages.mjs"
           fi
+          test -f "$DISCOVERY_CLI"
+          echo "DISCOVERY_CLI=$DISCOVERY_CLI" >> "$GITHUB_ENV"
 
       - id: packages
         name: Discover packages for CI
+        env:
+          PACKAGES_DIRECTORY: ${{ inputs.packages-directory }}
         shell: bash
         run: |
-          PACKAGES="$("$WORKSPACE_TOOLS_BIN/discover-test-packages" "${{ inputs.packages-directory }}" --json)"
+          PACKAGES="$(node "$DISCOVERY_CLI" "$PACKAGES_DIRECTORY" --json)"
           echo "$PACKAGES" | jq -e 'type == "array"' >/dev/null
           MATRIX="$(jq -cn --argjson packages "$PACKAGES" '{include: $packages}')"
           echo "$MATRIX" | jq -e 'type == "object" and (.include | type == "array")' >/dev/null
@@ -120,10 +130,54 @@ jobs:
             echo '~~~'
           } >> "$GITHUB_STEP_SUMMARY"
 
+  prepare-workspace:
+    name: Install and build workspace once
+    needs: discover-packages
+    if: ${{ needs.discover-packages.outputs.has-packages == 'true' }}
+    runs-on: ubuntu-latest
+    outputs:
+      artifact: ${{ steps.archive.outputs.artifact }}
+      node-version: ${{ steps.node.outputs.node-version }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        id: node
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: npm
+          registry-url: https://npm.pkg.github.com
+          scope: "@moyarich"
+      - name: Install workspace dependencies once
+        run: npm ci --prefer-offline --no-audit --no-fund
+        env:
+          NODE_AUTH_TOKEN: ${{ github.token }}
+      - name: Build all local packages once
+        run: npm run build --if-present
+      - name: Test workflow package resolution
+        run: npm run test:workflows --if-present
+      - name: Archive prepared workspace
+        id: archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Preserve executable bits and relative workspace symlinks in tar.
+          # Only dependency and build directories are shared, never credentials.
+          find . -path './.git' -prune -o -type d \
+            \( -name node_modules -o -name bin -o -name dist \) \
+            -prune -print0 > "$RUNNER_TEMP/prepared-paths"
+          tar --null -T "$RUNNER_TEMP/prepared-paths" -czf "$RUNNER_TEMP/prepared-workspace.tar.gz"
+          echo "artifact=prepared-workspace-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.archive.outputs.artifact }}
+          path: ${{ runner.temp }}/prepared-workspace.tar.gz
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 1
 
   check-packages:
     name: "Check ${{ matrix.name }}"
-    needs: discover-packages
+    needs: [discover-packages, prepare-workspace]
     if: ${{ needs.discover-packages.result == 'success' && needs.discover-packages.outputs.has-packages == 'true' }}
     strategy:
       fail-fast: false
@@ -131,5 +185,6 @@ jobs:
     uses: ./.github/workflows/reusable_node-ci.yml
     with:
       package-directory: ${{ matrix.directory }}
-      node-version: ${{ inputs.node-version }}
+      node-version: ${{ needs.prepare-workspace.outputs.node-version }}
+      prepared-artifact: ${{ needs.prepare-workspace.outputs.artifact }}
     secrets: inherit

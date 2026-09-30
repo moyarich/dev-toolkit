@@ -20,7 +20,7 @@ jobs:
   ci:
     uses: moyarich/dev-toolkit/.github/workflows/node-ci.yml@v1
     with:
-      node-version: "22"
+      node-version: "24"
 ```
 
 The repository must have a committed `package-lock.json`. The reusable workflow runs:
@@ -36,6 +36,6 @@ If the repository does not define `lint` or `typecheck`, those optional commands
 
 ## Inputs
 
-| Input | Required | Default | Description |
-| --- | --- | --- | --- |
-| `node-version` | No | `22` | Node.js version used by CI |
+| Input          | Required | Default | Description                |
+| -------------- | -------- | ------- | -------------------------- |
+| `node-version` | No       | `24`    | Node.js version used by CI |

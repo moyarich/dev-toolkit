@@ -8,19 +8,49 @@
     "apps/*"
   ],
   "scripts": {
-    "test": "node --test tests/cli.test.mjs && npm test --workspaces --if-present",
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test:workflows && npm test --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "demo": "demo",
     "demo:list": "demo list",
-    "test:playground": "node --test tests/playground/*.test.mjs"
+    "test:playground": "node --test tests/playground/*.test.mjs",
+    "package-lock:update": "npm install --package-lock-only --include=optional",
+    "format:check": "prettier . --check",
+    "format": "prettier . --write",
+    "prebuild": "npm run build --workspace @moyarich/vite-plugin-package-bin && npm run build --workspace @moyarich/web-components",
+    "test:workflows": "node --test tests/workflows/*.test.mjs"
   },
   "devDependencies": {
-    "@types/node": "^24.0.0",
-    "commander": "^14.0.1"
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^26.6.3",
+    "@types/vscode": "^1.138.0",
+    "@vscode/test-electron": "^3.1.0",
+    "@vscode/test-web": "^0.0.81",
+    "@vscode/vsce": "^4.0.0",
+    "esbuild": "^0.28.2",
+    "eslint": "^10.11.0",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^17.12.0",
+    "prettier": "3.9.9",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.71.0",
+    "vite": "^8.3.1",
+    "vitest": "^5.0.2"
   },
   "engines": {
     "node": ">=24"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "optionalDependencies": {
+    "@esbuild/linux-x64": "0.28.2",
+    "@rollup/rollup-linux-x64-gnu": "^4.63.5"
+  },
+  "dependencies": {
+    "@inquirer/prompts": "^8.7.2",
+    "chalk": "^6.0.1",
+    "commander": "^15.0.0",
+    "playwright": "^1.63.0",
+    "playwright-core": "^1.63.0"
+  }
 }

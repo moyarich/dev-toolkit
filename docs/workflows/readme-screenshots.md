@@ -82,12 +82,12 @@ Prefer stable `data-readme-screenshot` selectors over headings or other visible 
 
 ## Inputs
 
-| Input | Required | Default |
-| --- | --- | --- |
-| `start-command` | Yes | — |
-| `url` | No | `http://127.0.0.1:5173` |
-| `config` | No | empty |
-| `output-directory` | No | `docs/screenshots` |
-| `node-version` | No | `24` |
-| `playwright-version` | No | `1.55.0` |
-| `commit-message` | No | `docs: update README screenshots` |
+| Input                | Required | Default                           |
+| -------------------- | -------- | --------------------------------- |
+| `start-command`      | Yes      | —                                 |
+| `url`                | No       | `http://127.0.0.1:5173`           |
+| `config`             | No       | empty                             |
+| `output-directory`   | No       | `docs/screenshots`                |
+| `node-version`       | No       | `24`                              |
+| `playwright-version` | No       | `1.55.0`                          |
+| `commit-message`     | No       | `docs: update README screenshots` |

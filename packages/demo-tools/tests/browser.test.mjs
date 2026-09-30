@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
-import test from "node:test";
-import { waitForUrl } from "../src/browser/wait-for-url.mts";
+import { test } from "vitest";
+import { waitForUrl } from "../src/browser/wait-for-url.ts";
 
 test("waitForUrl resolves when an endpoint becomes ready", async () => {
   let attempts = 0;
