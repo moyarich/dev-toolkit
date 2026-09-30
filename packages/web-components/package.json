@@ -22,7 +22,7 @@
     "node": ">=24"
   },
   "scripts": {
-    "build": "vite build --config vite.config.mts",
+    "build": "vite build --config vite.config.ts",
     "test": "node --check src/index.mjs && node --check src/caption/caption-overlay.mjs && node --check src/cursor-overlay/cursor-overlay-element.mjs && node --check src/magnifier-cursor-overlay/element.mjs"
   },
   "repository": {
