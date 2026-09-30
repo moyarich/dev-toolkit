@@ -78,7 +78,7 @@ export async function captureDemoStrategy({
       interrupted,
       terminal.question("Finish recording: "),
       new Promise<void>((resolve) => {
-        page.once("close", resolve);
+        page.once("close", () => resolve());
       }),
     ]);
   } finally {
