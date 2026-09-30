@@ -4,7 +4,6 @@ A strategy is the unit of demo ownership. TypeScript authors should describe the
 object directly and use `satisfies DemoStrategy` rather than an authoring wrapper.
 
 ```ts
-import { executableDemoStrategy } from "@moyarich/demo-tools";
 import type { DemoStrategy } from "@moyarich/demo-tools";
 
 const strategy = {
@@ -17,20 +16,14 @@ const strategy = {
   },
 } satisfies DemoStrategy;
 
-export default executableDemoStrategy(strategy, import.meta.url);
+export default strategy;
 ```
 
 `DemoStrategy` provides compile-time checking. When discovery or
 `demo-strategy` dynamically imports a module, demo-tools validates the exported
 value with its runtime strategy assertion before execution.
 
-Run compiled output without the CLI:
-
-```sh
-node demo/strategies/basic-colors/index.js
-```
-
-Or through the installed executable:
+Run a strategy through the installed executable:
 
 ```sh
 demo-strategy demo/strategies/basic-colors/index.js
