@@ -44,10 +44,10 @@ jobs:
   validate-selection:
     name: "Validate package selector"
     needs: discover-packages
-    if: ${{ github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     steps:
       - name: Validate selected package
+        if: ${{ github.event_name == 'workflow_dispatch' }}
         env:
           INPUT_PACKAGE: ${{ inputs.package }}
           PACKAGES_JSON: ${{ needs.discover-packages.outputs.packages }}
