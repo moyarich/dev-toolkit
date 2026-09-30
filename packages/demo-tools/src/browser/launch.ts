@@ -7,7 +7,7 @@ export interface LaunchBrowserDemoOptions {
   launchOptions?: Record<string, unknown>;
   contextOptions?: Record<string, unknown>;
   pageOptions?: Record<string, unknown>;
-  waitUntil?: string;
+  waitUntil?: "load" | "domcontentloaded" | "networkidle" | "commit";
 }
 
 export interface BrowserDemo {
