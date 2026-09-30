@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { mkdtemp, mkdir, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import test from "node:test";
+import { test } from "vitest";
 import { discoverDemoStrategies } from "../src/runner/discover.ts";
 import { runDemoStrategies } from "../src/runner/run.ts";
 
