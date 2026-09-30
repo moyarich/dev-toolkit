@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import test from "node:test";
+import { test } from "vitest";
 import { extractPageActions } from "../src/generate/codegen.ts";
 
 test("extractPageActions keeps recorded page actions and drops recorder teardown", () => {
