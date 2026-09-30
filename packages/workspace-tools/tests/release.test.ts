@@ -1,6 +1,4 @@
 import assert from "node:assert/strict";
-import { spawnSync } from "node:child_process";
-import { fileURLToPath } from "node:url";
 import test from "node:test";
 import { changelogSection, parseReleaseArgument, releaseNotes, resolveNextVersion } from "../src/release.ts";
 import { packageInfo } from "../src/workspace.ts";
