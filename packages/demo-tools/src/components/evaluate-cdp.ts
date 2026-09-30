@@ -16,9 +16,7 @@ export async function evaluateComponentViaCDP({
   const expression = await transform(source);
   const session = await page.context().newCDPSession(page);
   try {
-    const result = await session.send<{
-      exceptionDetails?: { exception?: { description?: string }; text?: string };
-    }>("Runtime.evaluate", { expression, awaitPromise: true });
+    const result = await session.send("Runtime.evaluate", { expression, awaitPromise: true });
     if (result.exceptionDetails)
       throw new Error(
         result.exceptionDetails.exception?.description ??
