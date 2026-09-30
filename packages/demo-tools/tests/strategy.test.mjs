@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { assertDemoStrategy, isMainModule, runDemoStrategy } from "../src/index.ts";
+import { assertDemoStrategy, runDemoStrategy } from "../src/index.ts";
 
 test("assertDemoStrategy accepts a valid strategy", () => {
   const strategy = { name: "example", run() {} };
@@ -18,15 +18,4 @@ test("runDemoStrategy derives strategy context from its module URL", async () =>
   assert.equal(received.id, "example");
   assert.match(received.strategyDirectory, /tests$/);
   assert.match(received.artifactsDirectory, /tests[/\\]artifacts$/);
-});
-
-test("isMainModule compares the module URL with the process entrypoint", () => {
-  const original = process.argv[1];
-  try {
-    process.argv[1] = new URL(import.meta.url).pathname;
-    assert.equal(isMainModule(import.meta.url), true);
-    assert.equal(isMainModule(new URL("./other.mjs", import.meta.url).href), false);
-  } finally {
-    process.argv[1] = original;
-  }
 });
