@@ -13,6 +13,7 @@ on:
         required: true
         default: packages
         type: string
+
   workflow_call:
     inputs:
       node-version:
@@ -24,7 +25,7 @@ on:
         description: Directory containing workspace packages
         required: false
         type: string
-        default: "packages"
+        default: packages
 
 permissions:
   contents: read
@@ -33,107 +34,18 @@ permissions:
 jobs:
   discover-packages:
     name: "Discover packages"
-    runs-on: ubuntu-latest
-    outputs:
-      matrix: ${{ steps.packages.outputs.matrix }}
-      has-packages: ${{ steps.packages.outputs.has-packages }}
-    steps:
-      - name: Initialize workflow summary
-        if: ${{ always() }}
-        shell: bash
-        run: |
-          {
-            echo "# Reusable · Package CI — Discover packages"
-            echo
-            echo "| Execution | Value |"
-            echo "| --- | --- |"
-            echo "| Workflow | \`Reusable · Package CI\` |"
-            echo "| Job | \`${{ github.job }}\` |"
-            echo "| Repository | \`${{ github.repository }}\` |"
-            echo "| Ref | \`${{ github.ref_name }}\` |"
-            echo "| Run | \`#${{ github.run_number }}\` |"
-            echo
-          } >> "$GITHUB_STEP_SUMMARY"
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Set up Node.js for TypeScript discovery
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version: ${{ inputs.node-version }}
-          registry-url: https://npm.pkg.github.com
-          scope: "@moyarich"
-      - name: Resolve workspace tools CLI
-        shell: bash
-        env:
-          NODE_AUTH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-
-          if [ -f packages/workspace-tools/src/discover-test-packages.ts ]; then
-            TOOL_ROOT="$(mktemp -d "$RUNNER_TEMP/package-discovery.XXXXXX")"
-            DISCOVERY_CLI="$TOOL_ROOT/discover-test-packages.mjs"
-            node --input-type=module - "$DISCOVERY_CLI" <<'NODE'
-          import { readFileSync, writeFileSync } from "node:fs";
-          import { stripTypeScriptTypes } from "node:module";
-          const source = readFileSync("packages/workspace-tools/src/discover-test-packages.ts", "utf8");
-          const entry = '\nprocess.stdout.write(JSON.stringify(await discoverTestPackages(process.argv[2] ?? "packages")));\n';
-          writeFileSync(process.argv[2], stripTypeScriptTypes(source) + entry);
-          NODE
-          else
-            TOOL_ROOT="$RUNNER_TEMP/workspace-tools"
-            rm -rf "$TOOL_ROOT"
-            mkdir -p "$TOOL_ROOT"
-            npm install \
-              --prefix "$TOOL_ROOT" \
-              --package-lock=false \
-              --omit=dev --omit=optional --no-audit --no-fund \
-              --ignore-scripts \
-              @moyarich/workspace-tools@latest
-            DISCOVERY_CLI="$TOOL_ROOT/node_modules/@moyarich/workspace-tools/bin/discover-test-packages.mjs"
-          fi
-          test -f "$DISCOVERY_CLI"
-          echo "DISCOVERY_CLI=$DISCOVERY_CLI" >> "$GITHUB_ENV"
-
-      - id: packages
-        name: Discover packages for CI
-        env:
-          PACKAGES_DIRECTORY: ${{ inputs.packages-directory }}
-        shell: bash
-        run: |
-          PACKAGES="$(node "$DISCOVERY_CLI" "$PACKAGES_DIRECTORY" --json)"
-          echo "$PACKAGES" | jq -e 'type == "array"' >/dev/null
-          MATRIX="$(jq -cn --argjson packages "$PACKAGES" '{include: $packages}')"
-          echo "$MATRIX" | jq -e 'type == "object" and (.include | type == "array")' >/dev/null
-          PACKAGE_COUNT="$(echo "$PACKAGES" | jq 'length')"
-
-          {
-            echo "matrix=$MATRIX"
-            if [ "$PACKAGE_COUNT" -gt 0 ]; then
-              echo "has-packages=true"
-            else
-              echo "has-packages=false"
-            fi
-          } >> "$GITHUB_OUTPUT"
-
-          {
-            echo "## Package CI discovery"
-            echo
-            echo "| Setting | Value |"
-            echo "| --- | --- |"
-            echo "| Packages directory | \`${{ inputs.packages-directory }}\` |"
-            echo "| Node.js | \`${{ inputs.node-version }}\` |"
-            echo "| Package count | **$PACKAGE_COUNT** |"
-            echo
-            echo "### Discovered packages"
-            echo
-            echo '~~~json'
-            echo "$PACKAGES" | jq .
-            echo '~~~'
-          } >> "$GITHUB_STEP_SUMMARY"
+    uses: ./.github/workflows/reusable_discover-packages.yml
+    with:
+      packages-directory: ${{ inputs.packages-directory }}
+      require-test-script: true
+      node-version: ${{ inputs.node-version }}
 
   check-packages:
     name: "package: ${{ matrix.name }} | dir: ${{ matrix.directory }}"
     needs: discover-packages
-    if: ${{ needs.discover-packages.result == 'success' && needs.discover-packages.outputs.has-packages == 'true' }}
+    if: >-
+      ${{ needs.discover-packages.result == 'success' &&
+          needs.discover-packages.outputs.has-packages == 'true' }}
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.discover-packages.outputs.matrix || '{"include":[]}') }}
