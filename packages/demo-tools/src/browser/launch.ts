@@ -1,4 +1,4 @@
-import type { Browser, BrowserContext, BrowserPage, Chromium } from "../types.mts";
+import type { Browser, BrowserContext, BrowserPage, Chromium } from "../types.ts";
 
 export interface LaunchBrowserDemoOptions {
   chromium: Chromium;

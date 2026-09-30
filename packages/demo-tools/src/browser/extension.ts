@@ -1,5 +1,5 @@
 import path from "node:path";
-import type { BrowserContext, BrowserPage, Chromium } from "../types.mts";
+import type { BrowserContext, BrowserPage, Chromium } from "../types.ts";
 
 export interface LaunchBrowserExtensionOptions {
   chromium: Chromium;
