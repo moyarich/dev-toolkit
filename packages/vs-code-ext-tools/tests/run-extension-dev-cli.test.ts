@@ -1,15 +1,21 @@
-import { execFileSync } from "node:child_process";
+import { spawnSync } from "node:child_process";
 import { resolve } from "node:path";
 import { expect, test } from "vitest";
 
 const root = resolve(import.meta.dirname, "..");
 
 function invoke(...args: string[]) {
-  try {
-    return { status: 0, stdout: execFileSync(process.execPath, ["bin/run-extension-dev.mjs", ...args], { cwd: root, encoding: "utf8" }), stderr: "" };
-  } catch (error: any) {
-    return { status: error.status, stdout: error.stdout ?? "", stderr: error.stderr ?? "" };
-  }
+  const result = spawnSync(process.execPath, ["bin/run-extension-dev.mjs", ...args], {
+    cwd: root,
+    encoding: "utf8",
+    stdio: "pipe",
+  });
+
+  return {
+    status: result.status,
+    stdout: result.stdout ?? "",
+    stderr: result.stderr ?? "",
+  };
 }
 
 test("CLI shows help without running its action", () => {
