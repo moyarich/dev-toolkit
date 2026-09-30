@@ -9,12 +9,19 @@ export interface CliPluginOptions {
   external?: Array<string | RegExp>;
 }
 
+/**
+ * Configure Vite for Node.js command-line entry points.
+ *
+ * Entry files and shared chunks use deterministic names so repeated builds do
+ * not leave hash-named artifacts behind. Source maps are opt-in for published
+ * CLI packages.
+ */
 export function cli(options: CliPluginOptions): Plugin {
   const {
     entries,
     outDir = "bin",
     target = "node24",
-    sourcemap = true,
+    sourcemap = false,
     minify = false,
     external = [],
   } = options;
@@ -40,6 +47,8 @@ export function cli(options: CliPluginOptions): Plugin {
             external: [/^node:/, ...external],
             output: {
               banner: "#!/usr/bin/env node",
+              entryFileNames: "[name].mjs",
+              chunkFileNames: "_chunks/[name].mjs",
             },
           },
         },
