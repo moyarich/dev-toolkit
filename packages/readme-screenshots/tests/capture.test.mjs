@@ -3,7 +3,7 @@ import { mkdtemp, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import test from "node:test";
-import { loadConfig } from "../src/capture.mts";
+import { loadConfig } from "../src/capture.ts";
 
 test("loadConfig returns an empty object for a missing config", async () => {
   const directory = await mkdtemp(path.join(tmpdir(), "readme-screenshots-"));
