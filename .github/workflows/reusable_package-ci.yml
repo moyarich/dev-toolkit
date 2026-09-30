@@ -56,7 +56,7 @@ jobs:
         with:
           node-version: ${{ inputs.node-version }}
       - name: Install dependencies
-        run: npm install --ignore-scripts
+        run: npm ci --include=optional --ignore-scripts
 
       - name: Resolve workspace tools CLI
         shell: bash
@@ -70,7 +70,12 @@ jobs:
             TOOL_BIN_DIR="$RUNNER_TEMP/workspace-tools-bin"
             rm -rf "$TOOL_BIN_DIR"
             mkdir -p "$TOOL_BIN_DIR"
-            npm install               --prefix "$TOOL_BIN_DIR"               --package-lock=false               --ignore-scripts               "$GITHUB_WORKSPACE/packages/workspace-tools"
+            npm install \
+              --prefix "$TOOL_BIN_DIR" \
+              --package-lock=false \
+              --include=optional \
+              --ignore-scripts \
+              "$GITHUB_WORKSPACE/packages/workspace-tools"
             echo "WORKSPACE_TOOLS_BIN=$TOOL_BIN_DIR/node_modules/.bin" >> "$GITHUB_ENV"
           else
             TOOL_ROOT="$RUNNER_TEMP/workspace-tools"
@@ -79,6 +84,7 @@ jobs:
             npm install \
               --prefix "$TOOL_ROOT" \
               --package-lock=false \
+              --include=optional \
               --ignore-scripts \
               --registry=https://npm.pkg.github.com \
               @moyarich/workspace-tools
