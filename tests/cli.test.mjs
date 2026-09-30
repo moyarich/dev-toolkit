@@ -10,7 +10,6 @@ const commands = [
   "packages/workspace-tools/bin/workspace-release.mjs",
   "packages/workspace-tools/bin/workspace-publish.mjs",
   "packages/readme-screenshots/bin/readme-screenshots.mjs",
-  "packages/vs-code-ext-tools/bin/vs-code-publish.mjs",
   "packages/vs-code-ext-tools/bin/run-extension-dev.mjs",
   "packages/workspace-tools/bin/discover-test-packages.mjs",
 ];
