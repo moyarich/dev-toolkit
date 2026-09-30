@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
@@ -908,15 +908,11 @@ Push the release commit and tag with:
 function commandExists(command) {
   const lookupCommand = process.platform === "win32" ? "where" : "which";
 
-  try {
-    execFileSync(lookupCommand, [command], {
-      stdio: "ignore",
-    });
+  const result = spawnSync(lookupCommand, [command], {
+    stdio: "ignore",
+  });
 
-    return true;
-  } catch {
-    return false;
-  }
+  return result.status === 0;
 }
 
 /**
@@ -949,35 +945,41 @@ function selectWithFzf(choices, prompt) {
     return undefined;
   }
 
-  try {
-    const selected = execFileSync(
-      "fzf",
-      [
-        "--prompt",
-        `${prompt} > `,
-        "--height",
-        "40%",
-        "--layout",
-        "reverse",
-        "--border",
-        "--select-1",
-        "--exit-0",
-      ],
-      {
-        input: `${choices.join("\n")}\n`,
-        encoding: "utf8",
-        stdio: ["pipe", "pipe", "inherit"],
-      },
-    ).trim();
+  const result = spawnSync(
+    "fzf",
+    [
+      "--prompt",
+      `${prompt} > `,
+      "--height",
+      "40%",
+      "--layout",
+      "reverse",
+      "--border",
+      "--select-1",
+      "--exit-0",
+    ],
+    {
+      input: `${choices.join("\n")}\n`,
+      encoding: "utf8",
+      stdio: ["pipe", "pipe", "inherit"],
+    },
+  );
 
-    return selected || undefined;
-  } catch (error) {
-    if (error?.status === 1 || error?.status === 130) {
-      return undefined;
-    }
-
-    throw error;
+  if (result.error) {
+    throw result.error;
   }
+
+  if (result.status === 1 || result.status === 130) {
+    return undefined;
+  }
+
+  if (result.status !== 0) {
+    throw new Error(`fzf exited with status ${result.status}.`);
+  }
+
+  const selected = result.stdout.trim();
+
+  return selected || undefined;
 }
 
 /**
