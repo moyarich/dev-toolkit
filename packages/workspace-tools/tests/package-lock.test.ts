@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import {
   assertLockfilePackages,
   DEFAULT_CI_LOCKFILE_PACKAGES,
-} from "../src/package-lock.mts";
+} from "../src/package-lock.ts";
 
 test("accepts a lockfile containing required CI platform packages", () => {
   const lock = {

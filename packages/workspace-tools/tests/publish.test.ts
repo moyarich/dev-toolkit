@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { packageGitTagState, serializePublishPlan } from "../src/publish.mts";
+import { packageGitTagState, serializePublishPlan } from "../src/publish.ts";
 
 test("serializePublishPlan returns stable machine-readable package metadata", () => {
   const plan = [
