@@ -4,7 +4,7 @@ import { existsSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { dirname, resolve } from "node:path";
 import { loadEnvFile } from "node:process";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { confirm } from "@inquirer/prompts";
 import { Argument, program } from "commander";
@@ -120,4 +120,6 @@ program
   .allowUnknownOption()
   .action(publishExtension);
 
-await program.parseAsync();
+if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
+  await program.parseAsync();
+}
