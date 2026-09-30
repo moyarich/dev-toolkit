@@ -25,6 +25,5 @@ jobs:
     with:
       build-command: npm run build --workspace @moyarich/demo-tools-playground
       output-directory: apps/playground/dist
-      node-version: "24"
       install-command: npm ci --include=optional
       working-directory: "."
