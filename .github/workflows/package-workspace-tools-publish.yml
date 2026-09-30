@@ -70,7 +70,11 @@ jobs:
             echo
             echo "A real package publish was approved through the `release` environment."
             echo
+            echo "| Environment | `release` |"
+            echo "| Protection | Configure required reviewers/rules in **Settings → Environments → release** |"
+            echo
             echo "> Dry runs do not require this approval."
+            echo "> If the `release` environment did not already exist, GitHub may create it without protection rules; configure the environment before relying on it as an approval gate."
           } >> "$GITHUB_STEP_SUMMARY"
 
   publish:
