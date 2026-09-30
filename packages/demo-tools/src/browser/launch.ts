@@ -6,7 +6,6 @@ export interface LaunchBrowserDemoOptions {
   viewport?: { width: number; height: number };
   launchOptions?: Record<string, unknown>;
   contextOptions?: Record<string, unknown>;
-  pageOptions?: Record<string, unknown>;
   waitUntil?: "load" | "domcontentloaded" | "networkidle" | "commit";
 }
 
@@ -23,7 +22,6 @@ export async function launchBrowserDemo({
   viewport = { width: 1280, height: 900 },
   launchOptions = {},
   contextOptions = {},
-  pageOptions = {},
   waitUntil = "networkidle",
 }: LaunchBrowserDemoOptions): Promise<BrowserDemo> {
   if (!chromium?.launch)
