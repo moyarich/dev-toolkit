@@ -32,6 +32,8 @@ program
     "--no-verify-git-tag",
     "Allow publishing without verifying the matching package release Git tag",
   )
-  .action((selector, options) => publishWorkspacePackage(selector, options));
+  .action((selector, options) => {
+    publishWorkspacePackage(selector, options);
+  });
 
 await program.parseAsync();
