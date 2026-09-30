@@ -10,7 +10,8 @@ const commands = [
   "packages/workspace-tools/bin/workspace-release.mjs",
   "packages/workspace-tools/bin/workspace-publish.mjs",
   "packages/readme-screenshots/bin/readme-screenshots.mjs",
-  "packages/vs-code-ext-tools/src/confirm-publish.mjs",
+  "packages/vs-code-ext-tools/bin/vs-code-publish.mjs",
+  "packages/vs-code-ext-tools/bin/run-extension-dev.mjs",
   "packages/workspace-tools/bin/discover-test-packages.mjs",
 ];
 
@@ -54,8 +55,8 @@ test("release accepts both separated and equals option values", () => {
   }
 });
 
-test("publish retains validation of explicit boolean values", () => {
+test("publish rejects values assigned to boolean flags", () => {
   const result = invoke("packages/workspace-tools/bin/workspace-publish.mjs", "--dry-run=invalid");
   assert.equal(result.status, 1, result.stderr);
-  assert.match(result.stderr, /Boolean options must be true or false/);
+  assert.match(result.stderr, /unknown option '--dry-run=invalid'/);
 });
