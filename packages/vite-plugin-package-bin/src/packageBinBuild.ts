@@ -76,7 +76,7 @@ export async function discoverCliEntries(
 
 export function standaloneCliBuilds(
   entries: Record<string, string>,
-  options: Omit<PackageBinBuildOptions, "include">,
+  options: Omit<PackageBinBuildOptions, "include" | "emptyOutDir"> = {},
   root = process.cwd(),
 ): StandaloneCliBuild[] {
   const {
@@ -190,7 +190,7 @@ export function packageBinBuild(options: PackageBinBuildOptions): Plugin {
         await rm(resolve(root, outDir), { recursive: true, force: true });
       }
 
-      const { include: _include, ...buildOptions } = options;
+      const { include: _include, emptyOutDir: _emptyOutDir, ...buildOptions } = options;
       for (const { config } of standaloneCliBuilds(entries, buildOptions, root)) {
         await build({ ...config, logLevel: resolvedConfig.logLevel });
       }
