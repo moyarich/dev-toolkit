@@ -31,7 +31,10 @@ export interface CDPSession {
 }
 
 export interface BrowserPage {
-  evaluate<TArgument, TResult>(pageFunction: (argument: TArgument) => TResult | Promise<TResult>, argument: TArgument): Promise<TResult>;
+  evaluate<TArgument, TResult>(
+    pageFunction: (argument: TArgument) => TResult | Promise<TResult>,
+    argument: TArgument,
+  ): Promise<TResult>;
   goto(url: string): Promise<unknown>;
   locator(selector: string): { waitFor(options?: { timeout?: number }): Promise<void> };
   context(): BrowserContext;
@@ -56,6 +59,9 @@ export interface Browser {
 
 export interface Chromium {
   launch(options?: Record<string, unknown>): Promise<Browser>;
-  launchPersistentContext?(userDataDirectory: string, options?: Record<string, unknown>): Promise<BrowserContext>;
+  launchPersistentContext?(
+    userDataDirectory: string,
+    options?: Record<string, unknown>,
+  ): Promise<BrowserContext>;
   connectOverCDP?(endpoint: string): Promise<Browser>;
 }

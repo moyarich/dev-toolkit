@@ -450,11 +450,15 @@ function publishOne(root, pkg, registry, tag, access, { quiet = false } = {}) {
       return;
     }
 
-    execFileSync("npm", ["stage", "publish", "--access", access, "--tag", tag], {
-      cwd: resolve(root, pkg.directory),
-      env,
-      stdio: quiet ? ["ignore", "ignore", "inherit"] : "inherit",
-    });
+    execFileSync(
+      "npm",
+      ["stage", "publish", "--access", access, "--tag", tag],
+      {
+        cwd: resolve(root, pkg.directory),
+        env,
+        stdio: quiet ? ["ignore", "ignore", "inherit"] : "inherit",
+      },
+    );
 
     if (!quiet) {
       console.log(

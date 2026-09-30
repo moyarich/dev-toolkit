@@ -124,7 +124,6 @@ For npm packages, use normal semantic versioning.
 
 Reusable scripts and workflows should be migrated from existing repositories only after identifying which behavior is truly generic. Repository-specific behavior should remain in the consuming repository or be exposed as explicit configuration.
 
-
 ## Workspace tools
 
 The reusable CLI package currently provides:
@@ -176,7 +175,6 @@ The migration deliberately separates:
 
 Until `@moyarich/workspace-tools` has an initial published version, consumers should not depend on `npx @moyarich/workspace-tools` from reusable workflows. Publish/version the package first, then pin consumers to an appropriate released version.
 
-
 ## README screenshot tooling
 
 `@moyarich/readme-screenshots` extracts the reusable README screenshot automation originally used by `pointer-bubble`.
@@ -226,7 +224,6 @@ jobs:
 
 The workflow commits only the configured output directory when generated screenshots change.
 
-
 ### Automatic screenshot generation
 
 A screenshot config is optional. With no config, the runner automatically captures the configured site URL at a 1440×1000 viewport and writes:
@@ -248,7 +245,6 @@ jobs:
 Repositories that need additional or sectional screenshots can add `readme-screenshots.config.mjs`. For example, `pointer-bubble` can preserve its overview plus MapLibre capture by configuring the second screenshot with a stable selector. Prefer a dedicated `data-readme-screenshot` attribute over visible heading text so documentation automation does not break when copy changes.
 
 The generated screenshot files remain owned by the consuming repository. The reusable workflow starts the site, waits for its URL, invokes the shared capture package, and commits changed files from the configured output directory.
-
 
 ## GitHub Pages
 

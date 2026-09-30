@@ -10,7 +10,13 @@ export interface CaptureScreenshotOptions {
   [key: string]: unknown;
 }
 
-export async function captureScreenshot({ page, artifactsDirectory, name = "screenshot.png", locator, ...options }: CaptureScreenshotOptions): Promise<string> {
+export async function captureScreenshot({
+  page,
+  artifactsDirectory,
+  name = "screenshot.png",
+  locator,
+  ...options
+}: CaptureScreenshotOptions): Promise<string> {
   if (!page) throw new TypeError("captureScreenshot requires a Playwright page.");
   if (!artifactsDirectory) throw new TypeError("captureScreenshot requires artifactsDirectory.");
   await mkdir(artifactsDirectory, { recursive: true });

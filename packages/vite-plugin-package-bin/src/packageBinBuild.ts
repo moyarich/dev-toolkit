@@ -4,7 +4,6 @@ import { basename, extname, resolve } from "node:path";
 import type { InlineConfig, Plugin, ResolvedConfig } from "vite";
 import { build } from "vite";
 
-
 export interface PackageBinEntry {
   pattern: string;
   bin?: string;
@@ -30,7 +29,9 @@ type PackageBins = Record<string, string>;
 const managedBinExtensions = new Set([".js", ".mjs", ".cjs"]);
 
 async function readManagedPackageBins(root: string): Promise<PackageBins> {
-  const pkg = JSON.parse(await readFile(resolve(root, "package.json"), "utf8")) as {
+  const pkg = JSON.parse(
+    await readFile(resolve(root, "package.json"), "utf8"),
+  ) as {
     bin?: string | PackageBins;
   };
 
@@ -48,9 +49,9 @@ export async function discoverCliEntries(
   root = process.cwd(),
   bins?: PackageBins,
 ): Promise<Record<string, string>> {
-  const entryRules = (Array.isArray(entryOptions) ? entryOptions : [entryOptions]).map(
-    (entry) => ({ bin: "./bin/{name}.mjs", ...entry }),
-  );
+  const entryRules = (
+    Array.isArray(entryOptions) ? entryOptions : [entryOptions]
+  ).map((entry) => ({ bin: "./bin/{name}.mjs", ...entry }));
   const managedBins = bins ?? (await readManagedPackageBins(root));
   const candidates = new Map<string, string[]>();
 
@@ -207,8 +208,16 @@ export function packageBinBuild(options: PackageBinBuildOptions): Plugin {
         await rm(resolve(root, outDir), { recursive: true, force: true });
       }
 
-      const { entries: _entries, emptyOutDir: _emptyOutDir, ...buildOptions } = options;
-      for (const { config } of standaloneCliBuilds(entries, buildOptions, root)) {
+      const {
+        entries: _entries,
+        emptyOutDir: _emptyOutDir,
+        ...buildOptions
+      } = options;
+      for (const { config } of standaloneCliBuilds(
+        entries,
+        buildOptions,
+        root,
+      )) {
         await build({ ...config, logLevel: resolvedConfig.logLevel });
       }
     },

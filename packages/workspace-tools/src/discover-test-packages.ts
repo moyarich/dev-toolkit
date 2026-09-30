@@ -6,7 +6,9 @@ interface TestPackage {
   name: string;
 }
 
-export async function discoverTestPackages(root = "packages"): Promise<TestPackage[]> {
+export async function discoverTestPackages(
+  root = "packages",
+): Promise<TestPackage[]> {
   const entries = await readdir(root, { withFileTypes: true });
   const packages: TestPackage[] = [];
 
@@ -25,7 +27,12 @@ export async function discoverTestPackages(root = "packages"): Promise<TestPacka
         });
       }
     } catch (error) {
-      if (!(error instanceof Error && "code" in error && error.code === "ENOENT")) throw error;
+      if (!(
+        error instanceof Error &&
+        "code" in error &&
+        error.code === "ENOENT"
+      ))
+        throw error;
     }
   }
 

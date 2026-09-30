@@ -15,27 +15,36 @@
     "demo": "demo",
     "demo:list": "demo list",
     "test:playground": "node --test tests/playground/*.test.mjs",
-    "package-lock:update": "npm install --package-lock-only --include=optional"
+    "package-lock:update": "npm install --package-lock-only --include=optional",
+    "format:check": "prettier . --check",
+    "format": "prettier . --write"
   },
   "devDependencies": {
-    "@types/node": "^24.0.0",
-    "commander": "^14.0.3",
     "@eslint/js": "^10.0.1",
+    "@types/node": "^26.6.3",
     "eslint": "^10.11.0",
     "eslint-config-prettier": "^10.1.8",
     "globals": "^17.12.0",
-    "prettier": "^3.9.8",
-    "typescript": "^5.9.3",
+    "prettier": "3.9.9",
+    "typescript": "^6.0.3",
     "typescript-eslint": "^8.71.0",
-    "vite": "^7.1.7",
-    "vitest": "^3.2.4"
+    "vite": "^8.3.1",
+    "vitest": "^5.0.2"
   },
   "engines": {
     "node": ">=24"
   },
   "license": "MIT",
   "optionalDependencies": {
-    "@rollup/rollup-linux-x64-gnu": "^4.63.5",
-    "@esbuild/linux-x64": "0.28.2"
+    "@esbuild/linux-x64": "0.28.2",
+    "@rollup/rollup-linux-x64-gnu": "^4.63.5"
+  },
+  "dependencies": {
+    "@inquirer/prompts": "^8.7.2",
+    "@vscode/test-electron": "^3.1.0",
+    "chalk": "^6.0.1",
+    "commander": "^15.0.0",
+    "playwright": "^1.63.0",
+    "playwright-core": "^1.63.0"
   }
 }

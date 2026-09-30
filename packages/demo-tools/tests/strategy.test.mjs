@@ -13,7 +13,12 @@ test("assertDemoStrategy requires run", () => {
 
 test("runDemoStrategy derives strategy context from its module URL", async () => {
   let received;
-  const strategy = { name: "example", run(context) { received = context; } };
+  const strategy = {
+    name: "example",
+    run(context) {
+      received = context;
+    },
+  };
   await runDemoStrategy({ strategy, moduleUrl: import.meta.url });
   assert.equal(received.id, "example");
   assert.match(received.strategyDirectory, /tests$/);

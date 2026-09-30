@@ -1,12 +1,21 @@
 import assert from "node:assert/strict";
 import { test } from "vitest";
 
-import { assertDependencies, classifyOutdated, parseOutdated } from "../src/dependency-check.ts";
+import {
+  assertDependencies,
+  classifyOutdated,
+  parseOutdated,
+} from "../src/dependency-check.ts";
 
 test("parseOutdated accepts npm outdated JSON", () => {
-  assert.deepEqual(parseOutdated('{"commander":{"current":"14.0.1","wanted":"14.0.2","latest":"14.0.2"}}'), {
-    commander: { current: "14.0.1", wanted: "14.0.2", latest: "14.0.2" },
-  });
+  assert.deepEqual(
+    parseOutdated(
+      '{"commander":{"current":"14.0.1","wanted":"14.0.2","latest":"14.0.2"}}',
+    ),
+    {
+      commander: { current: "14.0.1", wanted: "14.0.2", latest: "14.0.2" },
+    },
+  );
 });
 
 test("dependency behind wanted fails", () => {

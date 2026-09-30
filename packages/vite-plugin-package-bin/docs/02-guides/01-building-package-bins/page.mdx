@@ -12,10 +12,7 @@ For multiple or custom source locations:
 
 ```ts
 packageBinBuild({
-  entries: [
-    { pattern: "src/**/*.ts" },
-    { pattern: "scripts/**/*.ts" },
-  ],
+  entries: [{ pattern: "src/**/*.ts" }, { pattern: "scripts/**/*.ts" }],
   emptyOutDir: true,
   sourcemap: true,
   external: ["commander"],

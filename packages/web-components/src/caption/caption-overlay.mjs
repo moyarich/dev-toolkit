@@ -196,9 +196,7 @@ export class CaptionOverlay extends HTMLElement {
     }
 
     return (
-      CaptionOverlay.placements.get(
-        CaptionOverlay.defaults.placement,
-      ) ?? "auto"
+      CaptionOverlay.placements.get(CaptionOverlay.defaults.placement) ?? "auto"
     );
   }
 }

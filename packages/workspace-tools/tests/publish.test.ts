@@ -84,7 +84,6 @@ test("serializePublishPlan marks fully published packages as not publishable", (
   assert.equal(pkg.publishable, false);
 });
 
-
 test("serializePublishPlan preserves mixed registry readiness for dry-run reporting", () => {
   const result = serializePublishPlan(
     [
@@ -133,9 +132,7 @@ test("packageGitTagState reports a missing package-scoped tag without invoking r
 });
 
 test("packageGitTagState compares an existing tag with HEAD using mocked Git", () => {
-  execFileSync
-    .mockReturnValueOnce("abc123\n")
-    .mockReturnValueOnce("abc123\n");
+  execFileSync.mockReturnValueOnce("abc123\n").mockReturnValueOnce("abc123\n");
 
   const state = packageGitTagState("/repo", {
     directory: "packages/workspace-tools",

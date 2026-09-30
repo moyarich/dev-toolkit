@@ -1,7 +1,11 @@
 import { spawn } from "node:child_process";
 import type { SpawnOptions } from "node:child_process";
 
-export function runProcess(command: string, args: string[] = [], options: SpawnOptions = {}): Promise<void> {
+export function runProcess(
+  command: string,
+  args: string[] = [],
+  options: SpawnOptions = {},
+): Promise<void> {
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, { stdio: "inherit", ...options });
     child.once("error", reject);

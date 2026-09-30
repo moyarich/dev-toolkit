@@ -405,15 +405,11 @@ function registryVersion(root, pkg, version) {
  * Previous tag or release commit.
  */
 function tagState(root, tag) {
-  const commit = execFileSync(
-    "git",
-    ["rev-list", "-n", "1", tag],
-    {
-      cwd: root,
-      encoding: "utf8",
-      stdio: ["ignore", "pipe", "pipe"],
-    },
-  ).trim();
+  const commit = execFileSync("git", ["rev-list", "-n", "1", tag], {
+    cwd: root,
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "pipe"],
+  }).trim();
 
   if (!commit) {
     return {
@@ -424,15 +420,11 @@ function tagState(root, tag) {
     };
   }
 
-  const head = execFileSync(
-    "git",
-    ["rev-parse", "HEAD"],
-    {
-      cwd: root,
-      encoding: "utf8",
-      stdio: ["ignore", "pipe", "pipe"],
-    },
-  ).trim();
+  const head = execFileSync("git", ["rev-parse", "HEAD"], {
+    cwd: root,
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "pipe"],
+  }).trim();
 
   return {
     name: tag,
@@ -571,8 +563,10 @@ function updateChangelog(root, pkg, version, selector) {
  * Dry-run information when `dryRun` is enabled.
  */
 export function release(argument, options = {}) {
-  const { selector, versionSpec: argumentVersionSpec } =
-    parseReleaseArgument(argument, options);
+  const { selector, versionSpec: argumentVersionSpec } = parseReleaseArgument(
+    argument,
+    options,
+  );
 
   const mode = options.mode || "bump";
 
@@ -600,15 +594,11 @@ export function release(argument, options = {}) {
   }
 
   if (
-    execFileSync(
-      "git",
-      ["status", "--porcelain"],
-      {
-        cwd: root,
-        encoding: "utf8",
-        stdio: ["ignore", "pipe", "pipe"],
-      },
-    ).trim()
+    execFileSync("git", ["status", "--porcelain"], {
+      cwd: root,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "pipe"],
+    }).trim()
   ) {
     throw new Error(
       "Working tree must be clean before creating a package release.",
@@ -674,7 +664,9 @@ export function release(argument, options = {}) {
           : `Increment the ${versionSpec} version.`;
 
     const versionChange =
-      mode === "package-json" ? "" : `\n  ${pkg.manifest.version} → ${nextVersion}`;
+      mode === "package-json"
+        ? ""
+        : `\n  ${pkg.manifest.version} → ${nextVersion}`;
 
     const registryStatus = alreadyPublished
       ? `${pkg.manifest.name}@${nextVersion} is already published.`

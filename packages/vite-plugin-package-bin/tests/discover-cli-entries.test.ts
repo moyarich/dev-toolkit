@@ -24,7 +24,10 @@ test("finds managed bins across multiple source locations", async () => {
       },
     );
 
-    assert.deepEqual(new Set(Object.keys(entries)), new Set(["doctor", "release"]));
+    assert.deepEqual(
+      new Set(Object.keys(entries)),
+      new Set(["doctor", "release"]),
+    );
     assert.equal(entries.release, join(root, "src/release/release.ts"));
     assert.equal(entries.doctor, join(root, "scripts/diagnostics/doctor.ts"));
   } finally {

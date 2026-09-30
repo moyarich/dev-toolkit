@@ -21,7 +21,9 @@ export interface ReadmeScreenshotsConfig {
   screenshots?: ScreenshotDefinition[];
 }
 
-export async function loadConfig(configPath: string): Promise<ReadmeScreenshotsConfig> {
+export async function loadConfig(
+  configPath: string,
+): Promise<ReadmeScreenshotsConfig> {
   const absolute = resolve(configPath);
   if (!existsSync(absolute)) return {};
   const loaded = (await import(pathToFileURL(absolute).href)) as {
@@ -40,15 +42,13 @@ export async function captureScreenshots(
     process.env.DEMO_OUTPUT_DIR ?? config.outputDir ?? "docs/screenshots",
   );
   const viewport = config.viewport ?? { width: 1440, height: 1000 };
-  const screenshots =
-    config.screenshots?.length
-      ? config.screenshots
-      : [
-          {
-            name:
-              process.env.README_SCREENSHOT_NAME ?? "playground-overview.png",
-          },
-        ];
+  const screenshots = config.screenshots?.length
+    ? config.screenshots
+    : [
+        {
+          name: process.env.README_SCREENSHOT_NAME ?? "playground-overview.png",
+        },
+      ];
 
   mkdirSync(outputDir, { recursive: true });
   const browser = await chromium.launch();

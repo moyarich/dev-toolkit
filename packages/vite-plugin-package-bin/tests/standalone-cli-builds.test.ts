@@ -13,7 +13,10 @@ test("creates one independent build per CLI entry", () => {
     "/repo",
   );
 
-  assert.deepEqual(builds.map(({ name }) => name), ["alpha", "beta"]);
+  assert.deepEqual(
+    builds.map(({ name }) => name),
+    ["alpha", "beta"],
+  );
 
   for (const { name, config } of builds) {
     assert.equal(config.configFile, false);

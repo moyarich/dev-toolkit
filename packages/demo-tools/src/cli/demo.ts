@@ -1,9 +1,5 @@
 import { Command } from "commander";
-import {
-  discoverDemoStrategies,
-  runDemoStrategies,
-  selectDemoStrategies,
-} from "../index.ts";
+import { discoverDemoStrategies, runDemoStrategies, selectDemoStrategies } from "../index.ts";
 import { captureDemoStrategy } from "../generate/index.ts";
 import { launchBrowserDemo } from "../browser/index.ts";
 import { encodeGif } from "../capture/index.ts";

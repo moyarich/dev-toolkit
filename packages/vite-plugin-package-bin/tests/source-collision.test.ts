@@ -20,7 +20,10 @@ test("reports source collisions with troubleshooting guidance", async () => {
           release: "./bin/release.mjs",
         }),
       (error: Error) => {
-        assert.match(error.message, /Package bin source collision for "release"/);
+        assert.match(
+          error.message,
+          /Package bin source collision for "release"/,
+        );
         assert.match(error.message, /src\/release\.ts/);
         assert.match(error.message, /src\/cli\/release\.ts/);
         assert.match(error.message, /src\/cli\/\*\*\/\*\.ts/);

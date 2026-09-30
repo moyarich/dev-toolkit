@@ -21,16 +21,13 @@ function commandExists(command: string): boolean {
 function canUseFzf(enabled = true): boolean {
   return Boolean(
     enabled &&
-      process.stdin.isTTY &&
-      process.stdout.isTTY &&
-      commandExists("fzf"),
+    process.stdin.isTTY &&
+    process.stdout.isTTY &&
+    commandExists("fzf"),
   );
 }
 
-function selectWithFzf(
-  choices: string[],
-  prompt: string,
-): string | undefined {
+function selectWithFzf(choices: string[], prompt: string): string | undefined {
   if (!choices.length) return undefined;
 
   try {
@@ -104,10 +101,7 @@ program
   )
   .addOption(new Option("--no-compile", "Skip npm run compile"))
   .addOption(
-    new Option(
-      "--no-open-devtools",
-      "Do not open VS Code developer tools",
-    ),
+    new Option("--no-open-devtools", "Do not open VS Code developer tools"),
   )
   .addOption(
     new Option(

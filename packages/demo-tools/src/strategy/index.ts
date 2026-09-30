@@ -31,7 +31,15 @@ export async function runDemoStrategy<T>({
   const path = await import("node:path");
   const { fileURLToPath } = await import("node:url");
   const strategyDirectory = moduleUrl ? path.dirname(fileURLToPath(moduleUrl)) : process.cwd();
-  const outputDirectory = path.resolve(artifactsDirectory ?? path.join(strategyDirectory, "artifacts"));
+  const outputDirectory = path.resolve(
+    artifactsDirectory ?? path.join(strategyDirectory, "artifacts"),
+  );
   await mkdir(outputDirectory, { recursive: true });
-  return strategy.run({ ...context, id: strategy.name, strategyDirectory, artifactsDirectory: outputDirectory, moduleUrl });
+  return strategy.run({
+    ...context,
+    id: strategy.name,
+    strategyDirectory,
+    artifactsDirectory: outputDirectory,
+    moduleUrl,
+  });
 }

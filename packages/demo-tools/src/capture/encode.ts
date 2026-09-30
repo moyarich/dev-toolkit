@@ -2,19 +2,79 @@ import path from "node:path";
 import { runProcess } from "../utils/process.ts";
 
 export async function ensureFfmpeg(): Promise<true> {
-  try { await runProcess("ffmpeg", ["-version"], { stdio: "ignore" }); return true; }
-  catch { throw new Error("ffmpeg is required to encode demo recordings. Install ffmpeg and ensure it is on PATH."); }
+  try {
+    await runProcess("ffmpeg", ["-version"], { stdio: "ignore" });
+    return true;
+  } catch {
+    throw new Error(
+      "ffmpeg is required to encode demo recordings. Install ffmpeg and ensure it is on PATH.",
+    );
+  }
 }
 
-export async function encodeWebm({ framesDirectory, output, frameRate = 10 }: { framesDirectory: string; output: string; frameRate?: number }): Promise<string> {
+export async function encodeWebm({
+  framesDirectory,
+  output,
+  frameRate = 10,
+}: {
+  framesDirectory: string;
+  output: string;
+  frameRate?: number;
+}): Promise<string> {
   await ensureFfmpeg();
-  await runProcess("ffmpeg", ["-y", "-framerate", String(frameRate), "-i", path.join(framesDirectory, "%06d.png"), "-c:v", "libvpx-vp9", "-pix_fmt", "yuv420p", "-crf", "30", "-b:v", "0", output]);
+  await runProcess("ffmpeg", [
+    "-y",
+    "-framerate",
+    String(frameRate),
+    "-i",
+    path.join(framesDirectory, "%06d.png"),
+    "-c:v",
+    "libvpx-vp9",
+    "-pix_fmt",
+    "yuv420p",
+    "-crf",
+    "30",
+    "-b:v",
+    "0",
+    output,
+  ]);
   return output;
 }
 
-export async function encodeGif({ input, output, fps = 12, width = 960, trimStart = 0 }: { input: string; output: string; fps?: number; width?: number; trimStart?: number }): Promise<string> {
+export async function encodeGif({
+  input,
+  output,
+  fps = 12,
+  width = 960,
+  trimStart = 0,
+}: {
+  input: string;
+  output: string;
+  fps?: number;
+  width?: number;
+  trimStart?: number;
+}): Promise<string> {
   await ensureFfmpeg();
-  const filter = [`trim=start=${trimStart}`, "setpts=PTS-STARTPTS", `fps=${fps}`, `scale='min(${width},iw)':-2:flags=lanczos`, "split[a][b]", "[a]palettegen=max_colors=256:reserve_transparent=0:stats_mode=full[p]", "[b][p]paletteuse=dither=sierra2_4a:diff_mode=rectangle"].join(",");
-  await runProcess("ffmpeg", ["-y", "-i", input, "-filter_complex", filter, "-gifflags", "+transdiff", "-loop", "0", output]);
+  const filter = [
+    `trim=start=${trimStart}`,
+    "setpts=PTS-STARTPTS",
+    `fps=${fps}`,
+    `scale='min(${width},iw)':-2:flags=lanczos`,
+    "split[a][b]",
+    "[a]palettegen=max_colors=256:reserve_transparent=0:stats_mode=full[p]",
+    "[b][p]paletteuse=dither=sierra2_4a:diff_mode=rectangle",
+  ].join(",");
+  await runProcess("ffmpeg", [
+    "-y",
+    "-i",
+    input,
+    "-filter_complex",
+    filter,
+    "-gifflags",
+    "+transdiff",
+    "-loop",
+    "0",
+    output,
+  ]);
   return output;
 }

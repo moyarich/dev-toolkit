@@ -10,7 +10,10 @@ test("package-qualified tags split at the final @", () => {
 
 test("registry both expands to both publish destinations", () => {
   const registry = "both";
-  assert.deepEqual(registry === "both" ? ["github", "npm"] : [registry], ["github", "npm"]);
+  assert.deepEqual(registry === "both" ? ["github", "npm"] : [registry], [
+    "github",
+    "npm",
+  ]);
 });
 
 test("npm distribution tags require an alphabetic first character", () => {

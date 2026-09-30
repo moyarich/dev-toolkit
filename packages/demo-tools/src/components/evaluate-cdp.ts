@@ -7,12 +7,25 @@ export interface EvaluateComponentOptions {
   transform?: (source: string) => string | Promise<string>;
 }
 
-export async function evaluateComponentViaCDP({ page, componentUrl, transform = (source) => source }: EvaluateComponentOptions): Promise<void> {
+export async function evaluateComponentViaCDP({
+  page,
+  componentUrl,
+  transform = (source) => source,
+}: EvaluateComponentOptions): Promise<void> {
   const source = await readFile(componentUrl, "utf8");
   const expression = await transform(source);
   const session = await page.context().newCDPSession(page);
   try {
-    const result = await session.send<{ exceptionDetails?: { exception?: { description?: string }; text?: string } }>("Runtime.evaluate", { expression, awaitPromise: true });
-    if (result.exceptionDetails) throw new Error(result.exceptionDetails.exception?.description ?? result.exceptionDetails.text ?? "Component evaluation failed.");
-  } finally { await session.detach(); }
+    const result = await session.send<{
+      exceptionDetails?: { exception?: { description?: string }; text?: string };
+    }>("Runtime.evaluate", { expression, awaitPromise: true });
+    if (result.exceptionDetails)
+      throw new Error(
+        result.exceptionDetails.exception?.description ??
+          result.exceptionDetails.text ??
+          "Component evaluation failed.",
+      );
+  } finally {
+    await session.detach();
+  }
 }

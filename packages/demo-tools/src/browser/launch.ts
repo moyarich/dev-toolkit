@@ -26,10 +26,18 @@ export async function launchBrowserDemo({
   pageOptions = {},
   waitUntil = "networkidle",
 }: LaunchBrowserDemoOptions): Promise<BrowserDemo> {
-  if (!chromium?.launch) throw new TypeError("launchBrowserDemo requires a Playwright chromium implementation.");
+  if (!chromium?.launch)
+    throw new TypeError("launchBrowserDemo requires a Playwright chromium implementation.");
   const browser = await chromium.launch(launchOptions);
   const context = await browser.newContext({ viewport, ...contextOptions });
   const page = await context.newPage(pageOptions);
   if (url) await page.goto(url, { waitUntil });
-  return { browser, context, page, async close() { await browser.close(); } };
+  return {
+    browser,
+    context,
+    page,
+    async close() {
+      await browser.close();
+    },
+  };
 }

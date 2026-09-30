@@ -6,12 +6,8 @@
     "strict": true,
     "noEmit": true,
     "allowImportingTsExtensions": true,
-    "types": [
-      "node"
-    ],
+    "types": ["node"],
     "skipLibCheck": true
   },
-  "include": [
-    "vite.config.ts"
-  ]
+  "include": ["vite.config.ts"]
 }

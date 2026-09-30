@@ -1,6 +1,11 @@
 import assert from "node:assert/strict";
 import { test } from "vitest";
-import { changelogSection, parseReleaseArgument, releaseNotes, resolveNextVersion } from "../src/release.ts";
+import {
+  changelogSection,
+  parseReleaseArgument,
+  releaseNotes,
+  resolveNextVersion,
+} from "../src/release.ts";
 import { packageInfo } from "../src/workspace.ts";
 
 test("parseReleaseArgument accepts bump names", () => {
@@ -29,12 +34,21 @@ test("parseReleaseArgument accepts explicit semver", () => {
 
 test("parseReleaseArgument rejects malformed input and versions", () => {
   assert.throws(() => parseReleaseArgument("demo-tools"), /Usage:/);
-  assert.throws(() => parseReleaseArgument("demo-tools=banana"), /Invalid version/);
+  assert.throws(
+    () => parseReleaseArgument("demo-tools=banana"),
+    /Invalid version/,
+  );
 });
 
 test("packageInfo rejects selectors that can escape configured workspaces", () => {
-  assert.throws(() => packageInfo(process.cwd(), "../demo-tools"), /Package selector/);
-  assert.throws(() => packageInfo(process.cwd(), "packages/../demo-tools"), /Package selector/);
+  assert.throws(
+    () => packageInfo(process.cwd(), "../demo-tools"),
+    /Package selector/,
+  );
+  assert.throws(
+    () => packageInfo(process.cwd(), "packages/../demo-tools"),
+    /Package selector/,
+  );
 });
 
 test("releaseNotes groups package changes for consumers", () => {
@@ -71,10 +85,10 @@ test("resolveNextVersion computes release versions without touching package file
   assert.equal(resolveNextVersion("0.1.1", "minor"), "0.2.0");
   assert.equal(resolveNextVersion("0.1.1", "major"), "1.0.0");
   assert.equal(resolveNextVersion("1.2.3", "prepatch"), "1.2.4-0");
-  assert.equal(resolveNextVersion("1.2.3-beta.1", "prerelease"), "1.2.3-beta.2");
+  assert.equal(
+    resolveNextVersion("1.2.3-beta.1", "prerelease"),
+    "1.2.3-beta.2",
+  );
   assert.equal(resolveNextVersion("1.2.3-beta", "prerelease"), "1.2.3-beta.0");
   assert.equal(resolveNextVersion("1.2.3", "1.2.4"), "1.2.4");
 });
-
-
-

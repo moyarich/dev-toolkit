@@ -10,7 +10,10 @@ export interface RunDemoStrategiesOptions {
   context?: Partial<DemoStrategyContext>;
 }
 
-export interface DemoRunResult { id: string; result: unknown }
+export interface DemoRunResult {
+  id: string;
+  result: unknown;
+}
 
 export async function runDemoStrategies({
   directory = path.resolve("demo/strategies"),
@@ -19,7 +22,17 @@ export async function runDemoStrategies({
   context = {},
 }: RunDemoStrategiesOptions = {}): Promise<DemoRunResult[]> {
   const discovered = await discoverDemoStrategies({ directory });
-  const names = selected === "all" ? undefined : new Set(Array.isArray(selected) ? selected : String(selected).split(",").map((value) => value.trim()).filter(Boolean));
+  const names =
+    selected === "all"
+      ? undefined
+      : new Set(
+          Array.isArray(selected)
+            ? selected
+            : String(selected)
+                .split(",")
+                .map((value) => value.trim())
+                .filter(Boolean),
+        );
   const strategies = names ? discovered.filter(({ id }) => names.has(id)) : discovered;
   if (names) {
     const found = new Set(strategies.map(({ id }) => id));
@@ -31,7 +44,12 @@ export async function runDemoStrategies({
   for (const entry of strategies) {
     const strategyArtifactsDirectory = path.join(artifactsDirectory, entry.id);
     await mkdir(strategyArtifactsDirectory, { recursive: true });
-    const strategyContext: DemoStrategyContext = { ...context, id: entry.id, strategyDirectory: entry.directory, artifactsDirectory: strategyArtifactsDirectory };
+    const strategyContext: DemoStrategyContext = {
+      ...context,
+      id: entry.id,
+      strategyDirectory: entry.directory,
+      artifactsDirectory: strategyArtifactsDirectory,
+    };
     results.push({ id: entry.id, result: await entry.strategy.run(strategyContext) });
   }
   return results;

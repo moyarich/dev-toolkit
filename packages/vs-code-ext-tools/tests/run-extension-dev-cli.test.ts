@@ -5,11 +5,15 @@ import { expect, test } from "vitest";
 const root = resolve(import.meta.dirname, "..");
 
 function invoke(...args: string[]) {
-  const result = spawnSync(process.execPath, ["bin/run-extension-dev.mjs", ...args], {
-    cwd: root,
-    encoding: "utf8",
-    stdio: "pipe",
-  });
+  const result = spawnSync(
+    process.execPath,
+    ["bin/run-extension-dev.mjs", ...args],
+    {
+      cwd: root,
+      encoding: "utf8",
+      stdio: "pipe",
+    },
+  );
 
   return {
     status: result.status,

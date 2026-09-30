@@ -4,11 +4,7 @@ import { spawnSync } from "node:child_process";
 import { existsSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 
-import {
-  packageInfo,
-  repositoryRoot,
-  workspacePackages,
-} from "./workspace.ts";
+import { packageInfo, repositoryRoot, workspacePackages } from "./workspace.ts";
 
 /**
  * @typedef {"fail" | "warn"} DependencyCheckLevel
@@ -160,7 +156,11 @@ export function dependencyCheck(root, pkg) {
     throw outdatedResult.error;
   }
 
-  if (outdatedResult.status !== 0 && outdatedResult.status !== 1 && !outdatedOutput) {
+  if (
+    outdatedResult.status !== 0 &&
+    outdatedResult.status !== 1 &&
+    !outdatedOutput
+  ) {
     throw new Error(outdatedResult.stderr.trim() || "npm outdated failed.");
   }
 
@@ -365,25 +365,24 @@ function selectWithFzf(choices, prompt) {
   }
 
   const result = spawnSync(
-
-      "fzf",
-      [
-        "--prompt",
-        `${prompt} > `,
-        "--height",
-        "40%",
-        "--layout",
-        "reverse",
-        "--border",
-        "--select-1",
-        "--exit-0",
-      ],
-      {
-        input: `${choices.join("\n")}\n`,
-        encoding: "utf8",
-        stdio: ["pipe", "pipe", "inherit"],
-      },
-    );
+    "fzf",
+    [
+      "--prompt",
+      `${prompt} > `,
+      "--height",
+      "40%",
+      "--layout",
+      "reverse",
+      "--border",
+      "--select-1",
+      "--exit-0",
+    ],
+    {
+      input: `${choices.join("\n")}\n`,
+      encoding: "utf8",
+      stdio: ["pipe", "pipe", "inherit"],
+    },
+  );
 
   if (result.error) {
     throw result.error;
@@ -459,8 +458,9 @@ function selectPackageWithFzf(root) {
  * Selected output format.
  */
 function selectOutputFormatWithFzf() {
-  return /** @type {OutputFormat | undefined} */ (
-    selectWithFzf(["text", "json"], "Output")
+  return /** @type {OutputFormat | undefined} */ selectWithFzf(
+    ["text", "json"],
+    "Output",
   );
 }
 

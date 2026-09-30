@@ -13,7 +13,7 @@ export async function freePort(host = "127.0.0.1"): Promise<number> {
         return;
       }
       const { port } = address;
-      server.close((error) => error ? reject(error) : resolve(port));
+      server.close((error) => (error ? reject(error) : resolve(port)));
     });
   });
 }

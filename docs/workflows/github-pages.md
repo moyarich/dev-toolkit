@@ -60,10 +60,10 @@ Use `PAGES_BASE_PATH` when the site's build system needs the repository path for
 
 ## Inputs
 
-| Input | Required | Default |
-| --- | --- | --- |
-| `build-command` | Yes | — |
-| `output-directory` | Yes | — |
-| `node-version` | No | `24` |
-| `install-command` | No | `npm ci --include=optional` |
-| `working-directory` | No | `.` |
+| Input               | Required | Default                     |
+| ------------------- | -------- | --------------------------- |
+| `build-command`     | Yes      | —                           |
+| `output-directory`  | Yes      | —                           |
+| `node-version`      | No       | `24`                        |
+| `install-command`   | No       | `npm ci --include=optional` |
+| `working-directory` | No       | `.`                         |

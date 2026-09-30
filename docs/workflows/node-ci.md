@@ -36,6 +36,6 @@ If the repository does not define `lint` or `typecheck`, those optional commands
 
 ## Inputs
 
-| Input | Required | Default | Description |
-| --- | --- | --- | --- |
-| `node-version` | No | `22` | Node.js version used by CI |
+| Input          | Required | Default | Description                |
+| -------------- | -------- | ------- | -------------------------- |
+| `node-version` | No       | `22`    | Node.js version used by CI |

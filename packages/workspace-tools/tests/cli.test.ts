@@ -41,13 +41,20 @@ for (const command of [
 }
 
 test("package discovery preserves its default directory and JSON output", () => {
-  const implicit = invoke("packages/workspace-tools/bin/discover-test-packages.mjs");
-  const explicit = invoke("packages/workspace-tools/bin/discover-test-packages.mjs", "packages");
+  const implicit = invoke(
+    "packages/workspace-tools/bin/discover-test-packages.mjs",
+  );
+  const explicit = invoke(
+    "packages/workspace-tools/bin/discover-test-packages.mjs",
+    "packages",
+  );
   expect(implicit.status).toBe(0);
   expect(explicit.status).toBe(0);
   expect(JSON.parse(implicit.stdout)).toEqual(JSON.parse(explicit.stdout));
   expect(JSON.parse(implicit.stdout)).toEqual(
-    expect.arrayContaining([expect.objectContaining({ name: "@moyarich/workspace-tools" })]),
+    expect.arrayContaining([
+      expect.objectContaining({ name: "@moyarich/workspace-tools" }),
+    ]),
   );
 });
 
@@ -68,7 +75,10 @@ test("release accepts both separated and equals option values", () => {
 });
 
 test("publish rejects values assigned to boolean flags", () => {
-  const result = invoke("packages/workspace-tools/bin/workspace-publish.mjs", "--dry-run=invalid");
+  const result = invoke(
+    "packages/workspace-tools/bin/workspace-publish.mjs",
+    "--dry-run=invalid",
+  );
   expect(result.status).toBe(1);
   expect(result.stderr).toMatch(/unknown option '--dry-run=invalid'/);
 });

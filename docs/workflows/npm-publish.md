@@ -62,9 +62,9 @@ Create the `NPM_TOKEN` repository secret before running the npm example. The reu
 
 ## Inputs
 
-| Input | Required | Default |
-| --- | --- | --- |
-| `package` | Yes | — |
-| `registry` | No | `github` |
-| `tag` | No | `latest` |
-| `node-version` | No | `24` |
+| Input          | Required | Default  |
+| -------------- | -------- | -------- |
+| `package`      | Yes      | —        |
+| `registry`     | No       | `github` |
+| `tag`          | No       | `latest` |
+| `node-version` | No       | `24`     |

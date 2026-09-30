@@ -113,10 +113,6 @@ export const publishProgram = program
       .choices(Object.keys(marketplaces))
       .default("vscode"),
   )
-  .argument(
-    "[publishArgs...]",
-    "Arguments passed to the marketplace publisher",
-  )
+  .argument("[publishArgs...]", "Arguments passed to the marketplace publisher")
   .allowUnknownOption()
   .action(publishExtension);
-
