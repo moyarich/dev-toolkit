@@ -13,11 +13,6 @@ export function assertDemoStrategy(value: unknown): asserts value is DemoStrateg
   }
 }
 
-export function isMainModule(moduleUrl?: string): boolean {
-  if (!moduleUrl || !process.argv[1]) return false;
-  return new URL(moduleUrl).pathname === new URL(`file://${process.argv[1]}`).pathname;
-}
-
 export interface RunDemoStrategyOptions<T = unknown> {
   strategy: DemoStrategy<T>;
   moduleUrl?: string;
@@ -39,22 +34,4 @@ export async function runDemoStrategy<T>({
   const outputDirectory = path.resolve(artifactsDirectory ?? path.join(strategyDirectory, "artifacts"));
   await mkdir(outputDirectory, { recursive: true });
   return strategy.run({ ...context, id: strategy.name, strategyDirectory, artifactsDirectory: outputDirectory, moduleUrl });
-}
-
-export async function runDemoStrategyModule<T>(options: RunDemoStrategyOptions<T>): Promise<boolean> {
-  if (!isMainModule(options.moduleUrl)) return false;
-  await runDemoStrategy(options);
-  return true;
-}
-
-export function executableDemoStrategy<T>(
-  strategy: DemoStrategy<T>,
-  moduleUrl: string,
-  options: Omit<RunDemoStrategyOptions<T>, "strategy" | "moduleUrl"> = {},
-): DemoStrategy<T> {
-  void runDemoStrategyModule({ strategy, moduleUrl, ...options }).catch((error: unknown) => {
-    console.error(error);
-    process.exitCode = 1;
-  });
-  return strategy;
 }
