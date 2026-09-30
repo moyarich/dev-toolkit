@@ -1,5 +1,5 @@
 import { readFile } from "node:fs/promises";
-import type { BrowserPage } from "../types.mts";
+import type { BrowserPage } from "../types.ts";
 
 export interface ImportHTMLElementOptions { page: BrowserPage; tagName: string; componentUrl: URL }
 

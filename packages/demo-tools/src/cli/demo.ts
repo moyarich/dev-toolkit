@@ -3,10 +3,10 @@ import {
   discoverDemoStrategies,
   runDemoStrategies,
   selectDemoStrategies,
-} from "../index.mts";
-import { captureDemoStrategy } from "../generate/index.mts";
-import { launchBrowserDemo } from "../browser/index.mts";
-import { encodeGif } from "../capture/index.mts";
+} from "../index.ts";
+import { captureDemoStrategy } from "../generate/index.ts";
+import { launchBrowserDemo } from "../browser/index.ts";
+import { encodeGif } from "../capture/index.ts";
 
 const program = new Command();
 

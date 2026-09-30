@@ -1,8 +1,8 @@
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { Command } from "commander";
-import { runDemoStrategy } from "../index.mts";
-import type { DemoStrategy } from "../types.mts";
+import { runDemoStrategy } from "../index.ts";
+import type { DemoStrategy } from "../types.ts";
 
 const program = new Command();
 
