@@ -47,14 +47,14 @@ export async function discoverCliEntries(
   root = process.cwd(),
   bins?: PackageBins,
 ): Promise<Record<string, string>> {
-  const includes = (Array.isArray(include) ? include : [include]).map((value) =>
-    typeof value === "string" ? { glob: value, bin: "./bin/{name}.mjs" } : { bin: "./bin/{name}.mjs", ...value },
+  const entryRules = (Array.isArray(entryOptions) ? entryOptions : [entryOptions]).map(
+    (entry) => ({ bin: "./bin/{name}.mjs", ...entry }),
   );
   const managedBins = bins ?? (await readManagedPackageBins(root));
   const candidates = new Map<string, string[]>();
 
-  for (const includeRule of includes) {
-    for await (const entry of glob(includeRule.glob, { cwd: root })) {
+  for (const entryRule of entryRules) {
+    for await (const entry of glob(entryRule.pattern, { cwd: root })) {
       const name = basename(entry).replace(/\.[^.]+$/, "");
       const expectedBin = entryRule.bin.replaceAll("{name}", name);
       if (managedBins[name] !== expectedBin) continue;
