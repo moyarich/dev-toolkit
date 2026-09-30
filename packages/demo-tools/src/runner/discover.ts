@@ -1,6 +1,7 @@
 import { readdir } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
+import { assertDemoStrategy } from "../strategy/index.ts";
 import type { DemoStrategy, DemoStrategyEntry } from "../types.ts";
 
 interface StrategyModulePath { modulePath: string; relativePath: string }
@@ -31,9 +32,10 @@ export async function discoverDemoStrategies(
   const modules = await findStrategyModules(root);
   const strategies: DemoStrategyEntry[] = [];
   for (const entry of modules) {
-    const loaded = await import(pathToFileURL(entry.modulePath).href) as { default?: DemoStrategy; strategy?: DemoStrategy };
+    const loaded = await import(pathToFileURL(entry.modulePath).href) as { default?: unknown; strategy?: unknown };
     const strategy = loaded.default ?? loaded.strategy;
-    if (!strategy?.name || typeof strategy.run !== "function") continue;
+    if (strategy === undefined) continue;
+    assertDemoStrategy(strategy);
     strategies.push({ id: strategy.name, description: strategy.description ?? "", directory: path.dirname(entry.modulePath), modulePath: entry.modulePath, relativePath: entry.relativePath, strategy });
   }
   const ids = new Set<string>();
