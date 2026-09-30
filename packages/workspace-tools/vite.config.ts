@@ -4,7 +4,7 @@ import { packageBinBuild } from "@moyarich/vite-plugin-package-bin";
 export default defineConfig({
   plugins: [
     packageBinBuild({
-      include: "src/**/*.ts",
+      entries: { pattern: "src/**/*.ts" },
       emptyOutDir: true,
     }),
   ],
