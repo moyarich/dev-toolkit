@@ -165,12 +165,12 @@ jobs:
           find . -path './.git' -prune -o -type d \
             \( -name node_modules -o -name bin -o -name dist \) \
             -prune -print0 > "$RUNNER_TEMP/prepared-paths"
-          tar --null -T "$RUNNER_TEMP/prepared-paths" -czf "$RUNNER_TEMP/prepared-workspace.tar.gz"
+          tar --null -T "$RUNNER_TEMP/prepared-paths" -cf "$RUNNER_TEMP/prepared-workspace.tar"
           echo "artifact=prepared-workspace-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_OUTPUT"
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.archive.outputs.artifact }}
-          path: ${{ runner.temp }}/prepared-workspace.tar.gz
+          path: ${{ runner.temp }}/prepared-workspace.tar
           if-no-files-found: error
           compression-level: 0
           retention-days: 1
