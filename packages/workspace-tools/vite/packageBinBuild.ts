@@ -131,7 +131,7 @@ export function packageBinBuild(options: PackageBinBuildOptions): Plugin {
     },
 
     load(id) {
-      if (id === virtualEntry) return "export {}";
+      if (id === virtualEntry) return "export const packageBinBuild = true;";
     },
 
     configResolved(config) {
