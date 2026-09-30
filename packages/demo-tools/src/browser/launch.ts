@@ -1,11 +1,12 @@
+import type { BrowserContextOptions, LaunchOptions } from "playwright";
 import type { Browser, BrowserContext, BrowserPage, Chromium } from "../types.ts";
 
 export interface LaunchBrowserDemoOptions {
   chromium: Chromium;
   url?: string;
   viewport?: { width: number; height: number };
-  launchOptions?: Record<string, unknown>;
-  contextOptions?: Record<string, unknown>;
+  launchOptions?: LaunchOptions;
+  contextOptions?: BrowserContextOptions;
   waitUntil?: "load" | "domcontentloaded" | "networkidle" | "commit";
 }
 
