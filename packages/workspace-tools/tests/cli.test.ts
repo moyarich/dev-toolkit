@@ -1,4 +1,4 @@
-import { execFileSync } from "node:child_process";
+import { spawnSync } from "node:child_process";
 import { resolve } from "node:path";
 import { describe, expect, test } from "vitest";
 
@@ -6,11 +6,17 @@ const packageRoot = resolve(import.meta.dirname, "..");
 const repositoryRoot = resolve(packageRoot, "../..");
 
 function invoke(script: string, ...args: string[]) {
-  try {
-    return { status: 0, stdout: execFileSync(process.execPath, [script, ...args], { cwd: repositoryRoot, encoding: "utf8" }), stderr: "" };
-  } catch (error: any) {
-    return { status: error.status, stdout: error.stdout ?? "", stderr: error.stderr ?? "" };
-  }
+  const result = spawnSync(process.execPath, [script, ...args], {
+    cwd: repositoryRoot,
+    encoding: "utf8",
+    stdio: "pipe",
+  });
+
+  return {
+    status: result.status,
+    stdout: result.stdout ?? "",
+    stderr: result.stderr ?? "",
+  };
 }
 
 for (const command of [
