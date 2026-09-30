@@ -20,16 +20,23 @@ const workflow = readFileSync(
   "utf8",
 );
 
+const escapeRegex = (value) =>
+  value.replace(/[.*+?^$\{\}()|[\]\\]/g, "\\const workflow = readFileSync(
+  join(workflows, "release-drafter.yml"),
+  "utf8",
+);
+");
+
 test("release drafter workflow uses package matrix configs", () => {
   for (const [directory, name] of packages) {
     assert.match(workflow, new RegExp(`directory: ${directory}`));
     assert.match(
       workflow,
       new RegExp(
-        `config: release-drafter-${directory.replace(/[.*+?^$\{\}()|[\]\\]/g, "\\$&")}\\.yml`,
+        `config: release-drafter-${escapeRegex(directory)}\\.yml`,
       ),
     );
-    assert.match(workflow, new RegExp(name.replace(/[.*+?^$\{\}()|[\]\\]/g, "\\$&")));
+    assert.match(workflow, new RegExp(escapeRegex(name)));
   }
 
   assert.match(workflow, /disable-autolabeler: true/);
@@ -43,23 +50,23 @@ test("each package release config filters by package path and tag namespace", ()
       "utf8",
     );
 
-    assert.match(config, new RegExp(`name-template: "${name.replace(/[.*+?^$\{\}()|[\]\\]/g, "\\$&")} v\\$RESOLVED_VERSION"`));
+    assert.match(config, new RegExp(`name-template: "${escapeRegex(name)} v\\$RESOLVED_VERSION"`));
     assert.match(
       config,
       new RegExp(
-        `tag-template: "packages/${directory.replace(/[.*+?^$\{\}()|[\]\\]/g, "\\$&")}@\\$RESOLVED_VERSION"`,
+        `tag-template: "packages/${escapeRegex(directory)}@\\$RESOLVED_VERSION"`,
       ),
     );
     assert.match(
       config,
       new RegExp(
-        `tag-prefix: "packages/${directory.replace(/[.*+?^$\{\}()|[\]\\]/g, "\\$&")}@"`,
+        `tag-prefix: "packages/${escapeRegex(directory)}@"`,
       ),
     );
     assert.match(
       config,
       new RegExp(
-        `- "packages/${directory.replace(/[.*+?^$\{\}()|[\]\\]/g, "\\$&")}/\\*\\*"`,
+        `- "packages/${escapeRegex(directory)}/\\*\\*"`,
       ),
     );
   }
