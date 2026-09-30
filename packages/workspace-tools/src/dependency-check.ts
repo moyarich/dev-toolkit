@@ -383,7 +383,7 @@ function selectWithFzf(choices, prompt) {
         encoding: "utf8",
         stdio: ["pipe", "pipe", "inherit"],
       },
-    ).trim();
+    );
 
   if (result.error) {
     throw result.error;
