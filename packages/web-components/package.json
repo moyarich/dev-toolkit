@@ -23,7 +23,7 @@
   },
   "scripts": {
     "build": "vite build --config vite.config.ts",
-    "test": "node --check src/index.mjs && node --check src/caption/caption-overlay.mjs && node --check src/cursor-overlay/cursor-overlay-element.mjs && node --check src/magnifier-cursor-overlay/element.mjs",
+    "test": "node --check src/index.mjs && node --check src/caption/caption-overlay.mjs && node --check src/cursor-overlay/cursor-overlay-element.mjs && node --check src/magnifier-cursor-overlay/element.mjs && vitest run",
     "typecheck": "tsc -p tsconfig.json"
   },
   "repository": {
@@ -38,7 +38,8 @@
   "devDependencies": {
     "@types/node": "^24.0.0",
     "vite": "^7.1.7",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
   },
   "license": "MIT"
 }
