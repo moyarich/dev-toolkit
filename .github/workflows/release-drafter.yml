@@ -220,25 +220,3 @@ jobs:
             echo "| Draft | [Open package draft release](${{ steps.drafter.outputs.html_url }}) |"
           } >> "$GITHUB_STEP_SUMMARY"
 
-  approve-release:
-    name: Approve reviewed package drafts
-    if: ${{ github.event_name == 'workflow_dispatch' }}
-    needs:
-      - discover-packages
-      - draft-release
-    runs-on: ubuntu-latest
-    environment:
-      name: release
-
-    steps:
-      - name: Record approval
-        shell: bash
-        run: |
-          {
-            echo "# Package release drafts approved"
-            echo
-            echo "The selected package draft release workflow passed the \`release\` environment approval gate."
-            echo
-            echo "> This workflow does not publish GitHub Releases or npm packages."
-            echo "> Existing package release and publish workflows remain responsible for irreversible release operations."
-          } >> "$GITHUB_STEP_SUMMARY"
