@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { getCommandPaletteShortcut, getQuickOpenShortcut } from "../src/vscode/commands.mts";
+import { getCommandPaletteShortcut, getQuickOpenShortcut } from "../src/vscode/commands.ts";
 
 test("VS Code shortcuts are platform aware", () => {
   assert.equal(getCommandPaletteShortcut("darwin"), "Meta+Shift+P");
