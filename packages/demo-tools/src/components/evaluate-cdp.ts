@@ -12,7 +12,7 @@ export async function evaluateComponentViaCDP({ page, componentUrl, transform = 
   const expression = await transform(source);
   const session = await page.context().newCDPSession(page);
   try {
-    const result = await session.send("Runtime.evaluate", { expression, awaitPromise: true }) as { exceptionDetails?: { exception?: { description?: string }; text?: string } };
+    const result = await session.send<{ exceptionDetails?: { exception?: { description?: string }; text?: string } }>("Runtime.evaluate", { expression, awaitPromise: true });
     if (result.exceptionDetails) throw new Error(result.exceptionDetails.exception?.description ?? result.exceptionDetails.text ?? "Component evaluation failed.");
   } finally { await session.detach(); }
 }
