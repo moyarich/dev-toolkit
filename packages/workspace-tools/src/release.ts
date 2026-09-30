@@ -5,13 +5,13 @@ import { execFileSync } from "node:child_process";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
-import { packageInfo, repositoryRoot } from "./workspace.mts";
+import { packageInfo, repositoryRoot } from "./workspace.ts";
 
 import {
   assertDependencies,
   dependencyCheck,
   printDependencyCheck,
-} from "./dependency-check.mts";
+} from "./dependency-check.ts";
 
 /**
  * Supported semantic-version bump types.

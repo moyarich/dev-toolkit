@@ -8,7 +8,7 @@ import {
   packageInfo,
   repositoryRoot,
   workspacePackages,
-} from "./workspace.mts";
+} from "./workspace.ts";
 
 /**
  * @typedef {"fail" | "warn"} DependencyCheckLevel

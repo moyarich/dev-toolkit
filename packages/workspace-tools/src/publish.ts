@@ -15,13 +15,13 @@ import {
   packageInfo,
   repositoryRoot,
   workspacePublishOrder,
-} from "./workspace.mts";
+} from "./workspace.ts";
 
 import {
   assertDependencies,
   dependencyCheck,
   printDependencyCheck,
-} from "./dependency-check.mts";
+} from "./dependency-check.ts";
 
 /**
  * @typedef {"github" | "npm"} Registry

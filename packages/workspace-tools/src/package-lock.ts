@@ -2,7 +2,7 @@ import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-import { repositoryRoot } from "./workspace.mts";
+import { repositoryRoot } from "./workspace.ts";
 
 export interface PackageLockOptions {
   dryRun?: boolean;
