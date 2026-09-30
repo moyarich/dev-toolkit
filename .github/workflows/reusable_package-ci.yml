@@ -58,20 +58,6 @@ jobs:
       - name: Install dependencies
         run: npm ci --include=optional --ignore-scripts
 
-      - name: Ensure Rollup native binary
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          if ! node -e "require.resolve('@rollup/rollup-linux-x64-gnu')" >/dev/null 2>&1; then
-            ROLLUP_VERSION="$(node -p "require('./node_modules/rollup/package.json').version")"
-            npm install \
-              --no-save \
-              --package-lock=false \
-              --ignore-scripts \
-              "@rollup/rollup-linux-x64-gnu@$ROLLUP_VERSION"
-          fi
-
       - name: Resolve workspace tools CLI
         shell: bash
         env:
