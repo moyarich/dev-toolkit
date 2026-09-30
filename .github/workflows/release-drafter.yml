@@ -7,18 +7,10 @@ on:
   workflow_dispatch:
     inputs:
       package:
-        description: Package draft to refresh
+        description: Package selector (all, package name, or packages/<directory>)
         required: true
         default: all
-        type: choice
-        options:
-          - all
-          - demo-tools
-          - readme-screenshots
-          - vite-plugin-package-bin
-          - vs-code-ext-tools
-          - web-components
-          - workspace-tools
+        type: string
 
       version:
         description: Optional explicit release version (for first release, use 0.1.0)
@@ -41,56 +33,96 @@ permissions:
   pull-requests: read
 
 jobs:
+  discover-packages:
+    name: "Discover publishable packages"
+    uses: ./.github/workflows/reusable_discover-packages.yml
+    with:
+      packages-directory: packages
+      require-publish-config: true
+      node-version: "24"
+
   draft-release:
-    name: "package: ${{ matrix.name }} | dir: packages/${{ matrix.directory }}"
+    name: "package: ${{ matrix.name }} | dir: ${{ matrix.directory }}"
+    needs: discover-packages
+    if: >-
+      ${{ needs.discover-packages.result == 'success' &&
+          needs.discover-packages.outputs.has-packages == 'true' }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          - directory: demo-tools
-            name: "@moyarich/demo-tools"
-            config: release-drafter-demo-tools.yml
-          - directory: readme-screenshots
-            name: "@moyarich/readme-screenshots"
-            config: release-drafter-readme-screenshots.yml
-          - directory: vite-plugin-package-bin
-            name: "@moyarich/vite-plugin-package-bin"
-            config: release-drafter-vite-plugin-package-bin.yml
-          - directory: vs-code-ext-tools
-            name: "@moyarich/vs-code-ext-tools"
-            config: release-drafter-vs-code-ext-tools.yml
-          - directory: web-components
-            name: "@moyarich/web-components"
-            config: release-drafter-web-components.yml
-          - directory: workspace-tools
-            name: "@moyarich/workspace-tools"
-            config: release-drafter-workspace-tools.yml
+      matrix: ${{ fromJSON(needs.discover-packages.outputs.matrix || '{"include":[]}') }}
 
     steps:
+      - name: Decide whether package is selected
+        id: selected
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_PACKAGE: ${{ inputs.package }}
+          PACKAGE_NAME: ${{ matrix.name }}
+          PACKAGE_DIRECTORY: ${{ matrix.directory }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ "$EVENT_NAME" != "workflow_dispatch" ] ||
+             [ "$INPUT_PACKAGE" = "all" ] ||
+             [ "$INPUT_PACKAGE" = "$PACKAGE_NAME" ] ||
+             [ "$INPUT_PACKAGE" = "$PACKAGE_DIRECTORY" ]; then
+            echo "value=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Checkout main history
-        if: >-
-          ${{ github.event_name == 'workflow_dispatch' &&
-              (inputs.package == 'all' || inputs.package == matrix.directory) }}
-        uses: actions/checkout@v7
+        if: ${{ steps.selected.outputs.value == 'true' }}
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: main
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Resolve comparison baseline
-        id: baseline
-        if: >-
-          ${{ github.event_name == 'workflow_dispatch' &&
-              (inputs.package == 'all' || inputs.package == matrix.directory) }}
+      - name: Generate package Release Drafter config
+        if: ${{ steps.selected.outputs.value == 'true' }}
         env:
-          INPUT_FROM: ${{ inputs.from }}
-          INPUT_VERSION: ${{ inputs.version }}
+          PACKAGE_NAME: ${{ matrix.name }}
+          PACKAGE_DIRECTORY: ${{ matrix.directory }}
         shell: bash
         run: |
           set -euo pipefail
 
-          if [ -n "$INPUT_FROM" ]; then
+          node --input-type=module <<'NODE'
+          import { readFileSync, writeFileSync } from "node:fs";
+
+          const template = readFileSync(
+            ".github/release-drafter-package-template.yml",
+            "utf8",
+          );
+
+          const config = template
+            .replaceAll("{{PACKAGE_NAME}}", process.env.PACKAGE_NAME)
+            .replaceAll("{{PACKAGE_DIRECTORY}}", process.env.PACKAGE_DIRECTORY);
+
+          writeFileSync(
+            ".github/release-drafter-package-generated.yml",
+            config,
+          );
+          NODE
+
+      - name: Resolve comparison baseline
+        id: baseline
+        if: ${{ steps.selected.outputs.value == 'true' }}
+        env:
+          INPUT_FROM: ${{ inputs.from }}
+          INPUT_VERSION: ${{ inputs.version }}
+          EVENT_NAME: ${{ github.event_name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ "$EVENT_NAME" != "workflow_dispatch" ]; then
+            BASELINE=""
+            SOURCE="previous published package release"
+          elif [ -n "$INPUT_FROM" ]; then
             BASELINE="$INPUT_FROM"
             SOURCE="input"
           elif [ -n "$INPUT_VERSION" ]; then
@@ -107,10 +139,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: Initialize workflow summary
-        if: >-
-          ${{ github.event_name != 'workflow_dispatch' ||
-              inputs.package == 'all' ||
-              inputs.package == matrix.directory }}
+        if: ${{ steps.selected.outputs.value == 'true' }}
         shell: bash
         run: |
           {
@@ -119,11 +148,11 @@ jobs:
             echo "| Execution | Value |"
             echo "| --- | --- |"
             echo "| Package | \`${{ matrix.name }}\` |"
-            echo "| Directory | \`packages/${{ matrix.directory }}\` |"
-            echo "| Config | \`${{ matrix.config }}\` |"
-            echo "| Requested version | \`${{ inputs.version || 'auto' }}\` |"
+            echo "| Directory | \`${{ matrix.directory }}\` |"
+            echo "| Current package version | \`${{ matrix.version }}\` |"
+            echo "| Requested release version | \`${{ inputs.version || 'auto' }}\` |"
             echo "| Comparison baseline | \`${{ steps.baseline.outputs.from || 'previous published package release' }}\` |"
-            echo "| Baseline source | \`${{ steps.baseline.outputs.source || 'automatic' }}\` |"
+            echo "| Baseline source | \`${{ steps.baseline.outputs.source }}\` |"
             echo "| Repository | \`${{ github.repository }}\` |"
             echo "| Ref | \`${{ github.ref_name }}\` |"
             echo "| Trigger | \`${{ github.event_name }}\` |"
@@ -133,24 +162,18 @@ jobs:
 
       - name: Create or update package draft release
         id: drafter
-        if: >-
-          ${{ github.event_name != 'workflow_dispatch' ||
-              inputs.package == 'all' ||
-              inputs.package == matrix.directory }}
+        if: ${{ steps.selected.outputs.value == 'true' }}
         uses: release-drafter/release-drafter@v7.7.0
         with:
-          config-name: ${{ matrix.config }}
+          config-name: file:release-drafter-package-generated.yml
           commitish: main
           version: ${{ github.event_name == 'workflow_dispatch' && inputs.version || '' }}
-          from: ${{ github.event_name == 'workflow_dispatch' && steps.baseline.outputs.from || '' }}
+          from: ${{ steps.baseline.outputs.from }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Draft summary
-        if: >-
-          ${{ github.event_name != 'workflow_dispatch' ||
-              inputs.package == 'all' ||
-              inputs.package == matrix.directory }}
+        if: ${{ steps.selected.outputs.value == 'true' }}
         shell: bash
         run: |
           {
@@ -167,7 +190,9 @@ jobs:
   approve-release:
     name: Approve reviewed package drafts
     if: ${{ github.event_name == 'workflow_dispatch' }}
-    needs: draft-release
+    needs:
+      - discover-packages
+      - draft-release
     runs-on: ubuntu-latest
     environment:
       name: release
