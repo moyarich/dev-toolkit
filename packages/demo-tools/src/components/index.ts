@@ -2,7 +2,7 @@ export { importHTMLElement } from "./import-html-element.ts";
 export { hideDemoCaption, installDemoCursor, showDemoCaption } from "./page.ts";
 export { evaluateComponentViaCDP } from "./evaluate-cdp.ts";
 export {
-  installDemoMagnifierCursorOverlay,
+  installMagnifierCursorOverlay as installDemoMagnifierCursorOverlay,
   pointDemoMagnifierCursorAt,
-  removeDemoMagnifierCursorOverlay,
+  removeMagnifierCursorOverlay as removeDemoMagnifierCursorOverlay,
 } from "./magnifier-cursor-overlay.ts";
