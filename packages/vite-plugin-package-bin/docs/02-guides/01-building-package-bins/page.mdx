@@ -1,34 +1,37 @@
 # Building package bins
 
-`packageBinBuild` discovers files matching `include` and runs a separate Vite library build for each entry. This keeps every generated executable standalone instead of creating shared runtime chunks.
-
-The plugin:
-
-- validates discovered commands against `package.json#bin`
-- removes the output directory before building
-- emits each command as an ES module with a Node shebang
-- externalizes Node built-ins
-- uses `inlineDynamicImports` so each command remains self-contained
-- removes its synthetic outer Vite entry from the emitted bundle
-
-## Example with options
+`packageBinBuild` discovers managed package bins across one or more source locations and runs a separate Vite library build for each entry.
 
 ```ts
 packageBinBuild({
-  include: "src/cli/*.ts",
-  outDir: "bin",
-  target: "node24",
+  include: ["src/**/*.ts", "scripts/**/*.ts"],
+  emptyOutDir: true,
   sourcemap: true,
-  minify: false,
   external: ["commander"],
 });
 ```
 
-Additional external dependencies can be strings or regular expressions.
+Given:
 
-```ts
-packageBinBuild({
-  include: "src/cli/*.ts",
-  external: [/^@inquirer\//, "chalk", "commander"],
-});
+```json
+{
+  "bin": {
+    "release": "./bin/release.mjs",
+    "publish": "./bin/publish.mjs",
+    "doctor": "./bin/doctor.sh"
+  }
+}
 ```
+
+the plugin can discover:
+
+```text
+src/release/release.ts
+src/publish/publish.ts
+```
+
+while leaving `doctor.sh` untouched.
+
+The plugin validates that each managed Node.js bin has exactly one matching source, emits each command with a Node shebang, externalizes Node built-ins, and uses `inlineDynamicImports` so commands do not share runtime chunks.
+
+When `emptyOutDir` is `true`, the output directory is cleared once before the first command is built. It is never cleared between command builds.
