@@ -65,12 +65,12 @@ function ansi(code: string, value: string): string {
  * Terminal styling helpers.
  */
 const style = {
-  bold: (value) => ansi("1", value),
-  cyan: (value) => ansi("36", value),
-  green: (value) => ansi("32", value),
-  yellow: (value) => ansi("33", value),
-  red: (value) => ansi("31", value),
-  dim: (value) => ansi("2", value),
+  bold: (value: string) => ansi("1", value),
+  cyan: (value: string) => ansi("36", value),
+  green: (value: string) => ansi("32", value),
+  yellow: (value: string) => ansi("33", value),
+  red: (value: string) => ansi("31", value),
+  dim: (value: string) => ansi("2", value),
 };
 
 /**
@@ -161,7 +161,7 @@ export function resolveNextVersion(currentVersion: string, versionSpec: string):
 
       const last = parts.at(-1);
 
-      if (/^\d+$/.test(last)) {
+      if (last && /^\d+$/.test(last)) {
         parts[parts.length - 1] = String(Number(last) + 1);
       } else {
         parts.push("0");
@@ -244,7 +244,7 @@ export function parseReleaseArgument(argument: string, options: ReleaseOptions =
  * Grouped release notes.
  */
 export function releaseNotes(messages: string[]) {
-  const groups = {
+  const groups: Record<"Added" | "Changed" | "Fixed" | "Removed", string[]> = {
     Added: [],
     Changed: [],
     Fixed: [],
@@ -375,11 +375,12 @@ function registryVersion(root: string, pkg: ReturnType<typeof packageInfo>, vers
       version: publishedVersion,
     };
   } catch (error) {
-    const stderr = String(error?.stderr || "");
+    const commandError = error as Error & { stderr?: string | Buffer; stdout?: string | Buffer };
+    const stderr = String(commandError.stderr || "");
 
-    const stdout = String(error?.stdout || "");
+    const stdout = String(commandError.stdout || "");
 
-    const details = `${stderr}\n${stdout}\n${error?.message || ""}`;
+    const details = `${stderr}\n${stdout}\n${commandError.message || ""}`;
 
     if (
       /E404|404 Not Found|is not in this registry|No match found for version/i.test(
@@ -394,7 +395,7 @@ function registryVersion(root: string, pkg: ReturnType<typeof packageInfo>, vers
 
     throw new Error(
       `Unable to verify ${spec} in ${registry}: ${
-        stderr.trim() || error?.message || "registry lookup failed"
+        stderr.trim() || commandError.message || "registry lookup failed"
       }`,
     );
   }
@@ -585,11 +586,11 @@ export function release(argument: string, options: ReleaseOptions = {}) {
   const versionSpec =
     mode === "package-json" ? null : options.version || argumentVersionSpec;
 
-  if (mode === "bump" && !VALID_BUMPS.has(versionSpec)) {
+  if (mode === "bump" && (!versionSpec || !VALID_BUMPS.has(versionSpec))) {
     throw new Error(`Invalid release bump: ${versionSpec}`);
   }
 
-  if (mode === "exact" && !SEMVER.test(versionSpec)) {
+  if (mode === "exact" && (!versionSpec || !SEMVER.test(versionSpec))) {
     throw new Error(`Invalid exact SemVer: ${versionSpec}`);
   }
 
@@ -625,7 +626,7 @@ export function release(argument: string, options: ReleaseOptions = {}) {
     let nextVersion = pkg.manifest.version;
 
     if (mode !== "package-json") {
-      nextVersion = resolveNextVersion(pkg.manifest.version, versionSpec);
+      nextVersion = resolveNextVersion(pkg.manifest.version, versionSpec!);
     }
 
     const registry = registryFor(pkg);
@@ -813,12 +814,11 @@ ${section}`);
     return result;
   }
 
-  if (mode !== "package-json") {
-    execFileSync(
+  execFileSync(
       "npm",
       [
         "version",
-        versionSpec,
+        versionSpec!,
         "--workspace",
         pkg.manifest.name,
         "--git-tag-version=false",
@@ -828,9 +828,8 @@ ${section}`);
         ...operationRunOptions,
       },
     );
-  }
 
-  const version = JSON.parse(readFileSync(pkg.file, "utf8")).version;
+  const version = (JSON.parse(readFileSync(pkg.file, "utf8")) as { version: string }).version;
 
   if (registryVersion(root, pkg, version).status === "published") {
     execFileSync("git", ["checkout", "--", pkg.file, "package-lock.json"], {
