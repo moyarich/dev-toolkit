@@ -25,9 +25,12 @@ const marketplaces = {
     requiredEnv: ["OVSX_PAT"],
     command: ["npx", "ovsx", "publish"],
   },
-};
+} as const;
 
-function runCliCommand(command, args = []) {
+type MarketplaceId = keyof typeof marketplaces;
+type Marketplace = (typeof marketplaces)[MarketplaceId];
+
+function runCliCommand(command: string, args: readonly string[] = []): void {
   const result = spawnSync(command, args, {
     cwd: projectDirectory,
     env: process.env,
@@ -43,13 +46,13 @@ function runCliCommand(command, args = []) {
   }
 }
 
-function loadEnvironment() {
+function loadEnvironment(): void {
   if (existsSync(environmentFile)) {
     loadEnvFile(environmentFile);
   }
 }
 
-function validateMarketplaceEnvironment(marketplace) {
+function validateMarketplaceEnvironment(marketplace: Marketplace): boolean {
   const missingEnvironmentVariables = marketplace.requiredEnv.filter(
     (name) => !process.env[name],
   );
@@ -68,7 +71,7 @@ function validateMarketplaceEnvironment(marketplace) {
   return false;
 }
 
-export async function publishExtension(marketplaceId, publishArgs) {
+export async function publishExtension(marketplaceId: MarketplaceId, publishArgs: string[] = []): Promise<void> {
   const marketplace = marketplaces[marketplaceId];
 
   console.log("Recording demos and generating current README GIFs...");
