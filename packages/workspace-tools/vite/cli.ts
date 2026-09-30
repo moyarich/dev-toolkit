@@ -1,10 +1,10 @@
 import { rm } from "node:fs/promises";
 import { resolve } from "node:path";
 
-import type { InlineConfig, Plugin, ResolvedConfig, UserConfig } from "vite";
+import type { InlineConfig } from "vite";
 import { build } from "vite";
 
-export interface CliPluginOptions {
+export interface CliBuildOptions {
   entries: Record<string, string>;
   outDir?: string;
   target?: string;
@@ -19,7 +19,7 @@ export interface StandaloneCliBuild {
 }
 
 export function standaloneCliBuilds(
-  options: CliPluginOptions,
+  options: CliBuildOptions,
   root = process.cwd(),
 ): StandaloneCliBuild[] {
   const {
@@ -64,53 +64,14 @@ export function standaloneCliBuilds(
  * Build each Node.js CLI entry independently so every bin/*.mjs file is a
  * standalone executable with no shared runtime chunks.
  */
-export function cli(options: CliPluginOptions): Plugin {
-  let resolvedConfig: ResolvedConfig;
+export async function buildCli(
+  options: CliBuildOptions,
+  root = process.cwd(),
+): Promise<void> {
+  const outDir = resolve(root, options.outDir ?? "bin");
+  await rm(outDir, { recursive: true, force: true });
 
-  return {
-    name: "moyarich:cli",
-    enforce: "pre",
-
-    config(): UserConfig {
-      return {
-        build: {
-          outDir: options.outDir ?? "bin",
-          emptyOutDir: false,
-          rollupOptions: {
-            input: "virtual:moyarich-cli-orchestrator",
-          },
-        },
-      };
-    },
-
-    configResolved(config) {
-      resolvedConfig = config;
-    },
-
-    resolveId(id) {
-      if (id === "virtual:moyarich-cli-orchestrator") return "\0virtual:moyarich-cli-orchestrator";
-    },
-
-    load(id) {
-      if (id === "\0virtual:moyarich-cli-orchestrator") return "export {};";
-    },
-
-    async buildStart() {
-      if (resolvedConfig.build.watch) return;
-
-      const outDir = resolve(resolvedConfig.root, options.outDir ?? "bin");
-      await rm(outDir, { recursive: true, force: true });
-
-      for (const { config } of standaloneCliBuilds(options, resolvedConfig.root)) {
-        await build({
-          ...config,
-          logLevel: resolvedConfig.logLevel,
-        });
-      }
-    },
-
-    generateBundle(_outputOptions, bundle) {
-      for (const fileName of Object.keys(bundle)) delete bundle[fileName];
-    },
-  };
+  for (const { config } of standaloneCliBuilds(options, root)) {
+    await build(config);
+  }
 }
