@@ -4,7 +4,7 @@ import { existsSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { dirname, resolve } from "node:path";
 import { loadEnvFile } from "node:process";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { fileURLToPath } from "node:url";
 
 import { confirm } from "@inquirer/prompts";
 import { Argument, program } from "commander";
@@ -105,7 +105,7 @@ export async function publishExtension(marketplaceId, publishArgs) {
   runCliCommand(command, [...commandArgs, ...publishArgs]);
 }
 
-program
+export const publishProgram = program
   .name("publish")
   .description("Validate and publish the extension.")
   .addArgument(
@@ -120,6 +120,3 @@ program
   .allowUnknownOption()
   .action(publishExtension);
 
-if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
-  await program.parseAsync();
-}
