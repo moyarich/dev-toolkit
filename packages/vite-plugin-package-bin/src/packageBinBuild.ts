@@ -73,7 +73,14 @@ export async function discoverCliEntries(
     }
     if (matches.length > 1) {
       throw new Error(
-        `Multiple source entries matched package bin "${name}": ${matches.join(", ")}`,
+        [
+          `Package bin source collision for "${name}".`,
+          ...matches.map((match) => `  - ${match}`),
+          "",
+          "Each package bin must resolve to exactly one source file.",
+          'Narrow packageBinBuild({ entries: { pattern: "..." } }) to the directory containing executable entry points.',
+          'For example: entries: { pattern: "src/cli/**/*.ts" }',
+        ].join("\n"),
       );
     }
     entries[name] = matches[0];
