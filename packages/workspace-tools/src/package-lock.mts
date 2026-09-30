@@ -9,6 +9,7 @@ export interface PackageLockOptions {
   json?: boolean;
   commit?: boolean;
   branch?: string;
+  requiredPackages?: string[];
 }
 
 export interface PackageLockResult {
@@ -19,6 +20,19 @@ export interface PackageLockResult {
   committed: boolean;
   branch: string | null;
   lockfileVersion: number | string;
+  validatedPackages: string[];
+}
+
+export const DEFAULT_CI_LOCKFILE_PACKAGES = ["@rollup/rollup-linux-x64-gnu"];
+
+/** Validate that platform-specific packages required by CI are represented in the lockfile. */
+export function assertLockfilePackages(lock: any, requiredPackages = DEFAULT_CI_LOCKFILE_PACKAGES) {
+  const packages = lock?.packages ?? {};
+  const missing = requiredPackages.filter((name) => !packages[`node_modules/${name}`]);
+  if (missing.length) {
+    throw new Error(`package-lock.json is missing CI platform dependencies:\n${missing.map((name) => `- ${name}`).join("\n")}\nRegenerate the lockfile so it contains optional dependencies for supported CI platforms.`);
+  }
+  return requiredPackages;
 }
 
 function git(root: string, args: string[], options: { quiet?: boolean } = {}) {
@@ -60,7 +74,7 @@ export function updateWorkspacePackageLock(options: PackageLockOptions = {}): Pa
   try {
     execFileSync(
       "npm",
-      ["install", "--package-lock-only", "--ignore-scripts", "--no-audit", "--no-fund"],
+      ["install", "--package-lock-only", "--include=optional", "--ignore-scripts", "--no-audit", "--no-fund"],
       { cwd: root, stdio: options.json ? ["ignore", "ignore", "inherit"] : "inherit" },
     );
 
@@ -76,6 +90,7 @@ export function updateWorkspacePackageLock(options: PackageLockOptions = {}): Pa
 
     const changed = changedFiles.includes("package-lock.json");
     const parsed = JSON.parse(readFileSync(lockfile, "utf8"));
+    const validatedPackages = assertLockfilePackages(parsed, options.requiredPackages);
     let committed = false;
     let branch: string | null = null;
 
@@ -102,6 +117,7 @@ export function updateWorkspacePackageLock(options: PackageLockOptions = {}): Pa
       committed,
       branch,
       lockfileVersion: parsed.lockfileVersion ?? "unknown",
+      validatedPackages,
     };
 
     if (dryRun) {
