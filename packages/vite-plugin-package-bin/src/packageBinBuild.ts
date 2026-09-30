@@ -1,11 +1,12 @@
 import { glob, readFile, rm } from "node:fs/promises";
-import { basename, resolve } from "node:path";
+import { basename, extname, resolve } from "node:path";
 
 import type { InlineConfig, Plugin, ResolvedConfig } from "vite";
 import { build } from "vite";
 
 export interface PackageBinBuildOptions {
-  include: string;
+  include: string | string[];
+  emptyOutDir: boolean;
   outDir?: string;
   target?: string;
   sourcemap?: boolean;
@@ -18,23 +19,64 @@ export interface StandaloneCliBuild {
   config: InlineConfig;
 }
 
-export async function discoverCliEntries(
-  include: string,
-  root = process.cwd(),
-): Promise<Record<string, string>> {
-  const entries: Record<string, string> = {};
+type PackageBins = Record<string, string>;
 
-  for await (const entry of glob(include, { cwd: root })) {
-    const name = basename(entry).replace(/\.[^.]+$/, "");
-    entries[name] = resolve(root, entry);
+const managedBinExtensions = new Set([".js", ".mjs", ".cjs"]);
+
+async function readManagedPackageBins(root: string): Promise<PackageBins> {
+  const pkg = JSON.parse(await readFile(resolve(root, "package.json"), "utf8")) as {
+    bin?: string | PackageBins;
+  };
+
+  if (!pkg.bin || typeof pkg.bin === "string") return {};
+
+  return Object.fromEntries(
+    Object.entries(pkg.bin)
+      .filter(([, path]) => managedBinExtensions.has(extname(path)))
+      .sort(([a], [b]) => a.localeCompare(b)),
+  );
+}
+
+export async function discoverCliEntries(
+  include: string | string[],
+  root = process.cwd(),
+  bins?: PackageBins,
+): Promise<Record<string, string>> {
+  const patterns = Array.isArray(include) ? include : [include];
+  const managedBins = bins ?? (await readManagedPackageBins(root));
+  const candidates = new Map<string, string[]>();
+
+  for (const pattern of patterns) {
+    for await (const entry of glob(pattern, { cwd: root })) {
+      const name = basename(entry).replace(/\.[^.]+$/, "");
+      if (!(name in managedBins)) continue;
+
+      const matches = candidates.get(name) ?? [];
+      matches.push(resolve(root, entry));
+      candidates.set(name, matches);
+    }
   }
 
-  return Object.fromEntries(Object.entries(entries).sort(([a], [b]) => a.localeCompare(b)));
+  const entries: Record<string, string> = {};
+  for (const name of Object.keys(managedBins)) {
+    const matches = [...new Set(candidates.get(name) ?? [])];
+    if (matches.length === 0) {
+      throw new Error(`No source entry matched package bin "${name}"`);
+    }
+    if (matches.length > 1) {
+      throw new Error(
+        `Multiple source entries matched package bin "${name}": ${matches.join(", ")}`,
+      );
+    }
+    entries[name] = matches[0];
+  }
+
+  return entries;
 }
 
 export function standaloneCliBuilds(
   entries: Record<string, string>,
-  options: Omit<PackageBinBuildOptions, "include"> = {},
+  options: Omit<PackageBinBuildOptions, "include">,
   root = process.cwd(),
 ): StandaloneCliBuild[] {
   const {
@@ -74,39 +116,24 @@ export function standaloneCliBuilds(
   }));
 }
 
-async function validatePackageBins(
+function validateManagedPackageBins(
   entries: Record<string, string>,
+  bins: PackageBins,
   outDir: string,
-  root: string,
-): Promise<void> {
-  const pkg = JSON.parse(await readFile(resolve(root, "package.json"), "utf8")) as {
-    bin?: string | Record<string, string>;
-  };
-  if (!pkg.bin || typeof pkg.bin === "string") return;
-
-  const expected = Object.fromEntries(
-    Object.keys(entries).map((name) => [name, `./${outDir}/${name}.mjs`]),
-  );
-
-  const actualEntries = Object.entries(pkg.bin).sort(([a], [b]) => a.localeCompare(b));
-  const expectedEntries = Object.entries(expected).sort(([a], [b]) => a.localeCompare(b));
-
-  if (
-    actualEntries.length !== expectedEntries.length ||
-    actualEntries.some(
-      ([name, path], index) =>
-        name !== expectedEntries[index]?.[0] || path !== expectedEntries[index]?.[1],
-    )
-  ) {
-    throw new Error(
-      `package.json#bin must match discovered CLI entries. Expected: ${JSON.stringify(expected)}`,
-    );
+): void {
+  for (const name of Object.keys(entries)) {
+    const expected = `./${outDir}/${name}.mjs`;
+    if (bins[name] !== expected) {
+      throw new Error(
+        `package.json#bin["${name}"] must be "${expected}", received "${bins[name]}"`,
+      );
+    }
   }
 }
 
 /**
- * Vite plugin that builds every CLI matching include as an independent
- * executable with no shared runtime chunks.
+ * Vite plugin that builds managed package bins as independent Node.js
+ * executables with no shared runtime chunks.
  */
 export function packageBinBuild(options: PackageBinBuildOptions): Plugin {
   const virtualEntry = "\0moyarich:package-bin-build";
@@ -149,14 +176,19 @@ export function packageBinBuild(options: PackageBinBuildOptions): Plugin {
 
     async buildStart() {
       const root = resolvedConfig.root;
-      const entries = await discoverCliEntries(options.include, root);
+      const bins = await readManagedPackageBins(root);
+      const entries = await discoverCliEntries(options.include, root, bins);
+
       if (Object.keys(entries).length === 0) {
-        throw new Error(`No CLI entries matched "${options.include}"`);
+        throw new Error("No managed Node.js package bins were found");
       }
 
       const outDir = options.outDir ?? "bin";
-      await validatePackageBins(entries, outDir, root);
-      await rm(resolve(root, outDir), { recursive: true, force: true });
+      validateManagedPackageBins(entries, bins, outDir);
+
+      if (options.emptyOutDir) {
+        await rm(resolve(root, outDir), { recursive: true, force: true });
+      }
 
       const { include: _include, ...buildOptions } = options;
       for (const { config } of standaloneCliBuilds(entries, buildOptions, root)) {
