@@ -10,7 +10,7 @@ import {
   workspacePatterns,
 } from "../src/workspace.ts";
 
-function fixture(workspaces = ["packages/*", "apps/*", "tools/special"]) {
+function fixture(workspaces: string[] | { packages: string[] } = ["packages/*", "apps/*", "tools/special"]) {
   const root = mkdtempSync(join(tmpdir(), "workspace-tools-"));
   writeFileSync(
     join(root, "package.json"),
