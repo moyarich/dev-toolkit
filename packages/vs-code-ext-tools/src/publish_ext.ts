@@ -68,7 +68,7 @@ function validateMarketplaceEnvironment(marketplace) {
   return false;
 }
 
-async function publishExtension(marketplaceId, publishArgs) {
+export async function publishExtension(marketplaceId, publishArgs) {
   const marketplace = marketplaces[marketplaceId];
 
   console.log("Recording demos and generating current README GIFs...");
