@@ -1,8 +1,7 @@
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { Command } from "commander";
-import { runDemoStrategy } from "../index.ts";
-import type { DemoStrategy } from "../types.ts";
+import { assertDemoStrategy, runDemoStrategy } from "../index.ts";
 
 const program = new Command();
 
@@ -16,13 +15,11 @@ program
 program.action(async (file: string, options: { artifacts?: string }) => {
   const modulePath = path.resolve(file);
   const loaded = (await import(pathToFileURL(modulePath).href)) as {
-    default?: DemoStrategy;
-    strategy?: DemoStrategy;
+    default?: unknown;
+    strategy?: unknown;
   };
   const strategy = loaded.default ?? loaded.strategy;
-  if (!strategy?.name || typeof strategy.run !== "function") {
-    throw new Error(`Not a demo strategy module: ${modulePath}`);
-  }
+  assertDemoStrategy(strategy);
   await runDemoStrategy({
     strategy,
     moduleUrl: pathToFileURL(modulePath).href,
