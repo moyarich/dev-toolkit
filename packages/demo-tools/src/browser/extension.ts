@@ -6,7 +6,7 @@ export interface LaunchBrowserExtensionOptions {
   extensionPath: string;
   headless?: boolean;
   userDataDirectory?: string;
-  launchOptions?: Record<string, any> & { args?: string[] };
+  launchOptions?: Record<string, unknown> & { args?: string[] };
 }
 
 export async function launchBrowserExtension({
