@@ -14,15 +14,17 @@ export async function showDemoCaption({ page, caption }: { page: BrowserPage; ca
   const tagName = "moyarich-caption-overlay";
   await importHTMLElement({ page, tagName, componentUrl: captionUrl });
   await page.evaluate(({ tagName, caption }: { tagName: string; caption: DemoCaption }) => {
-    let element = document.querySelector<HTMLElement & { caption?: DemoCaption }>(tagName);
+    let element = document.querySelector<HTMLElement>(tagName);
     if (!element) { element = document.createElement(tagName); element.setAttribute("popover", "manual"); document.documentElement.append(element); }
     if (typeof element.showPopover === "function" && !element.matches(":popover-open")) element.showPopover();
-    element.caption = { ...caption, visible: true };
+    Reflect.set(element, "caption", { ...caption, visible: true });
   }, { tagName, caption });
 }
 export async function hideDemoCaption({ page }: { page: BrowserPage }): Promise<void> {
   await page.evaluate((tagName: string) => {
-    const element = document.querySelector<HTMLElement & { caption?: DemoCaption }>(tagName);
-    if (element) element.caption = { ...(element.caption ?? {}), visible: false };
+    const element = document.querySelector<HTMLElement>(tagName);
+    if (!element) return;
+    const caption = Reflect.get(element, "caption");
+    Reflect.set(element, "caption", { ...(typeof caption === "object" && caption !== null ? caption : {}), visible: false });
   }, "moyarich-caption-overlay");
 }
