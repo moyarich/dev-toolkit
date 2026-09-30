@@ -28,8 +28,11 @@ test("adds a Node shebang only when the source is missing one", async () => {
       const output = config.build?.rollupOptions?.output;
       assert.ok(output && !Array.isArray(output));
       assert.equal(typeof output.banner, "function");
+      if (typeof output.banner !== "function") {
+        throw new TypeError("Expected Rollup banner to be a function.");
+      }
 
-      const banner = await output.banner({});
+      const banner = await output.banner({} as never);
       assert.equal(
         banner,
         name === "with-shebang" ? "" : "#!/usr/bin/env node",
