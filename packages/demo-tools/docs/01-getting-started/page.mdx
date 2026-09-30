@@ -10,7 +10,6 @@ demo/
 ```
 
 ```ts
-import { executableDemoStrategy } from "@moyarich/demo-tools";
 import type { DemoStrategy } from "@moyarich/demo-tools";
 
 const strategy = {
@@ -23,20 +22,14 @@ const strategy = {
   },
 } satisfies DemoStrategy;
 
-export default executableDemoStrategy(strategy, import.meta.url);
+export default strategy;
 ```
 
 `satisfies DemoStrategy` checks the strategy at compile time while preserving
 the object's inferred type. demo-tools validates dynamically loaded strategies
 again at the runtime boundary.
 
-Run the compiled strategy directly:
-
-```sh
-node demo/strategies/overview/index.js
-```
-
-Or use the installed CLI:
+Run it with the installed CLI:
 
 ```sh
 demo list
