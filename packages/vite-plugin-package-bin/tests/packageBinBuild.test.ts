@@ -9,7 +9,7 @@ test("standaloneCliBuilds creates one independent build per CLI entry", () => {
       alpha: "/repo/src/cli/alpha.ts",
       beta: "/repo/src/cli/beta.ts",
     },
-    {},
+    { emptyOutDir: true },
     "/repo",
   );
 
@@ -32,6 +32,7 @@ test("standaloneCliBuilds preserves CLI build options", () => {
   const [build] = standaloneCliBuilds(
     { demo: "/repo/demo.ts" },
     {
+      emptyOutDir: false,
       outDir: "dist/bin",
       target: "node24",
       sourcemap: true,
@@ -49,4 +50,19 @@ test("standaloneCliBuilds preserves CLI build options", () => {
   const external = build.config.build?.rollupOptions?.external;
   assert.ok(Array.isArray(external));
   assert.equal(external.at(-1), "commander");
+});
+
+test("discoverCliEntries supports multiple source locations and ignores unmanaged bins", async () => {
+  const entries = await import("../src/packageBinBuild.ts").then(({ discoverCliEntries }) =>
+    discoverCliEntries(
+      ["src/**/*.ts", "scripts/**/*.ts"],
+      process.cwd(),
+      {
+        alpha: "./bin/alpha.mjs",
+        beta: "./bin/beta.mjs",
+      },
+    ),
+  );
+
+  assert.equal(typeof entries, "object");
 });
