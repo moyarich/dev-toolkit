@@ -10,14 +10,19 @@ export default defineConfig({
     minify: false,
     lib: {
       entry: {
-        "readme-screenshots": resolve(import.meta.dirname, "bin/readme-screenshots.mjs"),
+        "readme-screenshots": resolve(
+          import.meta.dirname,
+          "src/cli/readme-screenshots.mjs",
+        ),
       },
       formats: ["es"],
       fileName: (_format, entryName) => `${entryName}.mjs`,
     },
     rollupOptions: {
       external: [/^node:/, "playwright"],
-      output: {},
+      output: {
+        banner: "#!/usr/bin/env node",
+      },
     },
   },
 });
