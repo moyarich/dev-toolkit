@@ -26,7 +26,7 @@
   ],
   "scripts": {
     "build": "vite build --config vite.config.ts",
-    "test": "node --test tests/*.test.mjs",
+    "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json",
     "lint": "eslint \"src/**/*.ts\" vite.config.ts && prettier --check \"src/**/*.{ts,cjs}\" \"tests/**/*.mjs\" \"vite.config.ts\" \"eslint.config.mjs\" \"prettier.config.mjs\" \"package.json\"",
     "lint:eslint": "eslint \"src/**/*.ts\" vite.config.ts",
@@ -71,7 +71,8 @@
     "eslint": "^9.36.0",
     "prettier": "^3.6.2",
     "typescript-eslint": "^8.44.1",
-    "@moyarich/vite-plugin-package-bin": "0.1.0"
+    "@moyarich/vite-plugin-package-bin": "0.1.0",
+    "vitest": "^3.2.4"
   },
   "license": "MIT"
 }
