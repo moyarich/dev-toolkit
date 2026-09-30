@@ -56,7 +56,7 @@ permissions:
 
 jobs:
   publish:
-    name: Publish @moyarich/workspace-tools
+    name: "package: @moyarich/workspace-tools | dir: packages/workspace-tools"
     uses: ./.github/workflows/reusable_npm-publish.yml
     with:
       package-directory: packages/workspace-tools
