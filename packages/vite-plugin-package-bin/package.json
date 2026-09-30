@@ -1,6 +1,6 @@
 {
   "name": "@moyarich/vite-plugin-package-bin",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "description": "Vite plugin for building package.json bin entries as standalone Node.js executables.",
   "type": "module",
   "exports": {
