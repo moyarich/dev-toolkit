@@ -1,16 +1,20 @@
 name: Package . Workspace Tools . Release
 
+run-name: >-
+  Workspace Tools Release · ${{ inputs.version-mode }} ·
+  dry-run=${{ inputs.dry-run }} · publish=${{ inputs.publish }}
+
 on:
   workflow_dispatch:
     inputs:
       version-mode:
-        description: Version — bump, use existing, or enter an exact version
+        description: Version — bump, use package.json, or enter an exact version
         required: true
         default: bump
         type: choice
         options:
           - bump
-          - existing
+          - package-json
           - exact
 
       version-bump:
@@ -56,10 +60,16 @@ on:
           - both
 
       dist-tag:
-        description: Publish — package tag (usually "latest")
+        description: Publish — distribution tag
         required: true
         default: latest
         type: string
+
+      verify-git-tag:
+        description: Safety — verify the matching release Git tag before publishing
+        required: true
+        default: true
+        type: boolean
 
       node-version:
         description: Advanced — Node.js version
@@ -67,14 +77,18 @@ on:
         default: "24"
         type: string
 
+concurrency:
+  group: workspace-tools-package-mutation
+  cancel-in-progress: false
+
 permissions:
   contents: write
   packages: write
 
 jobs:
   release:
+    name: "package: @moyarich/workspace-tools | dir: packages/workspace-tools"
     uses: ./.github/workflows/reusable_npm-release.yml
-
     with:
       package: packages/workspace-tools
       version-mode: ${{ inputs.version-mode }}
@@ -84,8 +98,8 @@ jobs:
       publish: ${{ inputs.publish }}
       registry: ${{ inputs.registry }}
       dist-tag: ${{ inputs.dist-tag }}
+      verify-git-tag: ${{ inputs.verify-git-tag }}
       node-version: ${{ inputs.node-version }}
-
     secrets:
-      github-token: ${{ secrets._GITHUB_TOKEN }}
-      npm-token: ${{ secrets._NPM_TOKEN }}
+      _GITHUB_TOKEN: ${{ secrets._GITHUB_TOKEN }}
+      _NPM_TOKEN: ${{ secrets._NPM_TOKEN }}

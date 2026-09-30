@@ -104,7 +104,7 @@ permissions:
 
 jobs:
   publish-package:
-    name: "Publish npm package"
+    name: "job: Publish"
     runs-on: ubuntu-latest
     outputs:
       package-name: ${{ steps.plan.outputs.name }}

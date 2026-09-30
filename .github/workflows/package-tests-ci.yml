@@ -2,6 +2,27 @@ name: "Package . CI"
 
 on:
   workflow_dispatch:
+    inputs:
+      package-directory:
+        description: Package to check
+        required: true
+        default: all
+        type: choice
+        options:
+          - all
+          - packages/demo-tools
+          - packages/readme-screenshots
+          - packages/vite-plugin-package-bin
+          - packages/vs-code-ext-tools
+          - packages/web-components
+          - packages/workspace-tools
+
+      node-version:
+        description: Node.js version used by CI
+        required: true
+        default: "24"
+        type: string
+
   pull_request:
   push:
     branches:
@@ -14,6 +35,17 @@ permissions:
 jobs:
   package-ci:
     name: "Package CI"
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.package-directory == 'all' }}
     uses: ./.github/workflows/reusable_package-ci.yml
     with:
       packages-directory: packages
+      node-version: ${{ inputs.node-version || '24' }}
+
+  selected-package-ci:
+    name: "Package CI · ${{ inputs.package-directory }}"
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.package-directory != 'all' }}
+    uses: ./.github/workflows/reusable_node-ci.yml
+    with:
+      package-directory: ${{ inputs.package-directory }}
+      node-version: ${{ inputs.node-version }}
+    secrets: inherit

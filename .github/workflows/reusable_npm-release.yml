@@ -179,7 +179,7 @@ permissions:
 
 jobs:
   release-package:
-    name: "Release npm package"
+    name: "job: Release"
     runs-on: ubuntu-latest
     outputs:
       package-name: ${{ steps.release.outputs.package-name }}
