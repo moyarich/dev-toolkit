@@ -114,7 +114,10 @@ export function standaloneCliBuilds(
         rollupOptions: {
           external: [/^node:/, ...external],
           output: {
-            banner: "#!/usr/bin/env node",
+            async banner() {
+              const source = await readFile(entry, "utf8");
+              return source.startsWith("#!") ? "" : "#!/usr/bin/env node";
+            },
             entryFileNames: `${name}.mjs`,
             inlineDynamicImports: true,
           },
