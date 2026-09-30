@@ -197,7 +197,7 @@ export function dependencyCheck(root: string, pkg: WorkspacePackage): Dependency
 
     const existing = results.find((item) => item.name === name);
 
-    const detail = {
+    const detail: DependencyCheckResult = {
       name,
       declared: range,
       workspace: workspace.manifest.version,
