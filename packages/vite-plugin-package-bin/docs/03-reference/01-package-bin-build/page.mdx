@@ -1,0 +1,60 @@
+# `packageBinBuild`
+
+Creates a Vite plugin that builds package binary entry points as independent Node.js executables.
+
+## Options
+
+### `include`
+
+**Type:** `string`  
+**Required:** yes
+
+Glob used to discover CLI source files relative to the Vite root.
+
+### `outDir`
+
+**Type:** `string`  
+**Default:** `"bin"`
+
+Directory for generated executables.
+
+### `target`
+
+**Type:** `string`  
+**Default:** `"node24"`
+
+Vite/esbuild build target.
+
+### `sourcemap`
+
+**Type:** `boolean`  
+**Default:** `false`
+
+Enables source maps for generated executables.
+
+### `minify`
+
+**Type:** `boolean`  
+**Default:** `false`
+
+Enables minification.
+
+### `external`
+
+**Type:** `Array<string | RegExp>`  
+**Default:** `[]`
+
+Additional Rollup externals. Node built-ins matching `node:` are always external.
+
+## Package bin validation
+
+For object-form `package.json#bin`, every discovered source must have a matching command and output path.
+
+For example:
+
+```text
+src/cli/workspace-release.ts
+→ ./bin/workspace-release.mjs
+```
+
+The comparison is independent of property order in `package.json`.
