@@ -13,17 +13,14 @@ interface RecorderContext {
   }): Promise<void>;
   _disableRecorder?(): Promise<void>;
 }
-type RecorderPage = Omit<BrowserPage, "context"> & {
-  context(): RecorderContext;
-};
 export interface CaptureDemoStrategyOptions {
-  page: RecorderPage;
+  page: BrowserPage;
   name: string;
   directory?: string;
   baseStrategy?: DemoStrategy;
   testIdAttributeName?: string;
   prepare?: (context: {
-    page: RecorderPage;
+    page: BrowserPage;
     name: string;
     baseStrategy?: DemoStrategy;
   }) => void | Promise<void>;
@@ -55,7 +52,7 @@ export async function captureDemoStrategy({
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
   const strategyName = `${path.basename(name)}-${timestamp}`;
   const outputFile = path.join(directory, `${strategyName}.codegen.mjs`);
-  const context = page.context();
+  const context = page.context() as ReturnType<BrowserPage["context"]> & RecorderContext;
   if (
     typeof context._enableRecorder !== "function" ||
     typeof context._disableRecorder !== "function"
