@@ -15,7 +15,7 @@ export interface TestElectron {
 interface EnsureExtensionOptions { developmentPath: string; build?: string | BuildCommand; cwd: string }
 
 async function ensureExtension({ developmentPath, build, cwd }: EnsureExtensionOptions): Promise<void> {
-  try { await access(path.join(developmentPath, "package.json")); return; } catch {}
+  try { await access(path.join(developmentPath, "package.json")); return; } catch { /* Build the extension below when package.json is not available yet. */ }
   if (!build) throw new Error(`VS Code extension is not built: ${developmentPath}`);
   const command = typeof build === "string" ? { command: "npm", args: ["run", build] } : build;
   await runProcess(command.command, command.args ?? [], { cwd });
