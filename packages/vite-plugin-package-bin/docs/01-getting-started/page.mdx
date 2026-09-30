@@ -1,0 +1,28 @@
+# Getting started
+
+Install `@moyarich/vite-plugin-package-bin` alongside Vite, then add `packageBinBuild` to the package's Vite configuration.
+
+```ts
+import { defineConfig } from "vite";
+import { packageBinBuild } from "@moyarich/vite-plugin-package-bin";
+
+export default defineConfig({
+  plugins: [
+    packageBinBuild({
+      include: "src/cli/*.ts",
+    }),
+  ],
+});
+```
+
+Declare the generated executables in `package.json#bin`.
+
+```json
+{
+  "bin": {
+    "example": "./bin/example.mjs"
+  }
+}
+```
+
+The source filename determines the command name. For example, `src/cli/example.ts` builds to `bin/example.mjs`.
