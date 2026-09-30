@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import test from "node:test";
+import { test } from "vitest";
 import { assertDemoStrategy, runDemoStrategy } from "../src/index.ts";
 
 test("assertDemoStrategy accepts a valid strategy", () => {
