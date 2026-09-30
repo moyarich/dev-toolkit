@@ -8,7 +8,7 @@ export default tseslint.config(
   eslint.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,
   {
-    files: ["src/**/*.mts", "vite.config.mts"],
+    files: ["src/**/*.ts", "vite.config.ts"],
     languageOptions: {
       parserOptions: {
         projectService: true,
