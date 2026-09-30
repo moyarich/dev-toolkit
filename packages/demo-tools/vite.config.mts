@@ -10,15 +10,17 @@ export default defineConfig({
     minify: false,
     lib: {
       entry: {
-        demo: resolve(import.meta.dirname, "bin/demo.mjs"),
-        "demo-strategy": resolve(import.meta.dirname, "bin/demo-strategy.mjs"),
+        demo: resolve(import.meta.dirname, "src/cli/demo.mts"),
+        "demo-strategy": resolve(import.meta.dirname, "src/cli/demo-strategy.mts"),
       },
       formats: ["es"],
       fileName: (_format, entryName) => `${entryName}.mjs`,
     },
     rollupOptions: {
       external: [/^node:/, "@vscode/test-electron", "playwright-core"],
-      output: {},
+      output: {
+        banner: "#!/usr/bin/env node",
+      },
     },
   },
 });
