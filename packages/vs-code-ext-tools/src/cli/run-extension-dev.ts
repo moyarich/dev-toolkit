@@ -5,7 +5,7 @@ import { resolve } from "node:path";
 
 import { Option, program } from "commander";
 
-import { runExtensionDev } from "../run-extension-dev.mts";
+import { runExtensionDev } from "../run-extension-dev.ts";
 
 function commandExists(command: string): boolean {
   try {

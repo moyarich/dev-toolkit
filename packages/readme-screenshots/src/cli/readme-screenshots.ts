@@ -1,5 +1,5 @@
 import { Command } from "commander";
-import { captureScreenshots } from "../capture.mts";
+import { captureScreenshots } from "../capture.ts";
 
 const program = new Command();
 
