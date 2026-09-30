@@ -25,9 +25,20 @@ export interface DemoStrategyEntry<T = unknown> {
 }
 
 export interface CDPSession {
-  send(method: string, params?: Record<string, unknown>): Promise<any>;
-  on(event: string, listener: (payload: any) => void): unknown;
+  send<T = unknown>(method: string, params?: Record<string, unknown>): Promise<T>;
+  on<T = unknown>(event: string, listener: (payload: T) => void): unknown;
   detach(): Promise<void>;
+}
+
+export interface BrowserPage {
+  evaluate<TArgument, TResult>(pageFunction: (argument: TArgument) => TResult | Promise<TResult>, argument: TArgument): Promise<TResult>;
+  goto(url: string): Promise<unknown>;
+  locator(selector: string): { waitFor(options?: { timeout?: number }): Promise<void> };
+  context(): unknown;
+  once(event: string, listener: () => void): unknown;
+  url(): string;
+  bringToFront?(): Promise<void>;
+  setViewportSize?(viewport: { width: number; height: number }): Promise<void>;
 }
 
 export interface BrowserContext {
