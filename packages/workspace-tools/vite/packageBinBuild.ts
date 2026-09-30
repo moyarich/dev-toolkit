@@ -88,7 +88,16 @@ async function validatePackageBins(
     Object.keys(entries).map((name) => [name, `./${outDir}/${name}.mjs`]),
   );
 
-  if (JSON.stringify(pkg.bin) !== JSON.stringify(expected)) {
+  const actualEntries = Object.entries(pkg.bin).sort(([a], [b]) => a.localeCompare(b));
+  const expectedEntries = Object.entries(expected).sort(([a], [b]) => a.localeCompare(b));
+
+  if (
+    actualEntries.length !== expectedEntries.length ||
+    actualEntries.some(
+      ([name, path], index) =>
+        name !== expectedEntries[index]?.[0] || path !== expectedEntries[index]?.[1],
+    )
+  ) {
     throw new Error(
       `package.json#bin must match discovered CLI entries. Expected: ${JSON.stringify(expected)}`,
     );
