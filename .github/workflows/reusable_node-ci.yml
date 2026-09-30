@@ -78,7 +78,7 @@ jobs:
           path: ${{ runner.temp }}/prepared-workspace
       - name: Restore prepared workspace
         if: ${{ inputs.prepared-artifact != '' }}
-        run: tar -xzf "$RUNNER_TEMP/prepared-workspace/prepared-workspace.tar.gz"
+        run: tar -xf "$RUNNER_TEMP/prepared-workspace/prepared-workspace.tar"
       - name: Install workspace dependencies
         if: ${{ inputs.prepared-artifact == '' }}
         run: npm ci --prefer-offline --no-audit --no-fund
