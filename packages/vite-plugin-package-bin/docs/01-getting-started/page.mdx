@@ -2,6 +2,8 @@
 
 Install `@moyarich/vite-plugin-package-bin` alongside Vite, then add `packageBinBuild` to the package's Vite configuration.
 
+The default source pattern is `src/**/*.ts`, so the common case only needs `emptyOutDir`:
+
 ```ts
 import { defineConfig } from "vite";
 import { packageBinBuild } from "@moyarich/vite-plugin-package-bin";
@@ -9,7 +11,6 @@ import { packageBinBuild } from "@moyarich/vite-plugin-package-bin";
 export default defineConfig({
   plugins: [
     packageBinBuild({
-      entries: { pattern: "src/cli/*.ts" },
       emptyOutDir: true,
     }),
   ],
@@ -26,4 +27,17 @@ Declare the generated executables in `package.json#bin`.
 }
 ```
 
-The source filename determines the command name. For example, `src/cli/example.ts` builds to `bin/example.mjs`.
+The source filename determines the command name. For example, `src/cli/example.ts` can build to `bin/example.mjs`.
+
+The plugin searches source files, not the generated `bin/` directory. If more than one source file has the basename of a managed command, narrow discovery to the executable directory:
+
+```ts
+packageBinBuild({
+  entries: {
+    pattern: "src/cli/**/*.ts",
+  },
+  emptyOutDir: true,
+});
+```
+
+CLI source files may include `#!/usr/bin/env node` when they also need to run directly. The build preserves an existing shebang and adds the Node shebang when the source does not provide one.
