@@ -21,6 +21,7 @@ permissions:
 
 jobs:
   pages:
+    name: "site: Playground | dir: apps/playground"
     uses: ./.github/workflows/reusable_github-pages.yml
     with:
       build-command: npm run build
