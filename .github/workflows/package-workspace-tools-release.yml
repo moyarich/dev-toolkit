@@ -87,7 +87,7 @@ permissions:
 
 jobs:
   release:
-    name: Release @moyarich/workspace-tools
+    name: "package: @moyarich/workspace-tools | dir: packages/workspace-tools"
     uses: ./.github/workflows/reusable_npm-release.yml
     with:
       package: packages/workspace-tools
