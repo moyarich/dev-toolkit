@@ -1,7 +1,20 @@
 import assert from "node:assert/strict";
-import test from "node:test";
+import { beforeEach, test, vi } from "vitest";
+
+const { execFileSync } = vi.hoisted(() => ({
+  execFileSync: vi.fn(),
+}));
+
+vi.mock("node:child_process", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("node:child_process")>()),
+  execFileSync,
+}));
 
 import { packageGitTagState, serializePublishPlan } from "../src/publish.ts";
+
+beforeEach(() => {
+  vi.clearAllMocks();
+});
 
 test("serializePublishPlan returns stable machine-readable package metadata", () => {
   const plan = [
@@ -93,8 +106,12 @@ test("serializePublishPlan preserves mixed registry readiness for dry-run report
   });
 });
 
-test("packageGitTagState reports the expected package-scoped tag name", () => {
-  const state = packageGitTagState(process.cwd(), {
+test("packageGitTagState reports a missing package-scoped tag without invoking real Git", () => {
+  execFileSync.mockImplementation(() => {
+    throw new Error("unknown revision");
+  });
+
+  const state = packageGitTagState("/repo", {
     directory: "packages/workspace-tools",
     manifest: {
       name: "@moyarich/workspace-tools",
@@ -102,8 +119,37 @@ test("packageGitTagState reports the expected package-scoped tag name", () => {
     },
   });
 
-  assert.equal(state.name, "workspace-tools@999.999.999");
-  assert.equal(state.exists, false);
-  assert.equal(state.atHead, false);
-  assert.equal(state.commit, null);
+  assert.deepEqual(state, {
+    name: "workspace-tools@999.999.999",
+    exists: false,
+    atHead: false,
+    commit: null,
+  });
+  assert.equal(execFileSync.mock.calls.length, 1);
+  assert.deepEqual(execFileSync.mock.calls[0].slice(0, 2), [
+    "git",
+    ["rev-list", "-n", "1", "workspace-tools@999.999.999"],
+  ]);
+});
+
+test("packageGitTagState compares an existing tag with HEAD using mocked Git", () => {
+  execFileSync
+    .mockReturnValueOnce("abc123\n")
+    .mockReturnValueOnce("abc123\n");
+
+  const state = packageGitTagState("/repo", {
+    directory: "packages/workspace-tools",
+    manifest: {
+      name: "@moyarich/workspace-tools",
+      version: "1.2.3",
+    },
+  });
+
+  assert.deepEqual(state, {
+    name: "workspace-tools@1.2.3",
+    exists: true,
+    atHead: true,
+    commit: "abc123",
+  });
+  assert.equal(execFileSync.mock.calls.length, 2);
 });
