@@ -12,7 +12,7 @@ export default defineConfig({
       entry: {
         "readme-screenshots": resolve(
           import.meta.dirname,
-          "src/cli/readme-screenshots.mjs",
+          "src/cli/readme-screenshots.mts",
         ),
       },
       formats: ["es"],
