@@ -110,9 +110,13 @@ test("workspacePublishOrder puts dependencies before the selected package", () =
     const special = packageInfo(root, "special");
     playground.manifest.dependencies = { [library.manifest.name]: "^1.0.0" };
     library.manifest.optionalDependencies = { [special.manifest.name]: "^1.0.0" };
+    writeFileSync(playground.file, JSON.stringify(playground.manifest));
+    writeFileSync(library.file, JSON.stringify(library.manifest));
 
     assert.deepEqual(
-      workspacePublishOrder(root, playground).map((pkg) => pkg.manifest.name),
+      workspacePublishOrder(root, packageInfo(root, "playground")).map(
+        (pkg) => pkg.manifest.name,
+      ),
       ["@example/special", "@example/library", "@example/playground"],
     );
   } finally {
