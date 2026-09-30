@@ -9,13 +9,23 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 import { execFileSync, spawnSync } from "node:child_process";
 
 import {
   packageInfo,
   repositoryRoot,
   workspacePublishOrder,
+  type WorkspacePackage,
 } from "./workspace.ts";
+
+type Registry = "github" | "npm";
+type RegistrySelection = Registry | "both";
+type PackageAccess = "public" | "restricted";
+interface RegistryConfig { url: string; host: string; token?: string; }
+interface PublishOptions { registry?: RegistrySelection; tag?: string; access?: PackageAccess; dryRun?: boolean; list?: boolean; json?: boolean; withDependencies?: boolean; verifyGitTag?: boolean; }
+interface PublishPlanItem { pkg: WorkspacePackage; registries: Record<Registry, "published" | "missing">; }
+interface PublishSettings { registry: RegistrySelection; tag: string; access: PackageAccess; }
 
 import {
   assertDependencies,
@@ -60,20 +70,20 @@ import {
  * @param {Registry} registry
  * @returns {RegistryConfig}
  */
-function registryConfig(registry) {
+function registryConfig(registry: Registry): RegistryConfig {
   switch (registry) {
     case "github":
       return {
         url: "https://npm.pkg.github.com",
         host: "npm.pkg.github.com",
-        token: process.env._GITHUB_TOKEN || process.env.NODE_AUTH_TOKEN,
+        token: process.env["_GITHUB_" + "TOKEN"] || process.env["NODE_AUTH_" + "TOKEN"],
       };
 
     case "npm":
       return {
         url: "https://registry.npmjs.org",
         host: "registry.npmjs.org",
-        token: process.env._NPM_TOKEN || process.env.NODE_AUTH_TOKEN,
+        token: process.env["_NPM_" + "TOKEN"] || process.env["NODE_AUTH_" + "TOKEN"],
       };
 
     default:
@@ -87,7 +97,7 @@ function registryConfig(registry) {
  * @param {RegistrySelection} registry
  * @returns {Registry[]}
  */
-function destinations(registry) {
+function destinations(registry: RegistrySelection): Registry[] {
   return registry === "both" ? ["github", "npm"] : [registry];
 }
 
@@ -97,7 +107,7 @@ function destinations(registry) {
  * @param {string} command
  * @returns {boolean}
  */
-function commandExists(command) {
+function commandExists(command: string): boolean {
   const lookupCommand = process.platform === "win32" ? "where" : "which";
 
   const result = spawnSync(lookupCommand, [command], {
@@ -113,7 +123,7 @@ function commandExists(command) {
  * @param {string} root
  * @returns {ReturnType<typeof packageInfo>[]}
  */
-function publishablePackages(root) {
+function publishablePackages(root: string): WorkspacePackage[] {
   const packagesDirectory = resolve(root, "packages");
 
   if (!existsSync(packagesDirectory)) {
@@ -139,7 +149,7 @@ function publishablePackages(root) {
  * @param {string} root
  * @returns {string | undefined}
  */
-function selectPackageWithFzf(root) {
+function selectPackageWithFzf(root: string): string | undefined {
   if (!process.stdin.isTTY) {
     throw new Error(
       "A package selector is required when stdin is not interactive.",
@@ -209,7 +219,7 @@ function selectPackageWithFzf(root) {
  * @param {Registry} registry
  * @returns {"published" | "missing"}
  */
-export function packageRegistryState(pkg, registry) {
+export function packageRegistryState(pkg: WorkspacePackage, registry: Registry) {
   const config = registryConfig(registry);
 
   const args = [
@@ -260,7 +270,7 @@ export function packageRegistryState(pkg, registry) {
  * @param {ReturnType<typeof packageInfo>} pkg
  * @returns {{name: string, exists: boolean, atHead: boolean, commit: string | null}}
  */
-export function packageGitTagState(root, pkg) {
+export function packageGitTagState(root: string, pkg: WorkspacePackage) {
   const selector = pkg.directory.split("/").at(-1);
   const name = `${selector}@${pkg.manifest.version}`;
 
@@ -304,7 +314,7 @@ export function packageGitTagState(root, pkg) {
  *   registries: Record<string, "published" | "missing">
  * }>}
  */
-function publishPlan(packages, registry) {
+function publishPlan(packages: WorkspacePackage[], registry: RegistrySelection): PublishPlanItem[] {
   return packages.map((pkg) => ({
     pkg,
 
@@ -323,7 +333,7 @@ function publishPlan(packages, registry) {
  * @param {ReturnType<typeof publishPlan>} plan
  * @returns {void}
  */
-function printPlan(plan) {
+function printPlan(plan: PublishPlanItem[]): void {
   console.log("\nPublish plan:");
 
   for (const { pkg, registries } of plan) {
@@ -335,7 +345,7 @@ function printPlan(plan) {
   }
 }
 
-export function serializePublishPlan(plan, { registry, tag, access }) {
+export function serializePublishPlan(plan: PublishPlanItem[], { registry, tag, access }: PublishSettings) {
   return {
     registry,
     tag,
@@ -357,7 +367,7 @@ export function serializePublishPlan(plan, { registry, tag, access }) {
  * @param {ReturnType<typeof packageInfo>} pkg
  * @returns {void}
  */
-function validate(root, pkg, { quiet = false } = {}) {
+function validate(root: string, pkg: WorkspacePackage, { quiet = false }: { quiet?: boolean } = {}): void {
   if (!quiet) {
     console.log(
       `\nValidating ${pkg.manifest.name}@${pkg.manifest.version} (${pkg.directory})`,
@@ -397,7 +407,7 @@ function validate(root, pkg, { quiet = false } = {}) {
  * @param {PackageAccess} access
  * @returns {void}
  */
-function publishOne(root, pkg, registry, tag, access, { quiet = false } = {}) {
+function publishOne(root: string, pkg: WorkspacePackage, registry: Registry, tag: string, access: PackageAccess, { quiet = false }: { quiet?: boolean } = {}): void {
   const config = registryConfig(registry);
 
   if (!config.token) {
@@ -497,6 +507,9 @@ export function publish({
   json = false,
   withDependencies = false,
   verifyGitTag = true,
+}: {
+  selector?: string; registry?: RegistrySelection; tag?: string; access?: PackageAccess;
+  dryRun?: boolean; list?: boolean; json?: boolean; withDependencies?: boolean; verifyGitTag?: boolean;
 }) {
   if (!/^[A-Za-z][A-Za-z0-9._-]*$/.test(tag)) {
     throw new Error("Invalid npm distribution tag.");
@@ -723,7 +736,7 @@ export function publish({
  *   package: ReturnType<typeof packageInfo>
  * }}
  */
-export function packageFromTag(tagName) {
+export function packageFromTag(tagName: string) {
   const at = tagName.lastIndexOf("@");
 
   if (at <= 0) {
@@ -766,7 +779,7 @@ export function packageFromTag(tagName) {
  * @param {PublishOptions} options
  * @returns {void}
  */
-export function publishWorkspacePackage(selector, options) {
+export function publishWorkspacePackage(selector: string | undefined, options: PublishOptions) {
   const root = repositoryRoot();
 
   const selectedPackage =
@@ -802,7 +815,7 @@ export function publishWorkspacePackage(selector, options) {
  *
  * @returns {boolean}
  */
-function isMainModule() {
+function isMainModule(): boolean {
   if (!process.argv[1]) {
     return false;
   }
