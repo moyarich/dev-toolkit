@@ -121,6 +121,15 @@ export function packageBinBuild(options: PackageBinBuildOptions): Plugin {
         build: {
           rollupOptions: {
             input: virtualEntry,
+            onwarn(warning, warn) {
+              if (
+                warning.code === "EMPTY_BUNDLE" &&
+                warning.message.includes("package-bin-build")
+              ) {
+                return;
+              }
+              warn(warning);
+            },
           },
         },
       };
@@ -131,7 +140,7 @@ export function packageBinBuild(options: PackageBinBuildOptions): Plugin {
     },
 
     load(id) {
-      if (id === virtualEntry) return "export const packageBinBuild = true;";
+      if (id === virtualEntry) return "export {}";
     },
 
     configResolved(config) {
