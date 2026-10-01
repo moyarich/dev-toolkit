@@ -101,5 +101,4 @@ jobs:
       verify-git-tag: ${{ inputs.verify-git-tag }}
       node-version: ${{ inputs.node-version }}
     secrets:
-      github-token: ${{ secrets._GITHUB_TOKEN }}
       npm-token: ${{ secrets._NPM_TOKEN }}

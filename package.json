@@ -9,17 +9,18 @@
   ],
   "scripts": {
     "build": "npm run build --workspaces --if-present",
-    "test": "npm run test:workflows && npm test --workspaces --if-present",
-    "lint": "npm run lint --workspaces --if-present",
-    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "vitest run --dir tests && npm test --workspaces --if-present",
+    "lint": "eslint \"tests/**/*.ts\" && npm run lint --workspaces --if-present",
+    "typecheck": "tsc -p tsconfig.tests.json && npm run typecheck --workspaces --if-present",
     "demo": "demo",
     "demo:list": "demo list",
-    "test:playground": "node --test tests/playground/*.test.mjs",
+    "test:playground": "vitest run --dir tests/playground",
     "package-lock:update": "npm install --package-lock-only --include=optional",
     "format:check": "prettier . --check",
     "format": "prettier . --write",
     "prebuild": "npm run build --workspace @moyarich/vite-plugin-package-bin && npm run build --workspace @moyarich/web-components",
-    "test:workflows": "node --test tests/workflows/*.test.mjs"
+    "test:workflows": "vitest run --dir tests/workflows",
+    "checks": "npm run format:check && npm run lint && npm run typecheck && npm run build && npm test"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -52,5 +53,6 @@
     "commander": "^15.0.0",
     "playwright": "^1.63.0",
     "playwright-core": "^1.63.0"
-  }
+  },
+  "type": "module"
 }

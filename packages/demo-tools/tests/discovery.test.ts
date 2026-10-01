@@ -6,7 +6,7 @@ import { test } from "vitest";
 import { discoverDemoStrategies } from "../src/runner/discover.ts";
 import { runDemoStrategies } from "../src/runner/run.ts";
 
-async function strategy(root, relative, name) {
+async function strategy(root: string, relative: string, name: string) {
   const directory = path.join(root, relative);
   await mkdir(directory, { recursive: true });
   await writeFile(

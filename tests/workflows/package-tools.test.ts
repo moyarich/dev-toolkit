@@ -11,7 +11,7 @@ import {
 import { tmpdir } from "node:os";
 import { resolve, join } from "node:path";
 import { spawnSync } from "node:child_process";
-import { test } from "node:test";
+import { test } from "vitest";
 
 const workflows = resolve(import.meta.dirname, "../../.github/workflows");
 const npmStub = `#!/usr/bin/env node
@@ -49,13 +49,13 @@ for (const file of [
   const text = readFileSync(join(workflows, file), "utf8");
   const step = text
     .split(
-      /      - name: Resolve (?:workspace tools CLI|screenshot tooling)\n/,
+      / {6}- name: Resolve (?:workspace tools CLI|screenshot tooling)\n/,
     )[1]
-    .split(/\n      - /)[0];
+    .split(/\n {6}- /)[0];
   const script = step
     .split("        run: |\n")[1]
     .split("\n")
-    .map((line) => line.replace(/^          /, ""))
+    .map((line) => line.replace(/^ {10}/, ""))
     .join("\n");
   const invocations = [
     ...new Set(
@@ -66,9 +66,11 @@ for (const file of [
       ].map((match) => match[0]),
     ),
   ];
-  const commands = invocations.map(
-    (command) => command.match(/\/bin\/([^/]+)\.mjs/)[1],
-  );
+  const commands = invocations.map((command) => {
+    const match = command.match(/\/bin\/([^/]+)\.mjs/);
+    assert.ok(match, `Unable to resolve CLI command from: ${command}`);
+    return match[1];
+  });
 
   for (const scenario of ["local", "published", "missing local output"]) {
     test(`${file}: ${scenario}, without npm command links`, () => {

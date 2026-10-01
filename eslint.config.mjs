@@ -2,22 +2,13 @@ import eslint from "@eslint/js";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  {
-    ignores: [
-      "bin/**",
-      "dist/**",
-      "coverage/**",
-      "demo/artifacts/**",
-      "demo/strategies/generated/**",
-    ],
-  },
   eslint.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,
   {
-    files: ["src/**/*.ts", "tests/**/*.ts", "vite.config.ts"],
+    files: ["tests/**/*.ts"],
     languageOptions: {
       parserOptions: {
-        projectService: true,
+        project: "./tsconfig.tests.json",
         tsconfigRootDir: import.meta.dirname,
       },
     },
@@ -29,9 +20,5 @@ export default tseslint.config(
       "@typescript-eslint/no-unsafe-member-access": "off",
       "@typescript-eslint/no-unsafe-return": "off",
     },
-  },
-  {
-    files: ["bin/**/*.mjs", "tests/**/*.mjs"],
-    ...tseslint.configs.disableTypeChecked,
   },
 );

@@ -135,5 +135,4 @@ jobs:
       verify-git-tag: ${{ inputs.verify-git-tag }}
       node-version: ${{ inputs.node-version }}
     secrets:
-      _GITHUB_TOKEN: ${{ secrets._GITHUB_TOKEN }}
       _NPM_TOKEN: ${{ secrets._NPM_TOKEN }}

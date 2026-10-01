@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
-import test from "node:test";
-import strategy from "../../demo/strategies/hello/index.mjs";
+import { test } from "vitest";
+import strategy from "../../demo/strategies/hello/index.ts";
 
 test("playground exposes a directly executable demo strategy", () => {
   assert.equal(strategy.name, "hello");
