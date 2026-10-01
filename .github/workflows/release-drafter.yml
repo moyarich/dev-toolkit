@@ -141,34 +141,60 @@ jobs:
           );
           NODE
 
-      - name: Resolve comparison baseline
+      - name: Resolve package release baseline
         id: baseline
         if: ${{ steps.selected.outputs.value == 'true' }}
         env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
           INPUT_FROM: ${{ inputs.from }}
           INPUT_VERSION: ${{ inputs.version }}
-          EVENT_NAME: ${{ github.event_name }}
+          PACKAGE_DIRECTORY: ${{ matrix.directory }}
         shell: bash
         run: |
           set -euo pipefail
 
-          if [ "$EVENT_NAME" != "workflow_dispatch" ]; then
-            BASELINE=""
-            SOURCE="previous published package release"
-          elif [ -n "$INPUT_FROM" ]; then
+          RELEASES="$(
+            gh api               --paginate               --slurp               "repos/$GH_REPO/releases?per_page=100"
+          )"
+
+          PREVIOUS_TAG="$(
+            jq -r --arg prefix "$PACKAGE_DIRECTORY@" '
+              [
+                .[][] |
+                select(
+                  .draft == false and
+                  (.tag_name | startswith($prefix))
+                )
+              ]
+              | sort_by(.published_at // .created_at)
+              | last
+              | .tag_name // empty
+            ' <<< "$RELEASES"
+          )"
+
+          VERSION="$INPUT_VERSION"
+
+          if [ -n "$INPUT_FROM" ]; then
             BASELINE="$INPUT_FROM"
             SOURCE="input"
-          elif [ -n "$INPUT_VERSION" ]; then
+          elif [ -n "$PREVIOUS_TAG" ]; then
+            BASELINE="$PREVIOUS_TAG"
+            SOURCE="previous published package release"
+          else
             BASELINE="$(git rev-list --max-parents=0 HEAD | tail -n 1)"
             SOURCE="first commit on main"
-          else
-            BASELINE=""
-            SOURCE="previous published package release"
+
+            if [ -z "$VERSION" ]; then
+              VERSION="0.1.0"
+            fi
           fi
 
           {
             echo "from=$BASELINE"
             echo "source=$SOURCE"
+            echo "version=$VERSION"
+            echo "previous-tag=$PREVIOUS_TAG"
           } >> "$GITHUB_OUTPUT"
 
       - name: Initialize workflow summary
@@ -183,7 +209,8 @@ jobs:
             echo "| Package | \`${{ matrix.name }}\` |"
             echo "| Directory | \`${{ matrix.directory }}\` |"
             echo "| Current package version | \`${{ matrix.version }}\` |"
-            echo "| Requested release version | \`${{ inputs.version || 'auto' }}\` |"
+            echo "| Release version | \`${{ steps.baseline.outputs.version || 'auto' }}\` |"
+            echo "| Previous published tag | \`${{ steps.baseline.outputs.previous-tag || 'none' }}\` |"
             echo "| Comparison baseline | \`${{ steps.baseline.outputs.from || 'previous published package release' }}\` |"
             echo "| Baseline source | \`${{ steps.baseline.outputs.source }}\` |"
             echo "| Repository | \`${{ github.repository }}\` |"
@@ -200,7 +227,7 @@ jobs:
         with:
           config-name: file:release-drafter-package-generated.yml
           commitish: main
-          version: ${{ github.event_name == 'workflow_dispatch' && inputs.version || '' }}
+          version: ${{ steps.baseline.outputs.version }}
           from: ${{ steps.baseline.outputs.from }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
