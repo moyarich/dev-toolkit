@@ -1,4 +1,7 @@
-import styleSheet from "./caption-overlay-style.css" with { type: "css" };
+import cssText from "./caption-overlay-style.css?inline";
+
+const styleSheet = new CSSStyleSheet();
+styleSheet.replaceSync(cssText);
 
 export type CaptionPointer = "bubble" | "arrow";
 export type CaptionPlacementName =
