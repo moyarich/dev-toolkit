@@ -97,3 +97,11 @@ test("release drafter uses only supported action inputs", () => {
   );
   assert.doesNotMatch(workflow, /\n\s+from:\n\s+description: Optional comparison baseline ref/);
 });
+
+
+test("first release is blocked when package tags exist without a published release", () => {
+  assert.match(workflow, /git tag --list "\$PACKAGE_DIRECTORY@\*"/);
+  assert.match(workflow, /EXISTING_GIT_TAG/);
+  assert.match(workflow, /Refusing to treat this package as a first release/);
+  assert.match(workflow, /existing-git-tag=/);
+});
