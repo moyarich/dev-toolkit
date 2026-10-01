@@ -34,10 +34,16 @@ From the `dev-toolkit` repository:
 npm run jest-to-vitest --workspace @moyarich/code-mod-jest-to-vitest -- path/to/project
 ```
 
-Or through the package bin:
+From GitHub Packages / npm package execution:
 
 ```bash
-npx jest-to-vitest path/to/project
+npx @moyarich/code-mod-jest-to-vitest path/to/project
+```
+
+After publishing the same identifier to the Codemod Registry:
+
+```bash
+npx codemod @moyarich/code-mod-jest-to-vitest
 ```
 
 This runs the local `packages/code-mod-jest-to-vitest/workflow.yaml` and then performs the migration audit.
@@ -55,7 +61,7 @@ npm run jest-to-vitest --workspace @moyarich/code-mod-jest-to-vitest -- --dry-ru
 or:
 
 ```bash
-npx jest-to-vitest --dry-run path/to/project
+npx @moyarich/code-mod-jest-to-vitest --dry-run path/to/project
 ```
 
 Dry-run behavior:
@@ -78,7 +84,7 @@ npm run audit:jest-to-vitest --workspace @moyarich/code-mod-jest-to-vitest -- pa
 or:
 
 ```bash
-npx jest-to-vitest --audit-only path/to/project
+npx @moyarich/code-mod-jest-to-vitest --audit-only path/to/project
 ```
 
 The audit checks for:
@@ -112,7 +118,22 @@ Fixtures currently cover:
 - files under `docs/**`
 - files under `bin/**`
 
+## Identifier alignment
+
+- Folder: `packages/code-mod-jest-to-vitest/`
+- npm / GitHub Packages: `@moyarich/code-mod-jest-to-vitest`
+- Codemod Registry: `@moyarich/code-mod-jest-to-vitest`
+- Local binary: `jest-to-vitest`
+
 ## Run with Codemod CLI
+
+Once published to the Codemod Registry:
+
+```bash
+npx codemod @moyarich/code-mod-jest-to-vitest
+```
+
+For local workflow development:
 
 ```bash
 npx codemod workflow validate \
