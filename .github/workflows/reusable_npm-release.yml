@@ -225,6 +225,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7 # v7
         with:
+          ref: ${{ inputs.target-branch }}
           fetch-depth: 0
           persist-credentials: false
           token: ${{ github.token }}
@@ -634,7 +635,7 @@ jobs:
           set -euo pipefail
 
           git push origin \
-            "HEAD:$GITHUB_REF_NAME" \
+            "HEAD:${{ inputs.target-branch }}" \
             --follow-tags
 
       - name: Ensure staged publishing CLI support
