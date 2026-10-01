@@ -24,7 +24,7 @@ const step = workflow
 const script = step
   .split("        run: |\n")[1]
   .split("\n")
-  .map((line) => line.replace(/^          /, ""))
+  .map((line) => line.replace(/^ {10}/, ""))
   .join("\n");
 
 for (const local of [true, false]) {
