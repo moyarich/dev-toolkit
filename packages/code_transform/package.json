@@ -5,7 +5,12 @@
   "description": "Reusable code migration transforms for dev-toolkit.",
   "scripts": {
     "test": "npx codemod jssg test transforms/jest-to-vitest/scripts/extend-jest-to-vitest.ts --language typescript",
-    "validate:jest-to-vitest": "npx codemod workflow validate -w transforms/jest-to-vitest/workflow.yaml"
+    "validate:jest-to-vitest": "npx codemod workflow validate -w transforms/jest-to-vitest/workflow.yaml",
+    "jest-to-vitest": "node ./bin/jest-to-vitest.mjs",
+    "audit:jest-to-vitest": "node ./bin/jest-to-vitest.mjs --audit-only"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "bin": {
+    "jest-to-vitest-extended": "./bin/jest-to-vitest.mjs"
+  }
 }
