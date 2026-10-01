@@ -168,8 +168,18 @@ jobs:
 
           VERSION="$INPUT_VERSION"
 
+          EXISTING_GIT_TAG="$(
+            git tag --list "$PACKAGE_DIRECTORY@*" |
+              sort -V |
+              tail -n 1
+          )"
+
           if [ -n "$PREVIOUS_TAG" ]; then
             SOURCE="previous published package release"
+          elif [ -n "$EXISTING_GIT_TAG" ]; then
+            echo "::error::Found Git tag '$EXISTING_GIT_TAG' for $PACKAGE_DIRECTORY but no matching published GitHub Release."
+            echo "::error::Refusing to treat this package as a first release. Publish/restore the release or supply an explicit version after reconciling release history."
+            exit 1
           else
             SOURCE="full package Git history"
 
@@ -182,6 +192,7 @@ jobs:
             echo "source=$SOURCE"
             echo "version=$VERSION"
             echo "previous-tag=$PREVIOUS_TAG"
+            echo "existing-git-tag=$EXISTING_GIT_TAG"
           } >> "$GITHUB_OUTPUT"
 
       - name: Initialize workflow summary
@@ -198,6 +209,7 @@ jobs:
             echo "| Current package version | \`${{ matrix.version }}\` |"
             echo "| Release version | \`${{ steps.baseline.outputs.version || 'auto' }}\` |"
             echo "| Previous published tag | \`${{ steps.baseline.outputs.previous-tag || 'none' }}\` |"
+            echo "| Existing Git tag | \`${{ steps.baseline.outputs.existing-git-tag || 'none' }}\` |"
             echo "| Baseline source | \`${{ steps.baseline.outputs.source }}\` |"
             echo "| Repository | \`${{ github.repository }}\` |"
             echo "| Ref | \`${{ github.ref_name }}\` |"
