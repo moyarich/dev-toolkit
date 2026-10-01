@@ -37,8 +37,8 @@ test("release drafter generates one package config template at runtime", () => {
     workflow,
     /config-name: file:release-drafter-package-generated.yml/,
   );
-  assert.match(workflow, /replaceAll("{{PACKAGE_NAME}}"/);
-  assert.match(workflow, /replaceAll("{{PACKAGE_DIRECTORY}}"/);
+  assert.ok(workflow.includes('replaceAll("{{PACKAGE_NAME}}"'));
+  assert.ok(workflow.includes('replaceAll("{{PACKAGE_DIRECTORY}}"'));
 
   assert.ok(
     template.includes('name-template: "{{PACKAGE_NAME}} v$RESOLVED_VERSION"'),
