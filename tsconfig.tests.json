@@ -8,9 +8,12 @@
       "node"
     ],
     "skipLibCheck": true,
-    "strict": true
+    "strict": true,
+    "allowImportingTsExtensions": true
   },
   "include": [
-    "tests/workflows/*.test.ts"
+    "tests/workflows/*.test.ts",
+    "tests/playground/*.test.ts",
+    "demo/strategies/**/*.ts"
   ]
 }
