@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 import {
   cpSync,
   existsSync,
@@ -15,7 +13,7 @@ import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const packageRoot = resolve(__dirname, "..");
+const packageRoot = resolve(__dirname, "../..");
 const workflowPath = resolve(packageRoot, "workflow.yaml");
 
 const args = process.argv.slice(2);

@@ -40,7 +40,7 @@ Or through the package bin:
 npx jest-to-vitest path/to/project
 ```
 
-This runs the local `packages/code_mod-jest-to-vitest/workflow.yaml` and then performs the migration audit.
+This runs the local `packages/code-mod-jest-to-vitest/workflow.yaml` and then performs the migration audit.
 
 There is no dependency on the external `jest/vitest` codemod package.
 
@@ -95,7 +95,7 @@ The audit checks for:
 ## Validate the codemod workflow
 
 ```bash
-npm run validate:jest-to-vitest --workspace @moyarich/code-mod-jest-to-vitest
+npm run validate --workspace @moyarich/code-mod-jest-to-vitest
 ```
 
 ## Test the transform
@@ -116,12 +116,12 @@ Fixtures currently cover:
 
 ```bash
 npx codemod workflow validate \
-  -w packages/code_mod-jest-to-vitest/workflow.yaml
+  -w packages/code-mod-jest-to-vitest/workflow.yaml
 ```
 
 ```bash
 npx codemod workflow run \
-  -w packages/code_mod-jest-to-vitest/workflow.yaml
+  -w packages/code-mod-jest-to-vitest/workflow.yaml
 ```
 
 That workflow is the complete AST migration; it no longer delegates to another Jest → Vitest codemod.
@@ -140,3 +140,16 @@ See:
 
 - `./docs/coverage.md` for the migration coverage matrix
 - `./docs/vscode-act-runner-local.md` for the real repository audit that motivated the implementation
+
+
+## Build
+
+This package follows the same build convention as `packages/vs-code-ext-tools`:
+
+```bash
+npm run build --workspace @moyarich/code-mod-jest-to-vitest
+npm run typecheck --workspace @moyarich/code-mod-jest-to-vitest
+npm test --workspace @moyarich/code-mod-jest-to-vitest
+```
+
+The CLI source lives at `src/cli/jest-to-vitest.ts`. Vite uses `@moyarich/vite-plugin-package-bin` to generate `bin/jest-to-vitest.mjs`.
