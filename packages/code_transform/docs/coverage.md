@@ -52,3 +52,24 @@ The CLI audit fails when it finds:
 - a Vitest config without coverage thresholds
 
 The threshold check is deliberate: migrating the test runner should not silently weaken an existing Jest coverage gate.
+
+
+## CLI safety modes
+
+### Dry run
+
+`--dry-run` runs the upstream codemod and extension against a temporary copy of the target repository. It prints the resulting diff and audits the preview, then deletes the temporary copy.
+
+The original project is not modified.
+
+```bash
+npx jest-to-vitest-extended --dry-run path/to/project
+```
+
+### Audit only
+
+`--audit-only` performs no transformations. It only checks migration completeness.
+
+```bash
+npx jest-to-vitest-extended --audit-only path/to/project
+```
