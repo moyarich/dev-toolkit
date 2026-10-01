@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "noEmit": true,
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "target": "ES2024",
+    "types": ["node", "vitest/globals"],
+    "skipLibCheck": true,
+    "strict": true,
+    "allowImportingTsExtensions": true
+  },
+  "include": [
+    "tests/workflows/*.test.ts",
+    "tests/playground/*.test.ts",
+    "demo/strategies/**/*.ts"
+  ]
+}

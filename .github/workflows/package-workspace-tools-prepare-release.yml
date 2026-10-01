@@ -63,5 +63,3 @@ jobs:
       version-bump: ${{ inputs.version-bump }}
       exact-version: ${{ inputs.exact-version }}
       node-version: ${{ inputs.node-version }}
-    secrets:
-      github-token: ${{ secrets._GITHUB_TOKEN }}

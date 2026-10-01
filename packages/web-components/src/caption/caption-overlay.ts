@@ -1,36 +1,41 @@
-/** @typedef {"bubble" | "arrow"} CaptionPointer */
+import cssText from "./caption-overlay-style.css?inline";
 
-/** @typedef {"top-left" | "top-right" | "bottom-left" | "bottom-right"} CaptionPlacementName */
+const styleSheet = new CSSStyleSheet();
+styleSheet.replaceSync(cssText);
 
-/** @typedef {"top" | "right" | "bottom" | "left"} CaptionSide */
+export type CaptionPointer = "bubble" | "arrow";
+export type CaptionPlacementName =
+  "top-left" | "top-right" | "bottom-left" | "bottom-right";
+export type CaptionSide = "top" | "right" | "bottom" | "left";
 
-/**
- * @typedef {
- *   CaptionPlacementName
- *   | string
- *   | {top?: string, right?: string, bottom?: string, left?: string}
- *   | {x: number, y: number, side: CaptionSide, offset?: number}
- *   | null
- * } CaptionPlacement
- */
+export type CaptionPlacement =
+  | CaptionPlacementName
+  | string
+  | { top?: string; right?: string; bottom?: string; left?: string }
+  | { x: number; y: number; side: CaptionSide; offset?: number }
+  | null;
 
-/**
- * @typedef {object} Caption
- * @property {string} [title]
- * @property {string} [description]
- * @property {CaptionPlacement} [placement]
- * @property {CaptionPointer} [pointer]
- * @property {boolean} [visible]
- */
+export interface Caption {
+  title?: string;
+  description?: string;
+  placement?: CaptionPlacement;
+  pointer?: CaptionPointer;
+  visible?: boolean;
+}
 
-import styleSheet from "./caption-overlay-style.css" with { type: "css" };
+interface ResolvedCaption {
+  title: string;
+  description: string;
+  placement: CaptionPlacement;
+  pointer: CaptionPointer;
+  visible: boolean;
+}
 
 export class CaptionOverlay extends HTMLElement {
   static tagName = "moyarich-caption-overlay";
-
   static styleSheets = [styleSheet];
 
-  static defaults = Object.freeze({
+  static defaults: ResolvedCaption = Object.freeze({
     title: "",
     description: "",
     placement: "bottom-right",
@@ -38,28 +43,24 @@ export class CaptionOverlay extends HTMLElement {
     visible: false,
   });
 
-  static placements = new Map([
+  static placements = new Map<string, string>([
     ["top-left", "46px auto auto 24px"],
     ["top-right", "46px 24px auto auto"],
     ["bottom-left", "auto auto 46px 24px"],
     ["bottom-right", "auto 24px 46px auto"],
   ]);
 
-  static pointers = new Set(["bubble", "arrow"]);
+  static pointers = new Set<CaptionPointer>(["bubble", "arrow"]);
 
-  #caption = { ...CaptionOverlay.defaults };
-
-  #pointer;
-
-  #heading;
-
-  #description;
+  #caption: ResolvedCaption = { ...CaptionOverlay.defaults };
+  #pointer: HTMLDivElement;
+  #heading: HTMLDivElement;
+  #description: HTMLDivElement;
 
   constructor() {
     super();
 
     const shadowRoot = this.attachShadow({ mode: "open" });
-
     shadowRoot.adoptedStyleSheets = CaptionOverlay.styleSheets;
 
     const body = document.createElement("div");
@@ -79,19 +80,16 @@ export class CaptionOverlay extends HTMLElement {
     this.#description.className = "caption-description";
 
     content.append(this.#heading, this.#description);
-
     body.append(this.#pointer, content);
-
     shadowRoot.append(body);
   }
 
-  connectedCallback() {
+  connectedCallback(): void {
     this.setAttribute("aria-live", "polite");
     this.#render();
   }
 
-  /** @param {Caption} value */
-  set caption(value) {
+  set caption(value: Caption) {
     const caption = {
       ...CaptionOverlay.defaults,
       ...value,
@@ -109,8 +107,7 @@ export class CaptionOverlay extends HTMLElement {
     this.#render();
   }
 
-  /** @returns {Caption} */
-  get caption() {
+  get caption(): Caption {
     const { placement } = this.#caption;
 
     return {
@@ -122,16 +119,13 @@ export class CaptionOverlay extends HTMLElement {
     };
   }
 
-  #render() {
+  #render(): void {
     this.#heading.textContent = this.#caption.title;
     this.#description.textContent = this.#caption.description;
-
     this.style.inset = this.#resolveInset(this.#caption.placement);
-
     this.#pointer.className = `caption__pointer ${this.#caption.pointer}`;
 
     const side = this.#resolveSide(this.#caption.placement);
-
     this.#pointer.dataset.side = side;
 
     if (side) {
@@ -143,48 +137,34 @@ export class CaptionOverlay extends HTMLElement {
     this.#containerVisible(this.#caption.visible);
   }
 
-  /**
-   * @param {boolean} visible
-   */
-  #containerVisible(visible) {
+  #containerVisible(visible: boolean): void {
     this.shadowRoot
       ?.querySelector(".caption__body")
       ?.classList.toggle("visible", visible);
   }
 
-  /**
-   * @param {CaptionPlacement} placement
-   * @returns {CaptionSide | ""}
-   */
-  #resolveSide(placement) {
+  #resolveSide(placement: CaptionPlacement): CaptionSide | "" {
     return placement && typeof placement === "object" && "side" in placement
       ? placement.side
       : "";
   }
 
-  /**
-   * @param {CaptionPlacement} placement
-   * @returns {string}
-   */
-  #resolveInset(placement) {
+  #resolveInset(placement: CaptionPlacement): string {
     if (typeof placement === "string") {
       const value = placement.trim();
-
       return CaptionOverlay.placements.get(value) ?? value;
     }
 
     if (placement && typeof placement === "object") {
       if ("x" in placement && "y" in placement && "side" in placement) {
         const offset = Number(placement.offset ?? 28);
-
-        const positions = {
+        const positions: Record<CaptionSide, string> = {
           top: `${placement.y - offset}px auto auto ${placement.x}px`,
           right: `${placement.y}px auto auto ${placement.x + offset}px`,
           bottom: `${placement.y + offset}px auto auto ${placement.x}px`,
           left: `${placement.y}px auto auto ${placement.x - offset}px`,
         };
-
-        return positions[placement.side] ?? positions.top;
+        return positions[placement.side];
       }
 
       return [
@@ -196,7 +176,9 @@ export class CaptionOverlay extends HTMLElement {
     }
 
     return (
-      CaptionOverlay.placements.get(CaptionOverlay.defaults.placement) ?? "auto"
+      CaptionOverlay.placements.get(
+        CaptionOverlay.defaults.placement as string,
+      ) ?? "auto"
     );
   }
 }

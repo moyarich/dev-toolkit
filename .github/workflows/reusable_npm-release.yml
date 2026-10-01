@@ -9,12 +9,6 @@ on:
         default: true
         type: boolean
 
-      target-branch:
-        description: Release target branch
-        required: true
-        default: main
-        type: string
-
       package:
         description: Package — package to release
         required: true
@@ -179,9 +173,6 @@ on:
         value: ${{ jobs.release-package.outputs.publish-json }}
 
     secrets:
-      _GITHUB_TOKEN:
-        required: false
-
       _NPM_TOKEN:
         required: false
 
@@ -205,8 +196,9 @@ jobs:
       publish-json: ${{ steps.publish.outputs.publish-json }}
 
     env:
-      GH_TOKEN: ${{ secrets._GITHUB_TOKEN || github.token }}
+      GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
+      TARGET_BRANCH: ${{ github.event_name == 'workflow_dispatch' && github.ref_name || inputs.target-branch }}
 
     steps:
       - name: Initialize workflow summary
@@ -228,9 +220,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7 # v7
         with:
+          ref: ${{ env.TARGET_BRANCH }}
           fetch-depth: 0
           persist-credentials: false
-          token: ${{ secrets._GITHUB_TOKEN || github.token }}
+          token: ${{ github.token }}
 
       - name: Resolve execution mode
         id: execution
@@ -276,7 +269,7 @@ jobs:
       - name: Configure GitHub remote
         if: ${{ steps.execution.outputs.dry-run == 'false' }}
         env:
-          GH_TOKEN: ${{ secrets._GITHUB_TOKEN || github.token }}
+          GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         shell: bash
         run: |
@@ -300,13 +293,13 @@ jobs:
 
       - name: Install workspace dependencies
         env:
-          NODE_AUTH_TOKEN: ${{ secrets._GITHUB_TOKEN || github.token }}
+          NODE_AUTH_TOKEN: ${{ github.token }}
         run: npm ci --include=optional
 
       - name: Resolve workspace tools CLI
         shell: bash
         env:
-          NODE_AUTH_TOKEN: ${{ secrets._GITHUB_TOKEN || github.token }}
+          NODE_AUTH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
 
@@ -382,7 +375,7 @@ jobs:
       - name: Validate publishing credentials
         if: ${{ steps.execution.outputs.dry-run == 'false' && inputs.publish }}
         env:
-          GITHUB_TOKEN_VALUE: ${{ secrets._GITHUB_TOKEN || github.token }}
+          GITHUB_TOKEN_VALUE: ${{ github.token }}
           NPM_TOKEN_VALUE: ${{ secrets._NPM_TOKEN }}
           REGISTRY: ${{ inputs.registry }}
         shell: bash
@@ -392,7 +385,7 @@ jobs:
           case "$REGISTRY" in
             github)
               if [ -z "$GITHUB_TOKEN_VALUE" ]; then
-                echo "::error::_GITHUB_TOKEN or github.token is required to publish to GitHub Packages."
+                echo "::error::github.token is required to publish to GitHub Packages."
                 exit 1
               fi
               ;;
@@ -406,7 +399,7 @@ jobs:
 
             both)
               if [ -z "$GITHUB_TOKEN_VALUE" ]; then
-                echo "::error::_GITHUB_TOKEN or github.token is required to publish to GitHub Packages."
+                echo "::error::github.token is required to publish to GitHub Packages."
                 exit 1
               fi
 
@@ -495,7 +488,7 @@ jobs:
           PUBLISH: ${{ inputs.publish }}
           REGISTRY: ${{ inputs.registry }}
           DIST_TAG: ${{ inputs.dist-tag }}
-          GIT_REF: ${{ inputs.target-branch }}
+          GIT_REF: ${{ env.TARGET_BRANCH }}
         shell: bash
         run: |
           set -euo pipefail
@@ -637,7 +630,7 @@ jobs:
           set -euo pipefail
 
           git push origin \
-            "HEAD:$GITHUB_REF_NAME" \
+            "HEAD:${TARGET_BRANCH}" \
             --follow-tags
 
       - name: Ensure staged publishing CLI support
@@ -652,7 +645,7 @@ jobs:
         id: publish
         if: ${{ steps.execution.outputs.dry-run == 'false' && inputs.publish }}
         env:
-          _GITHUB_TOKEN: ${{ secrets._GITHUB_TOKEN || github.token }}
+          _GITHUB_TOKEN: ${{ github.token }}
           _NPM_TOKEN: ${{ secrets._NPM_TOKEN }}
           VERIFY_GIT_TAG: ${{ inputs.verify-git-tag }}
         shell: bash

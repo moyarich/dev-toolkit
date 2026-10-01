@@ -25,6 +25,45 @@ permissions:
   packages: read
 
 jobs:
+  root-checks:
+    name: "Root checks"
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.package-directory == 'all' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7 # v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v7 # v7
+        with:
+          node-version: ${{ inputs.node-version || '24' }}
+          cache: npm
+          registry-url: https://npm.pkg.github.com
+
+      - name: Install workspace dependencies
+        run: npm ci --prefer-offline --no-audit --no-fund
+        env:
+          NODE_AUTH_TOKEN: ${{ github.token }}
+
+      - name: Install Chromium for Storybook tests
+        run: npx playwright install --with-deps chromium
+
+      - name: Run root checks
+        run: npm run checks
+
+      - name: Checks summary
+        if: ${{ always() }}
+        run: |
+          {
+            echo "## Root checks"
+            echo
+            echo "| Setting | Value |"
+            echo "| --- | --- |"
+            echo "| Command | `npm run checks` |"
+            echo "| Node.js | `${{ inputs.node-version || '24' }}` |"
+            echo "| Result | **${{ job.status }}** |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
   package-ci:
     name: "Package CI"
     if: ${{ github.event_name != 'workflow_dispatch' || inputs.package-directory == 'all' }}

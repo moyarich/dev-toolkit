@@ -1,6 +1,6 @@
 {
   "name": "@moyarich/web-components",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Reusable web components for demos and developer tooling.",
   "type": "module",
   "exports": {
@@ -23,8 +23,11 @@
   },
   "scripts": {
     "build": "vite build --config vite.config.ts",
-    "test": "node --check src/index.mjs && node --check src/caption/caption-overlay.mjs && node --check src/cursor-overlay/cursor-overlay-element.mjs && node --check src/magnifier-cursor-overlay/element.mjs",
-    "typecheck": "tsc -p tsconfig.json"
+    "test": "vitest run --project=storybook",
+    "typecheck": "tsc -p tsconfig.json",
+    "storybook": "storybook dev -p 6006 -c .storybook",
+    "build-storybook": "storybook build -c .storybook",
+    "test-storybook": "vitest run --project=storybook"
   },
   "repository": {
     "type": "git",
@@ -35,5 +38,12 @@
     "registry": "https://npm.pkg.github.com",
     "access": "public"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "@storybook/web-components-vite": "10.6.0",
+    "storybook": "10.6.0",
+    "@storybook/addon-vitest": "10.6.0",
+    "@vitest/browser-playwright": "^4.1.11",
+    "vitest": "^4.1.11"
+  }
 }

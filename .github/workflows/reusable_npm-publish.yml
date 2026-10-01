@@ -3,11 +3,6 @@ name: "Reusable · Publish npm package"
 on:
   workflow_dispatch:
     inputs:
-      target-branch:
-        description: Branch containing the package version to publish
-        required: true
-        default: main
-        type: string
       dry-run:
         description: Preview publishing without registry mutation
         required: true
@@ -103,8 +98,6 @@ on:
         description: Complete workspace-publish JSON result
         value: ${{ jobs.publish-package.outputs.result-json }}
     secrets:
-      github-token:
-        required: false
       npm-token:
         required: false
 
@@ -124,8 +117,9 @@ jobs:
       can-publish: ${{ steps.publish.outputs.can-publish }}
       result-json: ${{ steps.publish.outputs.result-json }}
     env:
-      GH_TOKEN: ${{ secrets.github-token || github.token }}
+      GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
+      TARGET_BRANCH: ${{ github.event_name == 'workflow_dispatch' && github.ref_name || inputs.target-branch }}
     steps:
       - name: Initialize workflow summary
         if: ${{ always() }}
@@ -145,7 +139,7 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/checkout@v7 # v7
         with:
-          ref: ${{ inputs.target-branch }}
+          ref: ${{ env.TARGET_BRANCH }}
           fetch-depth: 0
           persist-credentials: false
       - uses: actions/setup-node@v7 # v7
@@ -158,13 +152,13 @@ jobs:
         run: npm install --global npm@">=11.15.0 <12"
       - name: Install workspace dependencies
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.github-token || github.token }}
+          NODE_AUTH_TOKEN: ${{ github.token }}
         run: npm ci --include=optional
 
       - name: Resolve workspace tools CLI
         shell: bash
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.github-token || github.token }}
+          NODE_AUTH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
 
@@ -227,7 +221,7 @@ jobs:
           DRY_RUN: ${{ inputs.dry-run }}
           VERIFY_GIT_TAG: ${{ inputs.verify-git-tag }}
           PACKAGE_SELECTOR: ${{ inputs.package-directory }}
-          _GITHUB_TOKEN: ${{ secrets.github-token || github.token }}
+          _GITHUB_TOKEN: ${{ github.token }}
           _NPM_TOKEN: ${{ secrets.npm-token }}
         run: |
           set -euo pipefail

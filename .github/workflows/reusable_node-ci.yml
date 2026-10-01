@@ -142,6 +142,9 @@ jobs:
             echo "::endgroup::"
           done <<< "$BUILD_ORDER"
 
+      - name: Install Chromium for Storybook tests
+        if: ${{ inputs.package-directory == 'packages/web-components' || inputs.package-directory == '@moyarich/web-components' }}
+        run: npx playwright install --with-deps chromium
 
       - name: Test
         env:

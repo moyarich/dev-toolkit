@@ -18,12 +18,6 @@ on:
         default: ""
         type: string
 
-      from:
-        description: Optional comparison baseline ref; empty + explicit version uses the first commit on main
-        required: false
-        default: ""
-        type: string
-
   push:
     branches:
       - main
@@ -141,34 +135,112 @@ jobs:
           );
           NODE
 
-      - name: Resolve comparison baseline
+      - name: Resolve package release baseline
         id: baseline
         if: ${{ steps.selected.outputs.value == 'true' }}
         env:
-          INPUT_FROM: ${{ inputs.from }}
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
           INPUT_VERSION: ${{ inputs.version }}
-          EVENT_NAME: ${{ github.event_name }}
+          PACKAGE_DIRECTORY: ${{ matrix.directory }}
         shell: bash
         run: |
           set -euo pipefail
 
-          if [ "$EVENT_NAME" != "workflow_dispatch" ]; then
-            BASELINE=""
+          RELEASES="$(
+            gh api               --paginate               --slurp               "repos/$GH_REPO/releases?per_page=100"
+          )"
+
+          PREVIOUS_TAG="$(
+            jq -r --arg prefix "$PACKAGE_DIRECTORY@" '
+              [
+                .[][] |
+                select(
+                  .draft == false and
+                  (.tag_name | startswith($prefix))
+                )
+              ]
+              | sort_by(.published_at // .created_at)
+              | last
+              | .tag_name // empty
+            ' <<< "$RELEASES"
+          )"
+
+          VERSION="$INPUT_VERSION"
+
+          EXISTING_GIT_TAG="$(
+            git tag --list "$PACKAGE_DIRECTORY@*" |
+              sort -V |
+              tail -n 1
+          )"
+
+          if [ -n "$PREVIOUS_TAG" ]; then
             SOURCE="previous published package release"
-          elif [ -n "$INPUT_FROM" ]; then
-            BASELINE="$INPUT_FROM"
-            SOURCE="input"
-          elif [ -n "$INPUT_VERSION" ]; then
-            BASELINE="$(git rev-list --max-parents=0 HEAD | tail -n 1)"
-            SOURCE="first commit on main"
+          elif [ -n "$EXISTING_GIT_TAG" ]; then
+            WOULD_VERSION="${VERSION:-0.1.0}"
+            WOULD_TAG="$PACKAGE_DIRECTORY@$WOULD_VERSION"
+            WOULD_NAME="$PACKAGE_NAME v$WOULD_VERSION"
+
+            WOULD_CHANGES="$(
+              git log \
+                --reverse \
+                --format='- %s (%h)' \
+                HEAD \
+                -- "$PACKAGE_DIRECTORY" |
+                sed '/^- $/d'
+            )"
+
+            if [ -z "$WOULD_CHANGES" ]; then
+              WOULD_CHANGES="- No package-specific commits found."
+            fi
+
+            WOULD_BODY="$(
+              {
+                echo "## What's Changed"
+                echo
+                echo "$WOULD_CHANGES"
+              }
+            )"
+
+            {
+              echo "# Package release draft"
+              echo
+              echo "## Release blocked"
+              echo
+              echo "A package Git tag exists without a matching published GitHub Release, so the workflow did not create or update a draft."
+              echo
+              echo "| Would-have-created | Value |"
+              echo "| --- | --- |"
+              echo "| Package | \`$PACKAGE_NAME\` |"
+              echo "| Directory | \`$PACKAGE_DIRECTORY\` |"
+              echo "| Version | \`$WOULD_VERSION\` |"
+              echo "| Tag | \`$WOULD_TAG\` |"
+              echo "| Release name | \`$WOULD_NAME\` |"
+              echo "| Existing Git tag | \`$EXISTING_GIT_TAG\` |"
+              echo "| Result | **Blocked — release history requires reconciliation** |"
+              echo
+              echo "## Would-have-created release content"
+              echo
+              echo "$WOULD_BODY"
+              echo
+            } >> "$GITHUB_STEP_SUMMARY"
+
+            echo "::error::Found Git tag '$EXISTING_GIT_TAG' for $PACKAGE_DIRECTORY but no matching published GitHub Release."
+            echo "::error::Refusing to treat this package as a first release. Publish/restore the release or supply an explicit version after reconciling release history."
+            exit 1
           else
-            BASELINE=""
-            SOURCE="previous published package release"
+            SOURCE="full package Git history"
+
+            if [ -z "$VERSION" ]; then
+              VERSION="0.1.0"
+            fi
           fi
 
           {
-            echo "from=$BASELINE"
             echo "source=$SOURCE"
+            echo "version=$VERSION"
+            echo "previous-tag=$PREVIOUS_TAG"
+            echo "existing-git-tag=$EXISTING_GIT_TAG"
           } >> "$GITHUB_OUTPUT"
 
       - name: Initialize workflow summary
@@ -183,8 +255,9 @@ jobs:
             echo "| Package | \`${{ matrix.name }}\` |"
             echo "| Directory | \`${{ matrix.directory }}\` |"
             echo "| Current package version | \`${{ matrix.version }}\` |"
-            echo "| Requested release version | \`${{ inputs.version || 'auto' }}\` |"
-            echo "| Comparison baseline | \`${{ steps.baseline.outputs.from || 'previous published package release' }}\` |"
+            echo "| Release version | \`${{ steps.baseline.outputs.version || 'auto' }}\` |"
+            echo "| Previous published tag | \`${{ steps.baseline.outputs.previous-tag || 'none' }}\` |"
+            echo "| Existing Git tag | \`${{ steps.baseline.outputs.existing-git-tag || 'none' }}\` |"
             echo "| Baseline source | \`${{ steps.baseline.outputs.source }}\` |"
             echo "| Repository | \`${{ github.repository }}\` |"
             echo "| Ref | \`${{ github.ref_name }}\` |"
@@ -193,17 +266,92 @@ jobs:
             echo
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Create or update package draft release
+      - name: Create or update first package draft
+        id: first-draft
+        if: ${{ steps.selected.outputs.value == 'true' && steps.baseline.outputs.previous-tag == '' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PACKAGE_NAME: ${{ matrix.name }}
+          PACKAGE_DIRECTORY: ${{ matrix.directory }}
+          VERSION: ${{ steps.baseline.outputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          TAG="$PACKAGE_DIRECTORY@$VERSION"
+          NAME="$PACKAGE_NAME v$VERSION"
+
+          CHANGES="$(
+            git log \
+              --reverse \
+              --format='- %s (%h)' \
+              HEAD \
+              -- "$PACKAGE_DIRECTORY" |
+              sed '/^- $/d'
+          )"
+
+          if [ -z "$CHANGES" ]; then
+            CHANGES="- No package-specific commits found."
+          fi
+
+          BODY="$(
+            {
+              echo "## What's Changed"
+              echo
+              echo "$CHANGES"
+            }
+          )"
+
+          EXISTING_ID="$(
+            gh api --paginate --slurp "repos/$GH_REPO/releases?per_page=100" |
+              jq -r --arg tag "$TAG" '
+                [.[][] | select(.draft == true and .tag_name == $tag)]
+                | first
+                | .id // empty
+              '
+          )"
+
+          if [ -n "$EXISTING_ID" ]; then
+            RELEASE="$(
+              gh api \
+                --method PATCH \
+                "repos/$GH_REPO/releases/$EXISTING_ID" \
+                -f tag_name="$TAG" \
+                -f target_commitish="main" \
+                -f name="$NAME" \
+                -f body="$BODY" \
+                -F draft=true
+            )"
+          else
+            RELEASE="$(
+              gh api \
+                --method POST \
+                "repos/$GH_REPO/releases" \
+                -f tag_name="$TAG" \
+                -f target_commitish="main" \
+                -f name="$NAME" \
+                -f body="$BODY" \
+                -F draft=true
+            )"
+          fi
+
+          {
+            echo "name=$(jq -r '.name' <<< "$RELEASE")"
+            echo "tag_name=$(jq -r '.tag_name' <<< "$RELEASE")"
+            echo "html_url=$(jq -r '.html_url' <<< "$RELEASE")"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Create or update subsequent package draft
         id: drafter
-        if: ${{ steps.selected.outputs.value == 'true' }}
+        if: ${{ steps.selected.outputs.value == 'true' && steps.baseline.outputs.previous-tag != '' }}
         uses: release-drafter/release-drafter@v7.7.0
         with:
           config-name: file:release-drafter-package-generated.yml
           commitish: main
-          version: ${{ github.event_name == 'workflow_dispatch' && inputs.version || '' }}
-          from: ${{ steps.baseline.outputs.from }}
+          version: ${{ steps.baseline.outputs.version }}
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
 
       - name: Draft summary
         if: ${{ steps.selected.outputs.value == 'true' }}
@@ -215,8 +363,7 @@ jobs:
             echo "| Release | Value |"
             echo "| --- | --- |"
             echo "| Package | \`${{ matrix.name }}\` |"
-            echo "| Name | \`${{ steps.drafter.outputs.name }}\` |"
-            echo "| Tag | \`${{ steps.drafter.outputs.tag_name }}\` |"
-            echo "| Draft | [Open package draft release](${{ steps.drafter.outputs.html_url }}) |"
+            echo "| Name | \`${{ steps.first-draft.outputs.name || steps.drafter.outputs.name }}\` |"
+            echo "| Tag | \`${{ steps.first-draft.outputs.tag_name || steps.drafter.outputs.tag_name }}\` |"
+            echo "| Draft | [Open package draft release](${{ steps.first-draft.outputs.html_url || steps.drafter.outputs.html_url }}) |"
           } >> "$GITHUB_STEP_SUMMARY"
-

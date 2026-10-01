@@ -1,30 +1,28 @@
-import styleSheet from "./cursor-overlay-element-style.css" with { type: "css" };
+import cssText from "./cursor-overlay-element-style.css?inline";
+
+const styleSheet = new CSSStyleSheet();
+styleSheet.replaceSync(cssText);
 
 export class CursorOverlay extends HTMLElement {
   static tagName = "moyarich-cursor-overlay";
   static styleSheets = [styleSheet];
 
-  #cursor;
+  #cursor: HTMLDivElement;
 
-  #handleMouseMove = (event) => {
+  #handleMouseMove = (event: MouseEvent): void => {
     this.#cursor.style.translate = `${event.clientX}px ${event.clientY}px`;
   };
 
-  #handleMouseDown = () => {
+  #handleMouseDown = (): void => {
     this.#cursor.classList.remove("click");
-
     void this.#cursor.offsetWidth;
-
     this.#cursor.classList.add("click");
   };
 
   constructor() {
     super();
 
-    const shadowRoot = this.attachShadow({
-      mode: "open",
-    });
-
+    const shadowRoot = this.attachShadow({ mode: "open" });
     shadowRoot.adoptedStyleSheets = CursorOverlay.styleSheets;
 
     this.#cursor = document.createElement("div");
@@ -36,7 +34,7 @@ export class CursorOverlay extends HTMLElement {
     shadowRoot.append(this.#cursor);
   }
 
-  connectedCallback() {
+  connectedCallback(): void {
     this.setAttribute("popover", "manual");
 
     if (!this.matches(":popover-open")) {
@@ -44,13 +42,11 @@ export class CursorOverlay extends HTMLElement {
     }
 
     document.addEventListener("mousemove", this.#handleMouseMove, true);
-
     document.addEventListener("mousedown", this.#handleMouseDown, true);
   }
 
-  disconnectedCallback() {
+  disconnectedCallback(): void {
     document.removeEventListener("mousemove", this.#handleMouseMove, true);
-
     document.removeEventListener("mousedown", this.#handleMouseDown, true);
   }
 }

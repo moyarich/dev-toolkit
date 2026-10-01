@@ -41,9 +41,7 @@ for (const command of [
 }
 
 test("package discovery preserves its default directory and JSON output", () => {
-  const implicit = invoke(
-    "packages/workspace-tools/bin/discover-packages.mjs",
-  );
+  const implicit = invoke("packages/workspace-tools/bin/discover-packages.mjs");
   const explicit = invoke(
     "packages/workspace-tools/bin/discover-packages.mjs",
     "packages",

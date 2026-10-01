@@ -1,11 +1,10 @@
-import styleSheet from "./styles.css" with { type: "css" };
+import cssText from "./styles.css?inline";
+
+const styleSheet = new CSSStyleSheet();
+styleSheet.replaceSync(cssText);
 
 /**
  * Visual cursor magnifier that mirrors the rendered DOM beneath the pointer.
- *
- * The clone is intentionally visual-only: computed styles, live form values,
- * scroll positions, canvas pixels, and native text selection are preserved so
- * the lens reflects what the user can currently see.
  */
 export class MagnifierCursorOverlay extends HTMLElement {
   static tagName = "moyarich-magnifier-cursor-overlay";
@@ -13,19 +12,19 @@ export class MagnifierCursorOverlay extends HTMLElement {
   static maxDepth = 12;
   static maxTargetSize = 1.5;
 
-  #cursor;
-  #content;
-  #selectionLayer;
-  #target = null;
-  #clone = null;
+  #cursor: HTMLDivElement;
+  #content: HTMLDivElement;
+  #selectionLayer: HTMLDivElement;
+  #target: HTMLElement | null = null;
+  #clone: HTMLElement | null = null;
   #x = 0;
   #y = 0;
   #pointerVisible = false;
-  #clickTimer;
-  #pointerFrame;
-  #selectionFrame;
-  #refreshFrame;
-  #mutationFrame;
+  #clickTimer: ReturnType<typeof setTimeout> | undefined;
+  #pointerFrame: number | undefined;
+  #selectionFrame: number | undefined;
+  #refreshFrame: number | undefined;
+  #mutationFrame: number | undefined;
   #mutationObserver = new MutationObserver(() => this.#queueMutationRefresh());
 
   constructor() {
@@ -44,7 +43,7 @@ export class MagnifierCursorOverlay extends HTMLElement {
     root.append(this.#cursor);
   }
 
-  #getScale() {
+  #getScale(): number {
     return (
       Number.parseFloat(
         getComputedStyle(this.#cursor).getPropertyValue("--cursor-scale"),
@@ -52,30 +51,30 @@ export class MagnifierCursorOverlay extends HTMLElement {
     );
   }
 
-  #getSize() {
+  #getSize(): number {
     return this.#content.offsetWidth || this.#cursor.offsetWidth || 1;
   }
 
-  #getParent(element) {
+  #getParent(element: Element | null): Element | null {
     if (!element) return null;
     if (element.parentElement) return element.parentElement;
-    const root = element.getRootNode?.();
+    const root = element.getRootNode();
     return root instanceof ShadowRoot && root.host instanceof Element
       ? root.host
       : null;
   }
 
-  #elementFromPoint(x, y) {
-    let element = document.elementFromPoint(x, y);
+  #elementFromPoint(x: number, y: number): HTMLElement | null {
+    let element: Element | null = document.elementFromPoint(x, y);
     while (element?.shadowRoot) {
       const nested = element.shadowRoot.elementFromPoint(x, y);
       if (!nested || nested === element) break;
       element = nested;
     }
-    return element instanceof Element ? element : null;
+    return element instanceof HTMLElement ? element : null;
   }
 
-  #hasEnoughArea(element) {
+  #hasEnoughArea(element: Element): boolean {
     const rect = element.getBoundingClientRect();
     const radius = this.#getSize() / this.#getScale() / 2;
     const localX = this.#x - rect.left;
@@ -88,9 +87,9 @@ export class MagnifierCursorOverlay extends HTMLElement {
     );
   }
 
-  #getTarget() {
-    let element = this.#elementFromPoint(this.#x, this.#y);
-    let fallback = null;
+  #getTarget(): HTMLElement | null {
+    let element: Element | null = this.#elementFromPoint(this.#x, this.#y);
+    let fallback: HTMLElement | null = null;
 
     for (
       let depth = 0;
@@ -102,26 +101,34 @@ export class MagnifierCursorOverlay extends HTMLElement {
         element === document.body ||
         element === document.documentElement ||
         element.contains(this)
-      )
+      ) {
         break;
+      }
+
       const rect = element.getBoundingClientRect();
       if (rect.width <= 0 || rect.height <= 0) {
         element = this.#getParent(element);
         continue;
       }
+
       if (
         rect.width > innerWidth * MagnifierCursorOverlay.maxTargetSize ||
         rect.height > innerHeight * MagnifierCursorOverlay.maxTargetSize
-      )
+      ) {
         break;
-      fallback = element;
-      if (this.#hasEnoughArea(element)) return element;
+      }
+
+      if (element instanceof HTMLElement) {
+        fallback = element;
+        if (this.#hasEnoughArea(element)) return element;
+      }
       element = this.#getParent(element);
     }
+
     return fallback;
   }
 
-  #isTransparent(color) {
+  #isTransparent(color: string): boolean {
     return (
       !color ||
       color === "transparent" ||
@@ -130,50 +137,59 @@ export class MagnifierCursorOverlay extends HTMLElement {
     );
   }
 
-  #getBackground(element) {
-    let current = element;
+  #getBackground(element: Element): string {
+    let current: Element | null = element;
+
     for (
       let depth = 0;
       current && depth < MagnifierCursorOverlay.maxDepth;
       depth += 1
     ) {
       const style = getComputedStyle(current);
-      if (style.backgroundImage && style.backgroundImage !== "none")
+      if (style.backgroundImage && style.backgroundImage !== "none") {
         return style.background;
-      if (!this.#isTransparent(style.backgroundColor))
+      }
+      if (!this.#isTransparent(style.backgroundColor)) {
         return style.backgroundColor;
+      }
       current = this.#getParent(current);
     }
+
     for (const fallback of [document.body, document.documentElement]) {
       const style = getComputedStyle(fallback);
-      if (style.backgroundImage && style.backgroundImage !== "none")
+      if (style.backgroundImage && style.backgroundImage !== "none") {
         return style.background;
-      if (!this.#isTransparent(style.backgroundColor))
+      }
+      if (!this.#isTransparent(style.backgroundColor)) {
         return style.backgroundColor;
+      }
     }
+
     return "#fff";
   }
 
-  #removeIds(root) {
-    root.removeAttribute?.("id");
+  #removeIds(root: Element): void {
+    root.removeAttribute("id");
     root
-      .querySelectorAll?.("[id]")
+      .querySelectorAll("[id]")
       .forEach((element) => element.removeAttribute("id"));
   }
 
-  #copyComputedStyles(source, clone) {
+  #copyComputedStyles(source: Element, clone: HTMLElement): void {
     const sources = [source, ...source.querySelectorAll("*")];
-    const clones = [clone, ...clone.querySelectorAll("*")];
+    const clones = [clone, ...clone.querySelectorAll<HTMLElement>("*")];
+
     sources.forEach((element, index) => {
       const copy = clones[index];
       if (!copy) return;
       const computed = getComputedStyle(element);
-      for (const property of computed)
+      for (const property of computed) {
         copy.style.setProperty(property, computed.getPropertyValue(property));
+      }
     });
   }
 
-  #copyControlState(source, clone) {
+  #copyControlState(source: Element, clone: Element): void {
     if (
       source instanceof HTMLInputElement &&
       clone instanceof HTMLInputElement
@@ -190,41 +206,44 @@ export class MagnifierCursorOverlay extends HTMLElement {
       clone instanceof HTMLSelectElement
     ) {
       [...source.options].forEach((option, index) => {
-        if (clone.options[index])
-          clone.options[index].selected = option.selected;
+        const clonedOption = clone.options[index];
+        if (clonedOption) clonedOption.selected = option.selected;
       });
     }
   }
 
-  #copyFormState(source, clone) {
+  #copyFormState(source: Element, clone: Element): void {
     this.#copyControlState(source, clone);
-    const sources = source.querySelectorAll?.("input, textarea, select") ?? [];
-    const clones = clone.querySelectorAll?.("input, textarea, select") ?? [];
-    sources.forEach(
-      (element, index) =>
-        clones[index] && this.#copyControlState(element, clones[index]),
-    );
-  }
-
-  #copyScrollState(source, clone) {
-    const sources = [source, ...(source.querySelectorAll?.("*") ?? [])];
-    const clones = [clone, ...(clone.querySelectorAll?.("*") ?? [])];
+    const sources = source.querySelectorAll("input, textarea, select");
+    const clones = clone.querySelectorAll("input, textarea, select");
     sources.forEach((element, index) => {
-      if (!clones[index]) return;
-      clones[index].scrollLeft = element.scrollLeft;
-      clones[index].scrollTop = element.scrollTop;
+      const cloned = clones[index];
+      if (cloned) this.#copyControlState(element, cloned);
     });
   }
 
-  #copyCanvasState(source, clone) {
-    const sources = [
+  #copyScrollState(source: HTMLElement, clone: HTMLElement): void {
+    const sources = [source, ...source.querySelectorAll<HTMLElement>("*")];
+    const clones = [clone, ...clone.querySelectorAll<HTMLElement>("*")];
+
+    sources.forEach((element, index) => {
+      const cloned = clones[index];
+      if (!cloned) return;
+      cloned.scrollLeft = element.scrollLeft;
+      cloned.scrollTop = element.scrollTop;
+    });
+  }
+
+  #copyCanvasState(source: Element, clone: Element): void {
+    const sources: HTMLCanvasElement[] = [
       ...(source instanceof HTMLCanvasElement ? [source] : []),
-      ...(source.querySelectorAll?.("canvas") ?? []),
+      ...source.querySelectorAll<HTMLCanvasElement>("canvas"),
     ];
-    const clones = [
+    const clones: HTMLCanvasElement[] = [
       ...(clone instanceof HTMLCanvasElement ? [clone] : []),
-      ...(clone.querySelectorAll?.("canvas") ?? []),
+      ...clone.querySelectorAll<HTMLCanvasElement>("canvas"),
     ];
+
     sources.forEach((canvas, index) => {
       const copy = clones[index];
       if (!copy) return;
@@ -235,12 +254,12 @@ export class MagnifierCursorOverlay extends HTMLElement {
       try {
         context.drawImage(canvas, 0, 0);
       } catch {
-        /* Visual fallback for tainted/unsupported canvases. */
+        // Visual fallback for tainted/unsupported canvases.
       }
     });
   }
 
-  #createClone(target) {
+  #createClone(target: HTMLElement): HTMLElement | null {
     const rect = target.getBoundingClientRect();
     const clone = target.cloneNode(true);
     if (!(clone instanceof HTMLElement)) return null;
@@ -264,7 +283,7 @@ export class MagnifierCursorOverlay extends HTMLElement {
     return clone;
   }
 
-  #observeTarget() {
+  #observeTarget(): void {
     this.#mutationObserver.disconnect();
     if (this.#target?.isConnected) {
       this.#mutationObserver.observe(this.#target, {
@@ -276,7 +295,10 @@ export class MagnifierCursorOverlay extends HTMLElement {
     }
   }
 
-  #setTarget(nextTarget, { force = false } = {}) {
+  #setTarget(
+    nextTarget: HTMLElement | null,
+    { force = false }: { force?: boolean } = {},
+  ): void {
     if (!force && nextTarget === this.#target) return;
     this.#target = nextTarget;
     this.#clone?.remove();
@@ -301,7 +323,7 @@ export class MagnifierCursorOverlay extends HTMLElement {
     if (this.#pointerVisible) this.#cursor.classList.add("visible");
   }
 
-  #getTransform() {
+  #getTransform(): string {
     if (!this.#target) return "";
     const rect = this.#target.getBoundingClientRect();
     const scale = this.#getScale();
@@ -309,19 +331,20 @@ export class MagnifierCursorOverlay extends HTMLElement {
     return `translate(${radius - (this.#x - rect.left) * scale}px, ${radius - (this.#y - rect.top) * scale}px) scale(${scale})`;
   }
 
-  #positionLayers() {
+  #positionLayers(): void {
     if (!this.#target || !this.#clone) return;
     const transform = this.#getTransform();
     this.#clone.style.transform = transform;
     this.#selectionLayer.style.transform = transform;
   }
 
-  #updateSelection() {
+  #updateSelection(): void {
     this.#selectionLayer.replaceChildren();
     if (!this.#target || !this.#clone) return;
     const selection = window.getSelection();
-    if (!selection || selection.isCollapsed || selection.rangeCount === 0)
+    if (!selection || selection.isCollapsed || selection.rangeCount === 0) {
       return;
+    }
 
     const targetRect = this.#target.getBoundingClientRect();
     const fragment = document.createDocumentFragment();
@@ -344,7 +367,7 @@ export class MagnifierCursorOverlay extends HTMLElement {
     this.#selectionLayer.append(fragment);
   }
 
-  #renderPointer = () => {
+  #renderPointer = (): void => {
     this.#pointerFrame = undefined;
     this.#cursor.style.left = `${this.#x}px`;
     this.#cursor.style.top = `${this.#y}px`;
@@ -355,15 +378,16 @@ export class MagnifierCursorOverlay extends HTMLElement {
     this.#cursor.classList.add("visible");
   };
 
-  #handlePointerMove = (event) => {
+  #handlePointerMove = (event: PointerEvent): void => {
     this.#x = event.clientX;
     this.#y = event.clientY;
     this.#pointerVisible = true;
-    if (this.#pointerFrame === undefined)
+    if (this.#pointerFrame === undefined) {
       this.#pointerFrame = requestAnimationFrame(this.#renderPointer);
+    }
   };
 
-  #queueSelectionUpdate = () => {
+  #queueSelectionUpdate = (): void => {
     if (this.#selectionFrame !== undefined) return;
     this.#selectionFrame = requestAnimationFrame(() => {
       this.#selectionFrame = undefined;
@@ -371,7 +395,7 @@ export class MagnifierCursorOverlay extends HTMLElement {
     });
   };
 
-  #queueRefresh = () => {
+  #queueRefresh = (): void => {
     if (!this.#pointerVisible || this.#refreshFrame !== undefined) return;
     this.#refreshFrame = requestAnimationFrame(() => {
       this.#refreshFrame = undefined;
@@ -381,7 +405,7 @@ export class MagnifierCursorOverlay extends HTMLElement {
     });
   };
 
-  #queueMutationRefresh() {
+  #queueMutationRefresh(): void {
     if (!this.#pointerVisible || this.#mutationFrame !== undefined) return;
     this.#mutationFrame = requestAnimationFrame(() => {
       this.#mutationFrame = undefined;
@@ -395,7 +419,7 @@ export class MagnifierCursorOverlay extends HTMLElement {
     });
   }
 
-  #handlePointerDown = () => {
+  #handlePointerDown = (): void => {
     this.#cursor.classList.remove("click");
     void this.#cursor.offsetWidth;
     this.#cursor.classList.add("click");
@@ -406,14 +430,15 @@ export class MagnifierCursorOverlay extends HTMLElement {
     );
   };
 
-  #hide = () => {
+  #hide = (): void => {
     this.#pointerVisible = false;
     this.#cursor.classList.remove("visible");
   };
 
-  connectedCallback() {
+  connectedCallback(): void {
     this.setAttribute("popover", "manual");
     if (!this.matches(":popover-open")) this.showPopover();
+
     document.addEventListener("pointermove", this.#handlePointerMove, {
       capture: true,
       passive: true,
@@ -432,7 +457,7 @@ export class MagnifierCursorOverlay extends HTMLElement {
     window.addEventListener("blur", this.#hide);
   }
 
-  disconnectedCallback() {
+  disconnectedCallback(): void {
     document.removeEventListener("pointermove", this.#handlePointerMove, true);
     document.removeEventListener("pointerdown", this.#handlePointerDown, true);
     document.removeEventListener("selectionchange", this.#queueSelectionUpdate);
@@ -441,7 +466,8 @@ export class MagnifierCursorOverlay extends HTMLElement {
     document.removeEventListener("pointerleave", this.#hide);
     window.removeEventListener("blur", this.#hide);
     this.#mutationObserver.disconnect();
-    clearTimeout(this.#clickTimer);
+    if (this.#clickTimer !== undefined) clearTimeout(this.#clickTimer);
+
     for (const frame of [
       this.#pointerFrame,
       this.#selectionFrame,
@@ -450,6 +476,7 @@ export class MagnifierCursorOverlay extends HTMLElement {
     ]) {
       if (frame !== undefined) cancelAnimationFrame(frame);
     }
+
     this.#pointerFrame =
       this.#selectionFrame =
       this.#refreshFrame =

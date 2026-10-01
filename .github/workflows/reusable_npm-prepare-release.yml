@@ -79,10 +79,6 @@ on:
       package-version:
         description: Prepared package version
         value: ${{ jobs.prepare.outputs.package-version }}
-    secrets:
-      github-token:
-        required: false
-
 permissions: {}
 
 jobs:
@@ -98,7 +94,7 @@ jobs:
       prepare-branch: ${{ steps.release.outputs.branch }}
       package-version: ${{ steps.release.outputs.version }}
     env:
-      GH_TOKEN: ${{ secrets.github-token || github.token }}
+      GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
     steps:
       - name: Checkout target branch
@@ -117,7 +113,7 @@ jobs:
 
       - name: Install workspace dependencies
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.github-token || github.token }}
+          NODE_AUTH_TOKEN: ${{ github.token }}
         run: npm ci --include=optional --prefer-offline
 
       - name: Resolve workspace tools CLI

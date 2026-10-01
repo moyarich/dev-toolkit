@@ -6,8 +6,8 @@
     "strict": true,
     "noEmit": true,
     "allowImportingTsExtensions": true,
-    "types": ["node"],
+    "types": ["node", "vitest/globals"],
     "skipLibCheck": true
   },
-  "include": ["src/**/*.ts", "vite.config.ts"]
+  "include": ["src/**/*.ts", "tests/**/*.ts", "vite.config.ts"]
 }
