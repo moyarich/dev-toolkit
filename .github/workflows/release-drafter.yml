@@ -18,12 +18,6 @@ on:
         default: ""
         type: string
 
-      from:
-        description: Optional comparison baseline ref; empty + explicit version uses the first commit on main
-        required: false
-        default: ""
-        type: string
-
   push:
     branches:
       - main
@@ -147,7 +141,6 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
-          INPUT_FROM: ${{ inputs.from }}
           INPUT_VERSION: ${{ inputs.version }}
           PACKAGE_DIRECTORY: ${{ matrix.directory }}
         shell: bash
@@ -175,10 +168,7 @@ jobs:
 
           VERSION="$INPUT_VERSION"
 
-          if [ -n "$INPUT_FROM" ]; then
-            BASELINE="$INPUT_FROM"
-            SOURCE="input"
-          elif [ -n "$PREVIOUS_TAG" ]; then
+          if [ -n "$PREVIOUS_TAG" ]; then
             BASELINE="$PREVIOUS_TAG"
             SOURCE="previous published package release"
           else
@@ -228,7 +218,6 @@ jobs:
           config-name: file:release-drafter-package-generated.yml
           commitish: main
           version: ${{ steps.baseline.outputs.version }}
-          from: ${{ steps.baseline.outputs.from }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
