@@ -9,12 +9,6 @@ on:
         default: true
         type: boolean
 
-      target-branch:
-        description: Release target branch
-        required: true
-        default: main
-        type: string
-
       package:
         description: Package — package to release
         required: true
@@ -204,6 +198,7 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
+      TARGET_BRANCH: ${{ github.event_name == 'workflow_dispatch' && github.ref_name || inputs.target-branch }}
 
     steps:
       - name: Initialize workflow summary
@@ -225,7 +220,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7 # v7
         with:
-          ref: ${{ inputs.target-branch }}
+          ref: ${{ env.TARGET_BRANCH }}
           fetch-depth: 0
           persist-credentials: false
           token: ${{ github.token }}
@@ -493,7 +488,7 @@ jobs:
           PUBLISH: ${{ inputs.publish }}
           REGISTRY: ${{ inputs.registry }}
           DIST_TAG: ${{ inputs.dist-tag }}
-          GIT_REF: ${{ inputs.target-branch }}
+          GIT_REF: ${{ env.TARGET_BRANCH }}
         shell: bash
         run: |
           set -euo pipefail
@@ -635,7 +630,7 @@ jobs:
           set -euo pipefail
 
           git push origin \
-            "HEAD:${{ inputs.target-branch }}" \
+            "HEAD:${TARGET_BRANCH}" \
             --follow-tags
 
       - name: Ensure staged publishing CLI support
