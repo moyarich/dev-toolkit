@@ -170,7 +170,6 @@ function copyForDryRun(source, destination) {
 }
 
 function migrate(targetDir) {
-  run("npx", ["--yes", "codemod", "jest/vitest"], targetDir);
   run(
     "npx",
     ["--yes", "codemod", "workflow", "run", "-w", workflowPath],
