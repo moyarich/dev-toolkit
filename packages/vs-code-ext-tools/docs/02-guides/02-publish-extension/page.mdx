@@ -1,0 +1,17 @@
+# Publish a VS Code extension
+
+`vs-code-publish` provides the package's reusable extension publishing CLI.
+
+Inspect the command directly after building the package:
+
+```sh
+node packages/vs-code-ext-tools/bin/vs-code-publish.mjs --help
+```
+
+Or, when installed as a package:
+
+```sh
+vs-code-publish --help
+```
+
+The CLI uses Commander for command parsing and the package's reusable publishing implementation from `src/publish_ext.ts`.
