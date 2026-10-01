@@ -181,6 +181,27 @@ jobs:
             WOULD_TAG="$PACKAGE_DIRECTORY@$WOULD_VERSION"
             WOULD_NAME="$PACKAGE_NAME v$WOULD_VERSION"
 
+            WOULD_CHANGES="$(
+              git log \
+                --reverse \
+                --format='- %s (%h)' \
+                HEAD \
+                -- "$PACKAGE_DIRECTORY" |
+                sed '/^- $/d'
+            )"
+
+            if [ -z "$WOULD_CHANGES" ]; then
+              WOULD_CHANGES="- No package-specific commits found."
+            fi
+
+            WOULD_BODY="$(
+              {
+                echo "## What's Changed"
+                echo
+                echo "$WOULD_CHANGES"
+              }
+            )"
+
             {
               echo "# Package release draft"
               echo
@@ -197,6 +218,10 @@ jobs:
               echo "| Release name | \`$WOULD_NAME\` |"
               echo "| Existing Git tag | \`$EXISTING_GIT_TAG\` |"
               echo "| Result | **Blocked — release history requires reconciliation** |"
+              echo
+              echo "## Would-have-created release content"
+              echo
+              echo "$WOULD_BODY"
               echo
             } >> "$GITHUB_STEP_SUMMARY"
 
