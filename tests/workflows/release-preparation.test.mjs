@@ -65,7 +65,7 @@ test("reusable release and publish define target-branch once per trigger", () =>
       .split("  workflow_call:\n")[1]
       .split("\npermissions:")[0];
 
-    assert.equal([...dispatch.matchAll(/^      target-branch:/gm)].length, 1);
-    assert.equal([...call.matchAll(/^      target-branch:/gm)].length, 1);
+    assert.equal([...dispatch.matchAll(/^ {6}target-branch:/gm)].length, 1);
+    assert.equal([...call.matchAll(/^ {6}target-branch:/gm)].length, 1);
   }
 });
