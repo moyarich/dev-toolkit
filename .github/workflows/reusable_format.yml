@@ -1,6 +1,12 @@
 name: "Reusable · Format repository"
 
 on:
+  push:
+    branches:
+      - fix/package-release-drafter-first-release
+    paths:
+      - .github/workflows/reusable_format.yml
+
   workflow_dispatch:
     inputs:
       commit:
@@ -44,13 +50,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          persist-credentials: ${{ inputs.commit }}
+          persist-credentials: ${{ github.event_name == 'push' || inputs.commit }}
           fetch-depth: 1
 
       - name: Set up Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
-          node-version: ${{ inputs.node-version }}
+          node-version: ${{ inputs.node-version || '24' }}
           cache: npm
           registry-url: https://npm.pkg.github.com
           scope: "@moyarich"
@@ -77,7 +83,7 @@ jobs:
           fi
 
       - name: Commit formatting changes
-        if: ${{ inputs.commit && steps.format.outputs.changed == 'true' }}
+        if: ${{ (github.event_name == 'push' || inputs.commit) && steps.format.outputs.changed == 'true' }}
         shell: bash
         run: |
           set -euo pipefail
@@ -98,9 +104,9 @@ jobs:
             echo
             echo "| Setting | Value |"
             echo "| --- | --- |"
-            echo "| Node.js | `${{ inputs.node-version }}` |"
-            echo "| Commit requested | **${{ inputs.commit }}** |"
-            echo "| Branch | `${{ github.ref_name }}` |"
+            printf '| Node.js | `%s` |\n' "${{ inputs.node-version || '24' }}"
+            printf '| Commit requested | **%s** |\n' "${{ github.event_name == 'push' || inputs.commit }}"
+            printf '| Branch | `%s` |\n' "${{ github.ref_name }}"
             echo "| Changes detected | **${{ steps.format.outputs.changed || 'unknown' }}** |"
             echo "| Result | **${{ job.status }}** |"
 
@@ -112,7 +118,7 @@ jobs:
               cat /tmp/format-status.txt
               echo '~~~'
 
-              if [ "${{ inputs.commit }}" != "true" ]; then
+              if [ "${{ github.event_name == 'push' || inputs.commit }}" != "true" ]; then
                 echo
                 echo "> [!NOTE]"
                 echo "> Preview only. Formatting changes were not committed."
