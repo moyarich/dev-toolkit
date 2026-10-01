@@ -28,7 +28,7 @@ const script = step
   .join("\n");
 
 for (const local of [true, false]) {
-  test(`discovery ${local ? "compiles local helper without installing dependencies" : "uses latest published fallback"}`, () => {
+  void test(`discovery ${local ? "compiles local helper without installing dependencies" : "uses latest published fallback"}`, () => {
     const root = mkdtempSync(join(tmpdir(), "discovery-workflow-"));
     try {
       mkdirSync(join(root, "tools"));
