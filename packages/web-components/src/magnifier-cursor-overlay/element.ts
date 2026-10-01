@@ -1,4 +1,7 @@
-import styleSheet from "./styles.css" with { type: "css" };
+import cssText from "./styles.css?inline";
+
+const styleSheet = new CSSStyleSheet();
+styleSheet.replaceSync(cssText);
 
 /**
  * Visual cursor magnifier that mirrors the rendered DOM beneath the pointer.
