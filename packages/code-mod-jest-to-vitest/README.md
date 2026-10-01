@@ -174,3 +174,46 @@ npm test --workspace @moyarich/code-mod-jest-to-vitest
 ```
 
 The CLI source lives at `src/cli/jest-to-vitest.ts`. Vite uses `@moyarich/vite-plugin-package-bin` to generate `bin/jest-to-vitest.mjs`.
+
+
+## `.codemodrc.json`
+
+The package includes Codemod registry metadata in `.codemodrc.json`:
+
+```json
+{
+  "$schema": "https://codemod-utils.s3.us-west-1.amazonaws.com/configuration_schema.json",
+  "version": "0.1.0",
+  "private": false,
+  "name": "@moyarich/code-mod-jest-to-vitest",
+  "engine": "jssg",
+  "applicability": {
+    "from": [
+      ["jest", ">=", "26.0.0"]
+    ]
+  },
+  "meta": {
+    "tags": ["migration", "jest", "vitest"],
+    "git": "https://github.com/moyarich/dev-toolkit/tree/main/packages/code-mod-jest-to-vitest"
+  }
+}
+```
+
+This file describes the registry-facing codemod identity and applicability:
+
+- `name`: matches `package.json#name` and `codemod.yaml#name`
+- `version`: matches the package/codemod release version
+- `engine`: identifies the transform engine
+- `applicability.from`: declares the Jest version range this migration targets
+- `meta.tags`: helps discovery in the Codemod Registry
+- `meta.git`: points back to this package in `dev-toolkit`
+
+The three identifiers should stay aligned:
+
+```text
+package.json      @moyarich/code-mod-jest-to-vitest
+codemod.yaml      @moyarich/code-mod-jest-to-vitest
+.codemodrc.json   @moyarich/code-mod-jest-to-vitest
+```
+
+The published package also includes `.codemodrc.json` through `package.json#files`.
