@@ -1,0 +1,62 @@
+# Getting started
+
+Run the published codemod from the Codemod Registry:
+
+```sh
+npx codemod @moyarich/code-mod-jest-to-vitest
+```
+
+Run the package directly:
+
+```sh
+npx @moyarich/code-mod-jest-to-vitest path/to/project
+```
+
+From the `dev-toolkit` workspace:
+
+```sh
+npm run jest-to-vitest \
+  --workspace @moyarich/code-mod-jest-to-vitest \
+  -- path/to/project
+```
+
+Preview without modifying the target:
+
+```sh
+npm run jest-to-vitest \
+  --workspace @moyarich/code-mod-jest-to-vitest \
+  -- --dry-run path/to/project
+```
+
+Audit an existing migration:
+
+```sh
+npm run audit \
+  --workspace @moyarich/code-mod-jest-to-vitest \
+  -- path/to/project
+```
+
+## Package structure
+
+```text
+packages/code-mod-jest-to-vitest/
+├── docs/
+│   ├── page.mdx
+│   ├── 01-getting-started/
+│   │   └── page.mdx
+│   ├── 02-guides/
+│   │   ├── 01-vscode-act-runner-local/
+│   │   │   └── page.mdx
+│   │   └── 02-migration-coverage/
+│   │       └── page.mdx
+│   └── 03-reference/
+│       └── 01-registry-metadata/
+│           └── page.mdx
+├── src/
+├── scripts/
+├── tests/
+├── .codemodrc.json
+├── codemod.yaml
+├── workflow.yaml
+└── package.json
+```
