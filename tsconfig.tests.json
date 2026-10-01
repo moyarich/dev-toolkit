@@ -4,10 +4,7 @@
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "target": "ES2024",
-    "types": [
-      "node",
-      "vitest/globals"
-    ],
+    "types": ["node", "vitest/globals"],
     "skipLibCheck": true,
     "strict": true,
     "allowImportingTsExtensions": true
