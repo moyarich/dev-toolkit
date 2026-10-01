@@ -181,7 +181,6 @@ jobs:
           fi
 
           {
-            echo "from=$BASELINE"
             echo "source=$SOURCE"
             echo "version=$VERSION"
             echo "previous-tag=$PREVIOUS_TAG"
@@ -201,7 +200,6 @@ jobs:
             echo "| Current package version | \`${{ matrix.version }}\` |"
             echo "| Release version | \`${{ steps.baseline.outputs.version || 'auto' }}\` |"
             echo "| Previous published tag | \`${{ steps.baseline.outputs.previous-tag || 'none' }}\` |"
-            echo "| Comparison baseline | \`${{ steps.baseline.outputs.from || 'previous published package release' }}\` |"
             echo "| Baseline source | \`${{ steps.baseline.outputs.source }}\` |"
             echo "| Repository | \`${{ github.repository }}\` |"
             echo "| Ref | \`${{ github.ref_name }}\` |"
@@ -210,16 +208,92 @@ jobs:
             echo
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Create or update package draft release
+      - name: Create or update first package draft
+        id: first-draft
+        if: ${{ steps.selected.outputs.value == 'true' && steps.baseline.outputs.previous-tag == '' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PACKAGE_NAME: ${{ matrix.name }}
+          PACKAGE_DIRECTORY: ${{ matrix.directory }}
+          VERSION: ${{ steps.baseline.outputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          TAG="$PACKAGE_DIRECTORY@$VERSION"
+          NAME="$PACKAGE_NAME v$VERSION"
+
+          CHANGES="$(
+            git log \
+              --reverse \
+              --format='- %s (%h)' \
+              HEAD \
+              -- "$PACKAGE_DIRECTORY" |
+              sed '/^- $/d'
+          )"
+
+          if [ -z "$CHANGES" ]; then
+            CHANGES="- No package-specific commits found."
+          fi
+
+          BODY="$(
+            {
+              echo "## What's Changed"
+              echo
+              echo "$CHANGES"
+            }
+          )"
+
+          EXISTING_ID="$(
+            gh api --paginate --slurp "repos/$GH_REPO/releases?per_page=100" |
+              jq -r --arg tag "$TAG" '
+                [.[][] | select(.draft == true and .tag_name == $tag)]
+                | first
+                | .id // empty
+              '
+          )"
+
+          if [ -n "$EXISTING_ID" ]; then
+            RELEASE="$(
+              gh api \
+                --method PATCH \
+                "repos/$GH_REPO/releases/$EXISTING_ID" \
+                -f tag_name="$TAG" \
+                -f target_commitish="main" \
+                -f name="$NAME" \
+                -f body="$BODY" \
+                -F draft=true
+            )"
+          else
+            RELEASE="$(
+              gh api \
+                --method POST \
+                "repos/$GH_REPO/releases" \
+                -f tag_name="$TAG" \
+                -f target_commitish="main" \
+                -f name="$NAME" \
+                -f body="$BODY" \
+                -F draft=true
+            )"
+          fi
+
+          {
+            echo "name=$(jq -r '.name' <<< "$RELEASE")"
+            echo "tag-name=$(jq -r '.tag_name' <<< "$RELEASE")"
+            echo "html-url=$(jq -r '.html_url' <<< "$RELEASE")"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Create or update subsequent package draft
         id: drafter
-        if: ${{ steps.selected.outputs.value == 'true' }}
+        if: ${{ steps.selected.outputs.value == 'true' && steps.baseline.outputs.previous-tag != '' }}
         uses: release-drafter/release-drafter@v7.7.0
         with:
           config-name: file:release-drafter-package-generated.yml
           commitish: main
           version: ${{ steps.baseline.outputs.version }}
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
 
       - name: Draft summary
         if: ${{ steps.selected.outputs.value == 'true' }}
@@ -231,8 +305,8 @@ jobs:
             echo "| Release | Value |"
             echo "| --- | --- |"
             echo "| Package | \`${{ matrix.name }}\` |"
-            echo "| Name | \`${{ steps.drafter.outputs.name }}\` |"
-            echo "| Tag | \`${{ steps.drafter.outputs.tag_name }}\` |"
-            echo "| Draft | [Open package draft release](${{ steps.drafter.outputs.html_url }}) |"
+            echo "| Name | \`${{ steps.first-draft.outputs.name || steps.drafter.outputs.name }}\` |"
+            echo "| Tag | \`${{ steps.first-draft.outputs.tag-name || steps.drafter.outputs.tag_name }}\` |"
+            echo "| Draft | [Open package draft release](${{ steps.first-draft.outputs.html-url || steps.drafter.outputs.html_url }}) |"
           } >> "$GITHUB_STEP_SUMMARY"
 
