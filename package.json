@@ -19,7 +19,9 @@
     "format:check": "prettier . --check",
     "format": "prettier . --write",
     "prebuild": "npm run build --workspace @moyarich/vite-plugin-package-bin && npm run build --workspace @moyarich/web-components",
-    "test:workflows": "node --test tests/workflows/*.test.mjs"
+    "test:workflows": "node --test tests/workflows/*.test.mjs",
+    "check:workflow-syntax": "for file in tests/workflows/*.test.mjs; do node --check \"$file\" || exit 1; done",
+    "checks": "npm run check:workflow-syntax && npm run format:check && npm run lint && npm run typecheck && npm test"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
