@@ -66,6 +66,10 @@ A typical package looks like:
     "registry": "https://npm.pkg.github.com",
     "access": "public"
   },
+  "dependencies": {
+    "commander": "^15.0.0",
+    "fzf": "^0.5.2"
+  },
   "devDependencies": {
     "@moyarich/vite-plugin-package-bin": "0.1.0"
   },
@@ -395,6 +399,11 @@ Create `packages/hello-world/src/hello.ts`:
 
 ```ts
 /**
+ * Names available to the interactive CLI.
+ */
+export const names = ["World", "Moya", "Alice", "Bob", "Charlie"];
+
+/**
  * Build a greeting for a supplied name.
  */
 export function hello(name = "World"): string {
@@ -402,19 +411,51 @@ export function hello(name = "World"): string {
 }
 ```
 
-Keeping the reusable behavior outside the CLI makes it easy to test without spawning a process.
+Keeping the reusable behavior and selectable data outside the CLI makes it easy to test without spawning a process.
 
 ### 4. Add the CLI entry point
 
 Create `packages/hello-world/src/cli/hello-world.ts`:
 
 ```ts
-import { hello } from "../hello.js";
+import { Command } from "commander";
+import { Fzf } from "fzf";
+import { hello, names } from "../hello.js";
 
-const name = process.argv[2] ?? "World";
+const program = new Command();
 
-console.log(hello(name));
+program
+  .name("hello-world")
+  .description("Say hello to someone")
+  .argument("[name]", "Name to greet")
+  .option("-q, --query <query>", "Fuzzy-search the built-in names")
+  .action((name: string | undefined, options: { query?: string }) => {
+    if (name) {
+      console.log(hello(name));
+      return;
+    }
+
+    if (options.query) {
+      const fzf = new Fzf(names);
+      const [match] = fzf.find(options.query);
+
+      if (!match) {
+        console.error(`No name matched "${options.query}".`);
+        process.exitCode = 1;
+        return;
+      }
+
+      console.log(hello(match.item));
+      return;
+    }
+
+    console.log(hello());
+  });
+
+program.parse();
 ```
+
+Commander owns argument and option parsing, while `fzf` provides fuzzy matching without requiring the external `fzf` shell binary. The npm package named `fzf` is the JavaScript implementation from the `fzf-for-js` project. citeturn922882search0
 
 The source filename determines the generated binary filename:
 
@@ -441,12 +482,13 @@ export default defineConfig({
         pattern: "src/cli/**/*.ts",
       },
       emptyOutDir: true,
+      external: ["commander", "fzf"],
     }),
   ],
 });
 ```
 
-This discovers all TypeScript files under `src/cli/` and builds each one into `bin/*.mjs`.
+This discovers all TypeScript files under `src/cli/` and builds each one into `bin/*.mjs`. Commander and `fzf` remain normal runtime dependencies instead of being bundled into the generated CLI file.
 
 ### 6. Configure TypeScript
 
@@ -478,7 +520,7 @@ Create `packages/hello-world/tests/hello.test.ts`:
 
 ```ts
 import { describe, expect, it } from "vitest";
-import { hello } from "../src/hello.js";
+import { hello, names } from "../src/hello.js";
 
 describe("hello", () => {
   it("greets World by default", () => {
@@ -487,6 +529,10 @@ describe("hello", () => {
 
   it("greets a supplied name", () => {
     expect(hello("Moya")).toBe("Hello, Moya!");
+  });
+
+  it("provides names for fuzzy selection", () => {
+    expect(names).toContain("Moya");
   });
 });
 ```
@@ -532,6 +578,39 @@ Expected output:
 
 ```text
 Hello, Moya!
+```
+
+Use Commander options with fuzzy matching:
+
+```bash
+node packages/hello-world/bin/hello-world.mjs --query moy
+```
+
+Expected output:
+
+```text
+Hello, Moya!
+```
+
+You can inspect the CLI generated from Commander:
+
+```bash
+node packages/hello-world/bin/hello-world.mjs --help
+```
+
+Example help:
+
+```text
+Usage: hello-world [options] [name]
+
+Say hello to someone
+
+Arguments:
+  name                 Name to greet
+
+Options:
+  -q, --query <query>  Fuzzy-search the built-in names
+  -h, --help           display help for command
 ```
 
 ### 10. Run it through npm workspaces
