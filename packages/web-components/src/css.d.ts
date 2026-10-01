@@ -1,4 +1,4 @@
-declare module "*.css" {
-  const styleSheet: CSSStyleSheet;
-  export default styleSheet;
+declare module "*.css?inline" {
+  const cssText: string;
+  export default cssText;
 }
