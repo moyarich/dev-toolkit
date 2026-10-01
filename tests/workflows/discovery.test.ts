@@ -11,7 +11,7 @@ import {
 import { tmpdir } from "node:os";
 import { resolve, join } from "node:path";
 import { execFileSync, spawnSync } from "node:child_process";
-import { test } from "node:test";
+import { test } from "vitest";
 
 const repo = resolve(import.meta.dirname, "../..");
 const workflow = readFileSync(
@@ -28,7 +28,7 @@ const script = step
   .join("\n");
 
 for (const local of [true, false]) {
-  void test(`discovery ${local ? "compiles local helper without installing dependencies" : "uses latest published fallback"}`, () => {
+  test(`discovery ${local ? "compiles local helper without installing dependencies" : "uses latest published fallback"}`, () => {
     const root = mkdtempSync(join(tmpdir(), "discovery-workflow-"));
     try {
       mkdirSync(join(root, "tools"));
