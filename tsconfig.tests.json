@@ -1,10 +1,13 @@
 {
   "compilerOptions": {
     "noEmit": true,
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
     "target": "ES2024",
-    "types": ["node"],
+    "types": [
+      "node",
+      "vitest/globals"
+    ],
     "skipLibCheck": true,
     "strict": true,
     "allowImportingTsExtensions": true
