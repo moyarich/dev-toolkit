@@ -36,20 +36,37 @@ test("prepare release uses least privilege and only version-changing modes", () 
   assert.doesNotMatch(prepareWrapper, /- package-json/);
 });
 
-test("release and publish support explicit target branches", () => {
+test("manual runs use GitHub's selected ref while reusable calls support target-branch", () => {
   for (const [name, workflow] of [
     ["release", release],
     ["publish", publish],
   ] as const) {
-    assert.match(
-      workflow,
+    const dispatch = workflow
+      .split("  workflow_dispatch:\n")[1]
+      .split("  workflow_call:\n")[0];
+    const call = workflow
+      .split("  workflow_call:\n")[1]
+      .split("\npermissions:")[0];
+
+    assert.doesNotMatch(
+      dispatch,
       /^ {6}target-branch:/m,
-      `${name} should define the target-branch input`,
+      `${name} manual dispatch should rely on GitHub's built-in branch selector`,
+    );
+    assert.match(
+      call,
+      /^ {6}target-branch:/m,
+      `${name} reusable workflow should define target-branch`,
     );
     assert.match(
       workflow,
-      /ref: \$\{\{ inputs\.target-branch \}\}/,
-      `${name} checkout should use inputs.target-branch`,
+      /TARGET_BRANCH: \$\{\{ github\.event_name == 'workflow_dispatch' && github\.ref_name \|\| inputs\.target-branch \}\}/,
+      `${name} should resolve one effective target branch`,
+    );
+    assert.match(
+      workflow,
+      /ref: \$\{\{ env\.TARGET_BRANCH \}\}/,
+      `${name} checkout should use the resolved target branch`,
     );
     assert.match(
       workflow,
@@ -65,8 +82,8 @@ test("release and publish support explicit target branches", () => {
 
   assert.match(
     release,
-    /git push origin\s+\\\s*"HEAD:\$\{\{ inputs\.target-branch \}\}"\s+\\\s*--follow-tags/,
-    "release should push the release commit and tags to inputs.target-branch",
+    /git push origin\s+\\\s*"HEAD:\$\{TARGET_BRANCH\}"\s+\\\s*--follow-tags/,
+    "release should push the release commit and tags to the resolved target branch",
   );
 });
 
@@ -79,7 +96,7 @@ test("local mutation workflows use scoped concurrency keys", () => {
   }
 });
 
-test("reusable release and publish define target-branch once per trigger", () => {
+test("reusable release and publish define target-branch only for workflow_call", () => {
   for (const workflow of [release, publish]) {
     const dispatch = workflow
       .split("  workflow_dispatch:\n")[1]
@@ -88,7 +105,7 @@ test("reusable release and publish define target-branch once per trigger", () =>
       .split("  workflow_call:\n")[1]
       .split("\npermissions:")[0];
 
-    assert.equal([...dispatch.matchAll(/^ {6}target-branch:/gm)].length, 1);
+    assert.equal([...dispatch.matchAll(/^ {6}target-branch:/gm)].length, 0);
     assert.equal([...call.matchAll(/^ {6}target-branch:/gm)].length, 1);
   }
 });
