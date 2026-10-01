@@ -179,8 +179,6 @@ on:
         value: ${{ jobs.release-package.outputs.publish-json }}
 
     secrets:
-      _GITHUB_TOKEN:
-        required: false
 
       _NPM_TOKEN:
         required: false
@@ -205,7 +203,7 @@ jobs:
       publish-json: ${{ steps.publish.outputs.publish-json }}
 
     env:
-      GH_TOKEN: ${{ secrets._GITHUB_TOKEN || github.token }}
+      GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
 
     steps:
@@ -230,7 +228,7 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-          token: ${{ secrets._GITHUB_TOKEN || github.token }}
+          token: ${{ github.token }}
 
       - name: Resolve execution mode
         id: execution
@@ -276,7 +274,7 @@ jobs:
       - name: Configure GitHub remote
         if: ${{ steps.execution.outputs.dry-run == 'false' }}
         env:
-          GH_TOKEN: ${{ secrets._GITHUB_TOKEN || github.token }}
+          GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         shell: bash
         run: |
@@ -300,13 +298,13 @@ jobs:
 
       - name: Install workspace dependencies
         env:
-          NODE_AUTH_TOKEN: ${{ secrets._GITHUB_TOKEN || github.token }}
+          NODE_AUTH_TOKEN: ${{ github.token }}
         run: npm ci --include=optional
 
       - name: Resolve workspace tools CLI
         shell: bash
         env:
-          NODE_AUTH_TOKEN: ${{ secrets._GITHUB_TOKEN || github.token }}
+          NODE_AUTH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
 
@@ -382,7 +380,7 @@ jobs:
       - name: Validate publishing credentials
         if: ${{ steps.execution.outputs.dry-run == 'false' && inputs.publish }}
         env:
-          GITHUB_TOKEN_VALUE: ${{ secrets._GITHUB_TOKEN || github.token }}
+          GITHUB_TOKEN_VALUE: ${{ github.token }}
           NPM_TOKEN_VALUE: ${{ secrets._NPM_TOKEN }}
           REGISTRY: ${{ inputs.registry }}
         shell: bash
@@ -392,7 +390,7 @@ jobs:
           case "$REGISTRY" in
             github)
               if [ -z "$GITHUB_TOKEN_VALUE" ]; then
-                echo "::error::_GITHUB_TOKEN or github.token is required to publish to GitHub Packages."
+                echo "::error::github.token is required to publish to GitHub Packages."
                 exit 1
               fi
               ;;
@@ -406,7 +404,7 @@ jobs:
 
             both)
               if [ -z "$GITHUB_TOKEN_VALUE" ]; then
-                echo "::error::_GITHUB_TOKEN or github.token is required to publish to GitHub Packages."
+                echo "::error::github.token is required to publish to GitHub Packages."
                 exit 1
               fi
 
@@ -652,7 +650,7 @@ jobs:
         id: publish
         if: ${{ steps.execution.outputs.dry-run == 'false' && inputs.publish }}
         env:
-          _GITHUB_TOKEN: ${{ secrets._GITHUB_TOKEN || github.token }}
+          _GITHUB_TOKEN: ${{ github.token }}
           _NPM_TOKEN: ${{ secrets._NPM_TOKEN }}
           VERIFY_GIT_TAG: ${{ inputs.verify-git-tag }}
         shell: bash
