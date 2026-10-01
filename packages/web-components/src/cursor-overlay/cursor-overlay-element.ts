@@ -1,4 +1,7 @@
-import styleSheet from "./cursor-overlay-element-style.css" with { type: "css" };
+import cssText from "./cursor-overlay-element-style.css?inline";
+
+const styleSheet = new CSSStyleSheet();
+styleSheet.replaceSync(cssText);
 
 export class CursorOverlay extends HTMLElement {
   static tagName = "moyarich-cursor-overlay";
