@@ -9,6 +9,12 @@ on:
         default: true
         type: boolean
 
+      target-branch:
+        description: Release target branch
+        required: true
+        default: main
+        type: string
+
       package:
         description: Package — package to release
         required: true
@@ -81,6 +87,12 @@ on:
 
   workflow_call:
     inputs:
+      target-branch:
+        description: Release target branch
+        required: false
+        default: main
+        type: string
+
       dry-run:
         description: Dry-run — preview without making changes
         required: true
@@ -173,13 +185,14 @@ on:
       _NPM_TOKEN:
         required: false
 
-permissions:
-  contents: write
-  packages: write
+permissions: {}
 
 jobs:
   release-package:
     name: "job: Release"
+    permissions:
+      contents: write
+      packages: write
     runs-on: ubuntu-latest
     outputs:
       package-name: ${{ steps.release.outputs.package-name }}
@@ -482,7 +495,7 @@ jobs:
           PUBLISH: ${{ inputs.publish }}
           REGISTRY: ${{ inputs.registry }}
           DIST_TAG: ${{ inputs.dist-tag }}
-          GIT_REF: ${{ github.ref_name }}
+          GIT_REF: ${{ inputs.target-branch }}
         shell: bash
         run: |
           set -euo pipefail
