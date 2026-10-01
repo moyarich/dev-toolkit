@@ -56,18 +56,20 @@ test("release drafter generates one package config template at runtime", () => {
   );
 });
 
-test("first release can compare from the first commit on main", () => {
+test("first package release uses repository history and 0.1.0", () => {
   assert.match(workflow, /commitish: main/);
-  assert.match(
-    workflow,
-    /version: ${{ github.event_name == 'workflow_dispatch' && inputs.version || '' }}/,
-  );
-  assert.match(workflow, /git rev-list --max-parents=0 HEAD | tail -n 1/);
+  assert.match(workflow, /gh api/);
+  assert.match(workflow, /\.draft == false/);
+  assert.match(workflow, /startswith\(\$prefix\)/);
+  assert.match(workflow, /PREVIOUS_TAG/);
+  assert.match(workflow, /git rev-list --max-parents=0 HEAD \| tail -n 1/);
   assert.match(workflow, /SOURCE="first commit on main"/);
+  assert.match(workflow, /VERSION="0\.1\.0"/);
   assert.match(
     workflow,
-    /description: Optional explicit release version (for first release, use 0.1.0)/,
+    /version: \$\{\{ steps\.baseline\.outputs\.version \}\}/,
   );
+  assert.match(workflow, /previous-tag=/);
 });
 
 test("shared discovery workflow exposes reusable package metadata", () => {
