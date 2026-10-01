@@ -6,9 +6,23 @@
     "strict": true,
     "noEmit": true,
     "allowImportingTsExtensions": true,
-    "types": ["node"],
+    "types": [
+      "node"
+    ],
     "skipLibCheck": true,
-    "lib": ["ES2024", "DOM", "DOM.Iterable"]
+    "lib": [
+      "ES2024",
+      "DOM",
+      "DOM.Iterable"
+    ]
   },
-  "include": ["vite.config.ts", "src/**/*.ts", "src/**/*.d.ts"]
+  "include": [
+    "vite.config.ts",
+    "src/**/*.ts",
+    "src/**/*.d.ts"
+  ],
+  "exclude": [
+    "src/**/*.stories.ts",
+    ".storybook/**/*.ts"
+  ]
 }
