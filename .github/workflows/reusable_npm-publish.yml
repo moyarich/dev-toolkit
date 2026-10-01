@@ -103,8 +103,6 @@ on:
         description: Complete workspace-publish JSON result
         value: ${{ jobs.publish-package.outputs.result-json }}
     secrets:
-      github-token:
-        required: false
       npm-token:
         required: false
 
@@ -124,7 +122,7 @@ jobs:
       can-publish: ${{ steps.publish.outputs.can-publish }}
       result-json: ${{ steps.publish.outputs.result-json }}
     env:
-      GH_TOKEN: ${{ secrets.github-token || github.token }}
+      GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
     steps:
       - name: Initialize workflow summary
@@ -158,13 +156,13 @@ jobs:
         run: npm install --global npm@">=11.15.0 <12"
       - name: Install workspace dependencies
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.github-token || github.token }}
+          NODE_AUTH_TOKEN: ${{ github.token }}
         run: npm ci --include=optional
 
       - name: Resolve workspace tools CLI
         shell: bash
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.github-token || github.token }}
+          NODE_AUTH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
 
@@ -227,7 +225,7 @@ jobs:
           DRY_RUN: ${{ inputs.dry-run }}
           VERIFY_GIT_TAG: ${{ inputs.verify-git-tag }}
           PACKAGE_SELECTOR: ${{ inputs.package-directory }}
-          _GITHUB_TOKEN: ${{ secrets.github-token || github.token }}
+          _GITHUB_TOKEN: ${{ github.token }}
           _NPM_TOKEN: ${{ secrets.npm-token }}
         run: |
           set -euo pipefail
