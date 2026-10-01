@@ -10,8 +10,8 @@
   "scripts": {
     "build": "npm run build --workspaces --if-present",
     "test": "npm run test:workflows && npm test --workspaces --if-present",
-    "lint": "npm run lint --workspaces --if-present",
-    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "eslint \"tests/**/*.mjs\" && npm run lint --workspaces --if-present",
+    "typecheck": "tsc -p tsconfig.tests.json && npm run typecheck --workspaces --if-present",
     "demo": "demo",
     "demo:list": "demo list",
     "test:playground": "node --test tests/playground/*.test.mjs",
