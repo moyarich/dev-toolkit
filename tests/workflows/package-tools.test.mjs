@@ -66,9 +66,11 @@ for (const file of [
       ].map((match) => match[0]),
     ),
   ];
-  const commands = invocations.map(
-    (command) => command.match(/\/bin\/([^/]+)\.mjs/)[1],
-  );
+  const commands = invocations.map((command) => {
+    const match = command.match(/\/bin\/([^/]+)\.mjs/);
+    assert.ok(match, `Unable to resolve CLI command from: ${command}`);
+    return match[1];
+  });
 
   for (const scenario of ["local", "published", "missing local output"]) {
     test(`${file}: ${scenario}, without npm command links`, () => {
