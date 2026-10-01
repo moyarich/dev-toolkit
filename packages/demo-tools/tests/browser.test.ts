@@ -6,7 +6,7 @@ test("waitForUrl resolves when an endpoint becomes ready", async () => {
   let attempts = 0;
   const response = await waitForUrl("http://example.test", {
     interval: 0,
-    fetch: async () => ({ ok: ++attempts === 2 }),
+    fetch: () => Promise.resolve({ ok: ++attempts === 2 }),
   });
   assert.equal(response.ok, true);
   assert.equal(attempts, 2);
