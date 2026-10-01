@@ -23,10 +23,11 @@
   },
   "scripts": {
     "build": "vite build --config vite.config.ts",
-    "test": "vitest run --passWithNoTests",
+    "test": "vitest run --project=storybook",
     "typecheck": "tsc -p tsconfig.json",
     "storybook": "storybook dev -p 6006 -c .storybook",
-    "build-storybook": "storybook build -c .storybook"
+    "build-storybook": "storybook build -c .storybook",
+    "test-storybook": "vitest run --project=storybook"
   },
   "repository": {
     "type": "git",
@@ -40,6 +41,8 @@
   "license": "MIT",
   "devDependencies": {
     "@storybook/web-components-vite": "10.6.0",
-    "storybook": "10.6.0"
+    "storybook": "10.6.0",
+    "@storybook/addon-vitest": "10.6.0",
+    "@vitest/browser-playwright": "^5.0.2"
   }
 }
