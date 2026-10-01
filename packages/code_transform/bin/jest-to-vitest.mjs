@@ -1,7 +1,16 @@
 #!/usr/bin/env node
 
-import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
-import { dirname, extname, resolve } from "node:path";
+import {
+  cpSync,
+  existsSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  statSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
+import { basename, dirname, extname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 
@@ -14,6 +23,7 @@ const workflowPath = resolve(
 
 const args = process.argv.slice(2);
 const auditOnly = args.includes("--audit-only");
+const dryRun = args.includes("--dry-run");
 const targetArg = args.find((arg) => !arg.startsWith("--")) ?? ".";
 const target = resolve(process.cwd(), targetArg);
 
@@ -22,16 +32,18 @@ if (!existsSync(resolve(target, "package.json"))) {
   process.exit(1);
 }
 
-function run(command, commandArgs, cwd) {
+function run(command, commandArgs, cwd, { allowFailure = false } = {}) {
   const result = spawnSync(command, commandArgs, {
     cwd,
     stdio: "inherit",
     shell: process.platform === "win32",
   });
 
-  if (result.status !== 0) {
+  if (!allowFailure && result.status !== 0) {
     process.exit(result.status ?? 1);
   }
+
+  return result.status ?? 1;
 }
 
 function walk(dir, results = []) {
@@ -63,10 +75,10 @@ function walk(dir, results = []) {
   return results;
 }
 
-function audit() {
+function audit(targetDir) {
   const problems = [];
   const packageJson = JSON.parse(
-    readFileSync(resolve(target, "package.json"), "utf8"),
+    readFileSync(resolve(targetDir, "package.json"), "utf8"),
   );
 
   const deps = {
@@ -94,13 +106,13 @@ function audit() {
     "jest.config.cjs",
     "jest.config.mjs",
     "jest.config.ts",
-  ].find((name) => existsSync(resolve(target, name)));
+  ].find((name) => existsSync(resolve(targetDir, name)));
 
   const vitestConfig = [
     "vitest.config.js",
     "vitest.config.mjs",
     "vitest.config.ts",
-  ].find((name) => existsSync(resolve(target, name)));
+  ].find((name) => existsSync(resolve(targetDir, name)));
 
   if (jestConfig) {
     problems.push(`Jest config remains: ${jestConfig}`);
@@ -109,7 +121,7 @@ function audit() {
   if (!vitestConfig) {
     problems.push("No vitest.config.* file found");
   } else {
-    const source = readFileSync(resolve(target, vitestConfig), "utf8");
+    const source = readFileSync(resolve(targetDir, vitestConfig), "utf8");
     if (!/coverage\s*:/.test(source)) {
       problems.push(`${vitestConfig} does not define coverage configuration`);
     }
@@ -120,11 +132,11 @@ function audit() {
     }
   }
 
-  for (const file of walk(target)) {
+  for (const file of walk(targetDir)) {
     const source = readFileSync(file, "utf8");
     if (/\bjest\./.test(source)) {
       problems.push(
-        `Jest namespace reference remains: ${file.slice(target.length + 1)}`,
+        `Jest namespace reference remains: ${file.slice(targetDir.length + 1)}`,
       );
     }
   }
@@ -134,20 +146,69 @@ function audit() {
     for (const problem of problems) {
       console.error(`- ${problem}`);
     }
-    process.exitCode = 1;
-    return;
+    return false;
   }
 
   console.log("Jest → Vitest audit passed.");
+  return true;
 }
 
-if (!auditOnly) {
-  run("npx", ["--yes", "codemod", "jest/vitest"], target);
+function copyForDryRun(source, destination) {
+  const ignored = new Set([
+    ".git",
+    "node_modules",
+    "coverage",
+    "dist",
+    "out",
+    ".vscode-test",
+  ]);
+
+  cpSync(source, destination, {
+    recursive: true,
+    filter: (sourcePath) => !ignored.has(basename(sourcePath)),
+  });
+}
+
+function migrate(targetDir) {
+  run("npx", ["--yes", "codemod", "jest/vitest"], targetDir);
   run(
     "npx",
     ["--yes", "codemod", "workflow", "run", "-w", workflowPath],
-    target,
+    targetDir,
   );
 }
 
-audit();
+if (auditOnly) {
+  process.exitCode = audit(target) ? 0 : 1;
+} else if (dryRun) {
+  const tempRoot = mkdtempSync(resolve(tmpdir(), "jest-to-vitest-"));
+  const previewTarget = resolve(tempRoot, "project");
+
+  try {
+    console.log(`Dry run: copying ${target} to ${previewTarget}`);
+    copyForDryRun(target, previewTarget);
+
+    migrate(previewTarget);
+
+    console.log("\nDry-run diff (no files in the source project were changed):\n");
+    run(
+      "git",
+      [
+        "diff",
+        "--no-index",
+        "--",
+        target,
+        previewTarget,
+      ],
+      process.cwd(),
+      { allowFailure: true },
+    );
+
+    process.exitCode = audit(previewTarget) ? 0 : 1;
+  } finally {
+    rmSync(tempRoot, { recursive: true, force: true });
+  }
+} else {
+  migrate(target);
+  process.exitCode = audit(target) ? 0 : 1;
+}
