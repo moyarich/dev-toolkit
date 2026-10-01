@@ -10,12 +10,30 @@ nodes:
           js_file: "scripts/extend-jest-to-vitest.ts"
           language: "typescript"
           include:
+            - "**/*.js"
+            - "**/*.jsx"
+            - "**/*.mjs"
+            - "**/*.cjs"
             - "**/*.ts"
             - "**/*.tsx"
+            - "docs/**/*.js"
+            - "docs/**/*.jsx"
+            - "docs/**/*.mjs"
+            - "docs/**/*.cjs"
+            - "docs/**/*.ts"
+            - "docs/**/*.tsx"
+            - "bin/**/*.js"
+            - "bin/**/*.jsx"
+            - "bin/**/*.mjs"
+            - "bin/**/*.cjs"
+            - "bin/**/*.ts"
+            - "bin/**/*.tsx"
 
       - name: Validate no Jest namespace references remain
         run: |
-          if grep -R --line-number --include='*.ts' --include='*.tsx' '\bjest\.' .; then
+          set -euo pipefail
+
+          if grep -R             --line-number             --exclude-dir=node_modules             --exclude-dir=.git             --include='*.js'             --include='*.jsx'             --include='*.mjs'             --include='*.cjs'             --include='*.ts'             --include='*.tsx'             '\bjest\.' .; then
             echo "Jest namespace references remain after the migration."
             exit 1
           fi
