@@ -88,3 +88,12 @@ test("draft release workflow does not require the release environment", () => {
   assert.doesNotMatch(workflow, /environment:\s*\n\s*name: release/);
   assert.doesNotMatch(workflow, /approve-release:/);
 });
+
+
+test("release drafter uses only supported action inputs", () => {
+  assert.doesNotMatch(
+    workflow,
+    /uses: release-drafter\/release-drafter@v7\.7\.0[\s\S]*?\n\s+from:/,
+  );
+  assert.doesNotMatch(workflow, /\n\s+from:\n\s+description: Optional comparison baseline ref/);
+});
