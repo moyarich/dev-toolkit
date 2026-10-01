@@ -1,24 +1,26 @@
 # Jest → Vitest migration coverage
 
-The extended transform is intentionally additive to Codemod's upstream `jest/vitest` transform.
+The `dev-toolkit` transform is self-contained. It does not call or depend on Codemod's published `jest/vitest` package at runtime.
 
-## Upstream coverage reviewed
+## Behaviors incorporated from upstream review
 
-The upstream codemod currently covers:
+The local transform covers the behaviors reviewed in Codemod's `jest/vitest` source:
 
 - global Jest test APIs such as `describe`, `it`, `test`, hooks, and `expect`
 - `fit` → `it.only`
 - `(it|test).failing` → `(it|test).fails`
 - runtime `jest.*` → `vi.*`
 - mappings such as `requireActual` → `importActual`
-- `setMock` factory conversion
-- default-export mock adjustments
+- `setMock` → `mock`
+- `deepUnmock` → `unmock`
 - removal of `@jest/globals` imports
 - snapshot syntax cleanup
 
-## Extension coverage
+Unsupported `jest.enableAutomock()` is surfaced as an error instead of silently changing behavior.
 
-The dev-toolkit extension adds coverage for gaps observed in real repositories:
+## Additional dev-toolkit coverage
+
+The local transform also handles gaps observed in real repositories:
 
 - TypeScript Jest namespace types:
   - `jest.Mock`
@@ -53,12 +55,11 @@ The CLI audit fails when it finds:
 
 The threshold check is deliberate: migrating the test runner should not silently weaken an existing Jest coverage gate.
 
-
 ## CLI safety modes
 
 ### Dry run
 
-`--dry-run` runs the upstream codemod and extension against a temporary copy of the target repository. It prints the resulting diff and audits the preview, then deletes the temporary copy.
+`--dry-run` runs the complete local transform against a temporary copy of the target repository. It prints the resulting diff and audits the preview, then deletes the temporary copy.
 
 The original project is not modified.
 
