@@ -1,0 +1,20 @@
+name: "Temporary · Run format preview"
+
+on:
+  push:
+    branches:
+      - fix/package-release-drafter-first-release
+    paths:
+      - .github/workflows/tmp-run-format-preview.yml
+
+permissions:
+  contents: write
+  packages: read
+
+jobs:
+  format:
+    uses: ./.github/workflows/reusable_format.yml
+    with:
+      commit: false
+      node-version: "24"
+    secrets: inherit
