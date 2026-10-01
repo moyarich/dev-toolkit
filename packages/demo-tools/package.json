@@ -1,6 +1,6 @@
 {
   "name": "@moyarich/demo-tools",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Strategy-first tooling for creating automated demos, screenshots, and recordings.",
   "type": "module",
   "bin": {
@@ -52,7 +52,7 @@
     }
   },
   "dependencies": {
-    "@moyarich/web-components": "0.0.0"
+    "@moyarich/web-components": "0.1.0"
   },
   "repository": {
     "type": "git",
