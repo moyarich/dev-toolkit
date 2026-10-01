@@ -159,8 +159,8 @@ Project-specific runtime setup such as a VS Code `vscode` module alias belongs i
 
 See:
 
-- `./docs/coverage.md` for the migration coverage matrix
-- `./docs/vscode-act-runner-local.md` for the real repository audit that motivated the implementation
+- `./docs/02-guides/02-migration-coverage/page.mdx` for the migration coverage matrix
+- `./docs/02-guides/01-vscode-act-runner-local/page.mdx` for the real repository audit that motivated the implementation
 
 
 ## Build
