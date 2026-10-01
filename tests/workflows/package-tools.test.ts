@@ -11,7 +11,7 @@ import {
 import { tmpdir } from "node:os";
 import { resolve, join } from "node:path";
 import { spawnSync } from "node:child_process";
-import { test } from "node:test";
+import { test } from "vitest";
 
 const workflows = resolve(import.meta.dirname, "../../.github/workflows");
 const npmStub = `#!/usr/bin/env node
