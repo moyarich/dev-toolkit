@@ -79,8 +79,6 @@ on:
       package-version:
         description: Prepared package version
         value: ${{ jobs.prepare.outputs.package-version }}
-    secrets:
-
 permissions: {}
 
 jobs:
