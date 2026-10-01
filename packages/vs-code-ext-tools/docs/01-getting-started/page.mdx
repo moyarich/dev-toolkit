@@ -1,0 +1,23 @@
+# Getting started
+
+Build the package from the monorepo root:
+
+```sh
+npm run build --workspace @moyarich/vs-code-ext-tools
+```
+
+Run package checks:
+
+```sh
+npm run typecheck --workspace @moyarich/vs-code-ext-tools
+npm test --workspace @moyarich/vs-code-ext-tools
+```
+
+The package exposes two commands:
+
+```text
+vs-code-publish
+run-extension-dev
+```
+
+Their TypeScript entry points live in `src/cli/` and Vite generates the executable files under `bin/`.
