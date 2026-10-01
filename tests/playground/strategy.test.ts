@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
-import test from "node:test";
+import { test } from "vitest";
 import strategy from "../../demo/strategies/hello/index.ts";
 
-void test("playground exposes a directly executable demo strategy", () => {
+test("playground exposes a directly executable demo strategy", () => {
   assert.equal(strategy.name, "hello");
   assert.deepEqual(strategy.tags, ["playground"]);
   assert.equal(typeof strategy.run, "function");
