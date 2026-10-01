@@ -49,13 +49,13 @@ for (const file of [
   const text = readFileSync(join(workflows, file), "utf8");
   const step = text
     .split(
-      /      - name: Resolve (?:workspace tools CLI|screenshot tooling)\n/,
+      / {6}- name: Resolve (?:workspace tools CLI|screenshot tooling)\n/,
     )[1]
-    .split(/\n      - /)[0];
+    .split(/\n {6}- /)[0];
   const script = step
     .split("        run: |\n")[1]
     .split("\n")
-    .map((line) => line.replace(/^          /, ""))
+    .map((line) => line.replace(/^ {10}/, ""))
     .join("\n");
   const invocations = [
     ...new Set(
