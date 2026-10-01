@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { test } from "node:test";
+import { test } from "vitest";
 
 const root = resolve(import.meta.dirname, "../..");
 const workflows = resolve(root, ".github/workflows");
@@ -16,7 +16,7 @@ const discovery = readFileSync(
   "utf8",
 );
 
-void test("release drafter discovers publishable packages dynamically", () => {
+test("release drafter discovers publishable packages dynamically", () => {
   assert.ok(
     workflow.includes(
       "uses: ./.github/workflows/reusable_discover-packages.yml",
@@ -32,7 +32,7 @@ void test("release drafter discovers publishable packages dynamically", () => {
   assert.doesNotMatch(workflow, /type: choice/);
 });
 
-void test("release drafter generates one package config template at runtime", () => {
+test("release drafter generates one package config template at runtime", () => {
   assert.match(
     workflow,
     /config-name: file:release-drafter-package-generated.yml/,
@@ -52,7 +52,7 @@ void test("release drafter generates one package config template at runtime", ()
   assert.ok(template.includes('- "{{PACKAGE_DIRECTORY}}/**"'));
 });
 
-void test("first package release uses package git history and 0.1.0", () => {
+test("first package release uses package git history and 0.1.0", () => {
   assert.match(workflow, /gh api/);
   assert.match(workflow, /\.draft == false/);
   assert.match(workflow, /startswith\(\$prefix\)/);
@@ -68,7 +68,7 @@ void test("first package release uses package git history and 0.1.0", () => {
   assert.doesNotMatch(workflow, /git rev-list --max-parents=0 HEAD/);
 });
 
-void test("shared discovery workflow exposes reusable package metadata", () => {
+test("shared discovery workflow exposes reusable package metadata", () => {
   assert.match(discovery, /workflow_call:/);
   assert.match(discovery, /packages:/);
   assert.match(discovery, /matrix:/);
@@ -79,12 +79,12 @@ void test("shared discovery workflow exposes reusable package metadata", () => {
   assert.match(discovery, /require-build-script:/);
 });
 
-void test("draft release workflow does not require the release environment", () => {
+test("draft release workflow does not require the release environment", () => {
   assert.doesNotMatch(workflow, /environment:\s*\n\s*name: release/);
   assert.doesNotMatch(workflow, /approve-release:/);
 });
 
-void test("release drafter uses only supported action inputs", () => {
+test("release drafter uses only supported action inputs", () => {
   assert.doesNotMatch(
     workflow,
     /uses: release-drafter\/release-drafter@v7\.7\.0[\s\S]*?\n\s+from:/,
@@ -95,14 +95,14 @@ void test("release drafter uses only supported action inputs", () => {
   );
 });
 
-void test("first release is blocked when package tags exist without a published release", () => {
+test("first release is blocked when package tags exist without a published release", () => {
   assert.match(workflow, /git tag --list "\$PACKAGE_DIRECTORY@\*"/);
   assert.match(workflow, /EXISTING_GIT_TAG/);
   assert.match(workflow, /Refusing to treat this package as a first release/);
   assert.match(workflow, /existing-git-tag=/);
 });
 
-void test("blocked first release writes would-have-created details to the summary", () => {
+test("blocked first release writes would-have-created details to the summary", () => {
   assert.match(workflow, /## Release blocked/);
   assert.match(workflow, /Would-have-created/);
   assert.match(workflow, /WOULD_VERSION/);
@@ -111,7 +111,7 @@ void test("blocked first release writes would-have-created details to the summar
   assert.match(workflow, /release history requires reconciliation/);
 });
 
-void test("blocked release summary includes generated release content", () => {
+test("blocked release summary includes generated release content", () => {
   assert.match(workflow, /WOULD_CHANGES/);
   assert.match(workflow, /WOULD_BODY/);
   assert.match(workflow, /## Would-have-created release content/);
