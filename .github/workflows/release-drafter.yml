@@ -139,7 +139,7 @@ jobs:
         id: baseline
         if: ${{ steps.selected.outputs.value == 'true' }}
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           INPUT_VERSION: ${{ inputs.version }}
           PACKAGE_DIRECTORY: ${{ matrix.directory }}
@@ -169,11 +169,9 @@ jobs:
           VERSION="$INPUT_VERSION"
 
           if [ -n "$PREVIOUS_TAG" ]; then
-            BASELINE="$PREVIOUS_TAG"
             SOURCE="previous published package release"
           else
-            BASELINE="$(git rev-list --max-parents=0 HEAD | tail -n 1)"
-            SOURCE="first commit on main"
+            SOURCE="full package Git history"
 
             if [ -z "$VERSION" ]; then
               VERSION="0.1.0"
@@ -280,8 +278,8 @@ jobs:
 
           {
             echo "name=$(jq -r '.name' <<< "$RELEASE")"
-            echo "tag-name=$(jq -r '.tag_name' <<< "$RELEASE")"
-            echo "html-url=$(jq -r '.html_url' <<< "$RELEASE")"
+            echo "tag_name=$(jq -r '.tag_name' <<< "$RELEASE")"
+            echo "html_url=$(jq -r '.html_url' <<< "$RELEASE")"
           } >> "$GITHUB_OUTPUT"
 
       - name: Create or update subsequent package draft
@@ -306,7 +304,7 @@ jobs:
             echo "| --- | --- |"
             echo "| Package | \`${{ matrix.name }}\` |"
             echo "| Name | \`${{ steps.first-draft.outputs.name || steps.drafter.outputs.name }}\` |"
-            echo "| Tag | \`${{ steps.first-draft.outputs.tag-name || steps.drafter.outputs.tag_name }}\` |"
-            echo "| Draft | [Open package draft release](${{ steps.first-draft.outputs.html-url || steps.drafter.outputs.html_url }}) |"
+            echo "| Tag | \`${{ steps.first-draft.outputs.tag_name || steps.drafter.outputs.tag_name }}\` |"
+            echo "| Draft | [Open package draft release](${{ steps.first-draft.outputs.html_url || steps.drafter.outputs.html_url }}) |"
           } >> "$GITHUB_STEP_SUMMARY"
 
