@@ -1,0 +1,3 @@
+name: jest-to-vitest-extended
+version: 0.1.0
+description: Extend the standard Jest to Vitest migration with project-safe cleanup for remaining Jest APIs and types.
