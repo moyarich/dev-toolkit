@@ -16,10 +16,7 @@ import { spawnSync } from "node:child_process";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const packageRoot = resolve(__dirname, "..");
-const workflowPath = resolve(
-  packageRoot,
-  "transforms/jest-to-vitest/workflow.yaml",
-);
+const workflowPath = resolve(packageRoot, "workflow.yaml");
 
 const args = process.argv.slice(2);
 const auditOnly = args.includes("--audit-only");

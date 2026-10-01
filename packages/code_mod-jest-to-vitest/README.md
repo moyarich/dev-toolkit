@@ -31,16 +31,16 @@ The transform is syntax-driven and is not limited to test files or `__mocks__` d
 From the `dev-toolkit` repository:
 
 ```bash
-npm run jest-to-vitest --workspace @moyarich/code-transform -- path/to/project
+npm run jest-to-vitest --workspace @moyarich/code-mod-jest-to-vitest -- path/to/project
 ```
 
 Or through the package bin:
 
 ```bash
-npx jest-to-vitest-extended path/to/project
+npx jest-to-vitest path/to/project
 ```
 
-This runs the local `packages/code_transform/transforms/jest-to-vitest/workflow.yaml` and then performs the migration audit.
+This runs the local `packages/code_mod-jest-to-vitest/workflow.yaml` and then performs the migration audit.
 
 There is no dependency on the external `jest/vitest` codemod package.
 
@@ -49,13 +49,13 @@ There is no dependency on the external `jest/vitest` codemod package.
 Preview the migration without modifying the source project:
 
 ```bash
-npm run jest-to-vitest --workspace @moyarich/code-transform -- --dry-run path/to/project
+npm run jest-to-vitest --workspace @moyarich/code-mod-jest-to-vitest -- --dry-run path/to/project
 ```
 
 or:
 
 ```bash
-npx jest-to-vitest-extended --dry-run path/to/project
+npx jest-to-vitest --dry-run path/to/project
 ```
 
 Dry-run behavior:
@@ -72,13 +72,13 @@ Dry-run behavior:
 Check whether a repository has a complete Jest → Vitest migration without modifying files:
 
 ```bash
-npm run audit:jest-to-vitest --workspace @moyarich/code-transform -- path/to/project
+npm run audit:jest-to-vitest --workspace @moyarich/code-mod-jest-to-vitest -- path/to/project
 ```
 
 or:
 
 ```bash
-npx jest-to-vitest-extended --audit-only path/to/project
+npx jest-to-vitest --audit-only path/to/project
 ```
 
 The audit checks for:
@@ -95,13 +95,13 @@ The audit checks for:
 ## Validate the codemod workflow
 
 ```bash
-npm run validate:jest-to-vitest --workspace @moyarich/code-transform
+npm run validate:jest-to-vitest --workspace @moyarich/code-mod-jest-to-vitest
 ```
 
 ## Test the transform
 
 ```bash
-npm test --workspace @moyarich/code-transform
+npm test --workspace @moyarich/code-mod-jest-to-vitest
 ```
 
 Fixtures currently cover:
@@ -116,12 +116,12 @@ Fixtures currently cover:
 
 ```bash
 npx codemod workflow validate \
-  -w packages/code_transform/transforms/jest-to-vitest/workflow.yaml
+  -w packages/code_mod-jest-to-vitest/workflow.yaml
 ```
 
 ```bash
 npx codemod workflow run \
-  -w packages/code_transform/transforms/jest-to-vitest/workflow.yaml
+  -w packages/code_mod-jest-to-vitest/workflow.yaml
 ```
 
 That workflow is the complete AST migration; it no longer delegates to another Jest → Vitest codemod.
@@ -138,5 +138,5 @@ Project-specific runtime setup such as a VS Code `vscode` module alias belongs i
 
 See:
 
-- `../../docs/coverage.md` for the migration coverage matrix
-- `../../docs/vscode-act-runner-local.md` for the real repository audit that motivated the implementation
+- `./docs/coverage.md` for the migration coverage matrix
+- `./docs/vscode-act-runner-local.md` for the real repository audit that motivated the implementation

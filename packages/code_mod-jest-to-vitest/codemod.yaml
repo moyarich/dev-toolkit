@@ -1,0 +1,3 @@
+name: jest-to-vitest
+version: 0.1.0
+description: Self-contained Jest to Vitest migration with runtime APIs, TypeScript types, coverage checks, mocks, docs, and bin support.
