@@ -177,6 +177,29 @@ jobs:
           if [ -n "$PREVIOUS_TAG" ]; then
             SOURCE="previous published package release"
           elif [ -n "$EXISTING_GIT_TAG" ]; then
+            WOULD_VERSION="${VERSION:-0.1.0}"
+            WOULD_TAG="$PACKAGE_DIRECTORY@$WOULD_VERSION"
+            WOULD_NAME="$PACKAGE_NAME v$WOULD_VERSION"
+
+            {
+              echo "# Package release draft"
+              echo
+              echo "## Release blocked"
+              echo
+              echo "A package Git tag exists without a matching published GitHub Release, so the workflow did not create or update a draft."
+              echo
+              echo "| Would-have-created | Value |"
+              echo "| --- | --- |"
+              echo "| Package | \`$PACKAGE_NAME\` |"
+              echo "| Directory | \`$PACKAGE_DIRECTORY\` |"
+              echo "| Version | \`$WOULD_VERSION\` |"
+              echo "| Tag | \`$WOULD_TAG\` |"
+              echo "| Release name | \`$WOULD_NAME\` |"
+              echo "| Existing Git tag | \`$EXISTING_GIT_TAG\` |"
+              echo "| Result | **Blocked — release history requires reconciliation** |"
+              echo
+            } >> "$GITHUB_STEP_SUMMARY"
+
             echo "::error::Found Git tag '$EXISTING_GIT_TAG' for $PACKAGE_DIRECTORY but no matching published GitHub Release."
             echo "::error::Refusing to treat this package as a first release. Publish/restore the release or supply an explicit version after reconciling release history."
             exit 1
