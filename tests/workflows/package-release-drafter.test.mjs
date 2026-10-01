@@ -115,3 +115,11 @@ test("blocked first release writes would-have-created details to the summary", (
   assert.match(workflow, /WOULD_NAME/);
   assert.match(workflow, /release history requires reconciliation/);
 });
+
+
+test("blocked release summary includes generated release content", () => {
+  assert.match(workflow, /WOULD_CHANGES/);
+  assert.match(workflow, /WOULD_BODY/);
+  assert.match(workflow, /## Would-have-created release content/);
+  assert.match(workflow, /## What's Changed/);
+});
