@@ -9,17 +9,17 @@
   ],
   "scripts": {
     "build": "npm run build --workspaces --if-present",
-    "test": "vitest run \"tests/**/*.test.ts\" && npm test --workspaces --if-present",
+    "test": "vitest run tests && npm test --workspaces --if-present",
     "lint": "eslint \"tests/**/*.ts\" && npm run lint --workspaces --if-present",
     "typecheck": "tsc -p tsconfig.tests.json && npm run typecheck --workspaces --if-present",
     "demo": "demo",
     "demo:list": "demo list",
-    "test:playground": "vitest run \"tests/playground/*.test.ts\"",
+    "test:playground": "vitest run tests/playground",
     "package-lock:update": "npm install --package-lock-only --include=optional",
     "format:check": "prettier . --check",
     "format": "prettier . --write",
     "prebuild": "npm run build --workspace @moyarich/vite-plugin-package-bin && npm run build --workspace @moyarich/web-components",
-    "test:workflows": "vitest run \"tests/workflows/*.test.ts\"",
+    "test:workflows": "vitest run tests/workflows",
     "checks": "npm run format:check && npm run lint && npm run typecheck && npm test"
   },
   "devDependencies": {
