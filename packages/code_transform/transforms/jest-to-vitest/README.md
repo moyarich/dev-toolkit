@@ -1,15 +1,28 @@
-# Jest to Vitest extended transform
+# Jest to Vitest transform
 
-This transform complements Codemod's existing `jest/vitest` migration.
+This is a self-contained Jest → Vitest codemod for `dev-toolkit`.
 
-It handles migration gaps that may remain in support files and manual mocks, including:
+It incorporates the migration behaviors reviewed from Codemod's `jest/vitest` implementation and adds the TypeScript and repository-level coverage needed by real projects such as `vscode-act-runner-local`.
 
-- `jest.fn()` and other remaining `jest.*` runtime calls → `vi.*`
+It handles:
+
+- Jest globals such as `describe`, `it`, `test`, hooks, and `expect`
+- `fit` → `it.only`
+- `(it|test).failing` → `(it|test).fails`
+- `jest.*` runtime APIs → `vi.*`
+- API renames such as:
+  - `requireActual` → `importActual`
+  - `requireMock` → `importMock`
+  - `createMockFromModule` → `importMock`
+  - `genMockFromModule` → `importMock`
+  - `setMock` → `mock`
+  - `deepUnmock` → `unmock`
+- removal of `@jest/globals` imports
 - TypeScript Jest namespace types such as `jest.Mock` and `jest.Mocked<T>`
-- required `vitest` runtime and type imports
+- snapshot syntax cleanup for legacy `Array [` and `Object {` output
 - JavaScript and TypeScript files under normal source trees, `docs/**`, and `bin/**`
 
-The transform is syntax-driven and is not limited to `__mocks__` directories.
+The transform is syntax-driven and is not limited to test files or `__mocks__` directories.
 
 ## Usage
 
@@ -27,11 +40,9 @@ Or through the package bin:
 npx jest-to-vitest-extended path/to/project
 ```
 
-This runs:
+This runs the local `packages/code_transform/transforms/jest-to-vitest/workflow.yaml` and then performs the migration audit.
 
-1. the upstream `jest/vitest` codemod
-2. the dev-toolkit extension transform
-3. the migration audit
+There is no dependency on the external `jest/vitest` codemod package.
 
 ### Dry run
 
@@ -50,7 +61,7 @@ npx jest-to-vitest-extended --dry-run path/to/project
 Dry-run behavior:
 
 - copies the target project to a temporary directory
-- runs the complete migration against the temporary copy
+- runs the complete local migration against the temporary copy
 - prints a `git diff --no-index` preview
 - runs the migration audit against the preview
 - deletes the temporary copy
@@ -101,27 +112,31 @@ Fixtures currently cover:
 - files under `docs/**`
 - files under `bin/**`
 
-## Run the extension workflow directly
+## Run with Codemod CLI
+
+```bash
+npx codemod workflow validate \
+  -w packages/code_transform/transforms/jest-to-vitest/workflow.yaml
+```
 
 ```bash
 npx codemod workflow run \
   -w packages/code_transform/transforms/jest-to-vitest/workflow.yaml
 ```
 
-Running the workflow directly executes only the dev-toolkit extension. Use the CLI entry point for the complete upstream + extension migration.
+That workflow is the complete AST migration; it no longer delegates to another Jest → Vitest codemod.
 
 ## Migration flow
 
-1. run the standard `jest/vitest` codemod
-2. run this extension transform
-3. update package scripts and dependencies
-4. migrate Jest configuration to Vitest configuration
-5. preserve coverage include/exclude rules and thresholds
-6. run coverage, lint, typecheck, build, integration tests, and packaging as appropriate
+1. run the local Jest → Vitest AST transform
+2. update package scripts and dependencies
+3. migrate Jest configuration to Vitest configuration
+4. preserve coverage include/exclude rules and thresholds
+5. run coverage, lint, typecheck, build, integration tests, and packaging as appropriate
 
 Project-specific runtime setup such as a VS Code `vscode` module alias belongs in the target project's Vitest configuration rather than the AST transform.
 
 See:
 
 - `../../docs/coverage.md` for the migration coverage matrix
-- `../../docs/vscode-act-runner-local.md` for the real repository audit that motivated the extension
+- `../../docs/vscode-act-runner-local.md` for the real repository audit that motivated the implementation
