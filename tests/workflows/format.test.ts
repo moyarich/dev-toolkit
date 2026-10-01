@@ -23,6 +23,9 @@ test("format workflow previews by default and only commits when requested", () =
 test("format workflow reports changed files in the job summary", () => {
   assert.match(workflow, /git status --short > \/tmp\/format-status\.txt/);
   assert.match(workflow, /Formatting changes/);
-  assert.match(workflow, /Preview only\. Formatting changes were not committed\./);
+  assert.match(
+    workflow,
+    /Preview only\. Formatting changes were not committed\./,
+  );
   assert.match(workflow, /GITHUB_STEP_SUMMARY/);
 });

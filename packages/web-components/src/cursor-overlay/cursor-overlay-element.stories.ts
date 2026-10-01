@@ -12,7 +12,8 @@ const meta = {
     const wrapper = document.createElement("div");
     wrapper.style.minHeight = "320px";
     wrapper.style.padding = "2rem";
-    wrapper.innerHTML = "<p>Move and click the pointer inside the story canvas.</p>";
+    wrapper.innerHTML =
+      "<p>Move and click the pointer inside the story canvas.</p>";
 
     const element = document.createElement("moyarich-cursor-overlay");
     wrapper.append(element);
