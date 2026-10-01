@@ -9,14 +9,8 @@ on:
         default: "."
         type: string
 
-      commit-changes:
-        description: "Commit and push codemod changes back to this branch"
-        required: true
-        default: true
-        type: boolean
-
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: jest-to-vitest-${{ github.ref }}
@@ -74,7 +68,23 @@ jobs:
       - name: Run tests
         run: npm test
 
-      - name: Write workflow summary
+      - name: Create migration patch
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git add --all
+          git diff --cached --binary > jest-to-vitest.patch
+
+      - name: Upload migration patch
+        uses: actions/upload-artifact@v4
+        with:
+          name: jest-to-vitest-patch
+          path: jest-to-vitest.patch
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Write migration summary
         if: always()
         shell: bash
         run: |
@@ -83,22 +93,56 @@ jobs:
             echo
             echo "- Target: \`${{ inputs.target-directory }}\`"
             echo "- Branch: \`${{ github.ref_name }}\`"
-            echo "- Commit changes: \`${{ inputs.commit-changes }}\`"
             echo
             echo "### Changed files"
             echo
             echo '~~~text'
             git status --short
             echo '~~~'
+            echo
+            echo "The migration must be approved before changes are committed and pushed."
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Commit migration changes
-        if: ${{ success() && inputs.commit-changes }}
+  commit:
+    name: "Approve and commit migration"
+    needs: migrate
+    runs-on: ubuntu-latest
+    environment: jest-to-vitest-approval
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout selected branch
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
+
+      - name: Download migration patch
+        uses: actions/download-artifact@v5
+        with:
+          name: jest-to-vitest-patch
+
+      - name: Apply migration patch
         shell: bash
         run: |
           set -euo pipefail
 
-          if git diff --quiet && git diff --cached --quiet && [[ -z "$(git ls-files --others --exclude-standard)" ]]; then
+          if [[ ! -s jest-to-vitest.patch ]]; then
+            echo "No migration changes to commit."
+            exit 0
+          fi
+
+          git apply --index --binary jest-to-vitest.patch
+          rm jest-to-vitest.patch
+
+      - name: Commit and push migration
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if git diff --cached --quiet; then
             echo "No migration changes to commit."
             exit 0
           fi
@@ -106,6 +150,18 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git add --all
           git commit -m "refactor: migrate Jest tests to Vitest"
           git push origin "HEAD:${{ github.ref_name }}"
+
+      - name: Write commit summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "## Jest → Vitest commit"
+            echo
+            echo "- Branch: \`${{ github.ref_name }}\`"
+            echo "- Environment: \`jest-to-vitest-approval\`"
+            echo
+            echo "The approved migration was committed and pushed."
+          } >> "$GITHUB_STEP_SUMMARY"
