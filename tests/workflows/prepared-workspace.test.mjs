@@ -36,16 +36,10 @@ test("node CI installs dependencies on each runner", () => {
 });
 
 test("node CI builds only the selected workspace dependency graph", () => {
-  assert.match(
-    nodeCI,
-    /name: Build selected workspace and local dependencies/,
-  );
+  assert.match(nodeCI, /name: Build selected workspace and local dependencies/);
   assert.match(nodeCI, /item\.manifest\.dependencies/);
   assert.match(nodeCI, /item\.manifest\.devDependencies/);
   assert.match(nodeCI, /item\.manifest\.optionalDependencies/);
-  assert.match(
-    nodeCI,
-    /npm run build --workspace "\$package" --if-present/,
-  );
+  assert.match(nodeCI, /npm run build --workspace "\$package" --if-present/);
   assert.doesNotMatch(nodeCI, /Build all local packages/);
 });

@@ -142,7 +142,6 @@ jobs:
             echo "::endgroup::"
           done <<< "$BUILD_ORDER"
 
-
       - name: Test
         env:
           WORKSPACE: ${{ inputs.package-directory }}

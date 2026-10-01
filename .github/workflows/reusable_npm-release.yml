@@ -179,7 +179,6 @@ on:
         value: ${{ jobs.release-package.outputs.publish-json }}
 
     secrets:
-
       _NPM_TOKEN:
         required: false
 

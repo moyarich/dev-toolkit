@@ -367,4 +367,3 @@ jobs:
             echo "| Tag | \`${{ steps.first-draft.outputs.tag_name || steps.drafter.outputs.tag_name }}\` |"
             echo "| Draft | [Open package draft release](${{ steps.first-draft.outputs.html_url || steps.drafter.outputs.html_url }}) |"
           } >> "$GITHUB_STEP_SUMMARY"
-

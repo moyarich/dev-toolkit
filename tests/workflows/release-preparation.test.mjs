@@ -5,8 +5,7 @@ import { test } from "node:test";
 
 const workflows = resolve(import.meta.dirname, "../../.github/workflows");
 
-const read = (name) =>
-  readFileSync(join(workflows, name), "utf8");
+const read = (name) => readFileSync(join(workflows, name), "utf8");
 
 const prepare = read("reusable_npm-prepare-release.yml");
 const prepareWrapper = read("package-workspace-tools-prepare-release.yml");
@@ -18,7 +17,10 @@ const publishWrapper = read("package-workspace-tools-publish.yml");
 test("prepare release creates a PR branch without pushing release tags", () => {
   assert.match(prepare, /target-branch:/);
   assert.match(prepare, /persist-credentials: false/);
-  assert.match(prepare, /PREPARE_BRANCH="prepare-\$\{SAFE_TARGET\}-\$\{SAFE_RELEASE\}-\$\{RUN_ID\}"/);
+  assert.match(
+    prepare,
+    /PREPARE_BRANCH="prepare-\$\{SAFE_TARGET\}-\$\{SAFE_RELEASE\}-\$\{RUN_ID\}"/,
+  );
   assert.match(prepare, /git tag -d "\$TAG"/);
   assert.match(prepare, /gh pr create/);
   assert.match(prepare, /git push .*"HEAD:\$\{PREPARE_BRANCH\}"/);
@@ -42,10 +44,7 @@ test("release and publish support explicit target branches", () => {
     assert.match(workflow, /permissions: \{\}/);
   }
 
-  assert.match(
-    release,
-    /"HEAD:\$\{\{ inputs\.target-branch \}\}"/,
-  );
+  assert.match(release, /"HEAD:\$\{\{ inputs\.target-branch \}\}"/);
 });
 
 test("local mutation workflows use scoped concurrency keys", () => {
@@ -57,7 +56,6 @@ test("local mutation workflows use scoped concurrency keys", () => {
   }
 });
 
-
 test("reusable release and publish define target-branch once per trigger", () => {
   for (const workflow of [release, publish]) {
     const dispatch = workflow
@@ -67,13 +65,7 @@ test("reusable release and publish define target-branch once per trigger", () =>
       .split("  workflow_call:\n")[1]
       .split("\npermissions:")[0];
 
-    assert.equal(
-      [...dispatch.matchAll(/^      target-branch:/gm)].length,
-      1,
-    );
-    assert.equal(
-      [...call.matchAll(/^      target-branch:/gm)].length,
-      1,
-    );
+    assert.equal([...dispatch.matchAll(/^      target-branch:/gm)].length, 1);
+    assert.equal([...call.matchAll(/^      target-branch:/gm)].length, 1);
   }
 });
