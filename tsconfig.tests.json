@@ -9,7 +9,5 @@
     "types": ["node"],
     "skipLibCheck": true
   },
-  "include": [
-    "tests/**/*.mjs"
-  ]
+  "include": ["tests/**/*.mjs"]
 }
