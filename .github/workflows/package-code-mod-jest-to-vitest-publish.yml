@@ -1,0 +1,50 @@
+name: Package . Jest to Vitest Codemod . Publish
+
+run-name: >-
+  Jest to Vitest Codemod Publish · ${{ inputs.target-branch }} ·
+  dry-run=${{ inputs.dry-run }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      target-branch:
+        description: Publish target branch
+        required: true
+        default: main
+        type: string
+      dry-run:
+        description: Preview validation without publishing
+        required: true
+        default: true
+        type: boolean
+      registry:
+        description: Codemod Registry URL
+        required: true
+        default: https://codemod.com
+        type: string
+      node-version:
+        description: Advanced — Node.js version
+        required: true
+        default: "24"
+        type: string
+
+concurrency:
+  group: >-
+    ${{ github.workflow }}-${{ inputs.target-branch }}-${{ inputs.registry }}
+  cancel-in-progress: false
+
+permissions: {}
+
+jobs:
+  publish:
+    name: "package: @moyarich/code-mod-jest-to-vitest | dir: packages/code-mod-jest-to-vitest"
+    permissions:
+      contents: read
+      id-token: write
+    uses: ./.github/workflows/reusable_codemod-publish.yml
+    with:
+      codemod-directory: packages/code-mod-jest-to-vitest
+      target-branch: ${{ inputs.target-branch }}
+      dry-run: ${{ inputs.dry-run }}
+      registry: ${{ inputs.registry }}
+      node-version: ${{ inputs.node-version }}
