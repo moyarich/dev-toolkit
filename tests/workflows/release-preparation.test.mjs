@@ -5,6 +5,7 @@ import { test } from "node:test";
 
 const workflows = resolve(import.meta.dirname, "../../.github/workflows");
 
+/** @param {string} name */
 const read = (name) => readFileSync(join(workflows, name), "utf8");
 
 const prepare = read("reusable_npm-prepare-release.yml");
