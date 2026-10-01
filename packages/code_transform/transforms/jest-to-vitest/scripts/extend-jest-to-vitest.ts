@@ -14,60 +14,143 @@ const JEST_TYPE_NAMES = new Set([
   "SpiedSetter",
 ]);
 
-const codemod: Codemod<TypeScript> = (root) => {
-  const rootNode = root.root();
-  const edits = [];
+const JEST_GLOBALS = [
+  "afterAll",
+  "afterEach",
+  "beforeAll",
+  "beforeEach",
+  "describe",
+  "expect",
+  "it",
+  "test",
+];
 
-  for (const node of rootNode.findAll({
-    rule: {
-      pattern: "jest.$METHOD($$$ARGS)",
-    },
-  })) {
-    edits.push(node.replace(node.text().replace(/^jest\./, "vi.")));
-  }
+const JEST_API_RENAMES: Record<string, string> = {
+  createMockFromModule: "importMock",
+  deepUnmock: "unmock",
+  genMockFromModule: "importMock",
+  requireActual: "importActual",
+  requireMock: "importMock",
+  setMock: "mock",
+};
 
-  for (const node of rootNode.findAll({
-    rule: {
-      pattern: "jest.$TYPE",
-    },
-  })) {
-    const typeName = node.getMatch("TYPE")?.text();
-    if (!typeName || !JEST_TYPE_NAMES.has(typeName)) continue;
-
-    edits.push(node.replace(typeName));
-  }
-
-  if (edits.length === 0) return null;
-
-  let output = rootNode.commitEdits(edits);
-
-  const needsVi = /\bvi\./.test(output);
-  const usedTypes = [...JEST_TYPE_NAMES].filter((name) =>
-    new RegExp(`\\b${name}(?:\\s*<|\\b)`).test(output),
-  );
-
-  if (!needsVi && usedTypes.length === 0) return output;
-
+function mergeVitestImport(
+  source: string,
+  runtimeImports: string[],
+  typeImports: string[],
+): string {
   const importParts = [
-    ...(needsVi ? ["vi"] : []),
-    ...usedTypes.map((name) => `type ${name}`),
+    ...runtimeImports,
+    ...typeImports.map((name) => `type ${name}`),
   ];
 
-  if (/from\s+["']vitest["']/.test(output)) {
-    output = output.replace(
-      /import\s*\{([^}]*)\}\s*from\s*["']vitest["'];?/,
-      (_match, existing: string) => {
-        const existingParts = existing
-          .split(",")
-          .map((part) => part.trim())
-          .filter(Boolean);
-        const merged = [...new Set([...existingParts, ...importParts])];
-        return `import { ${merged.join(", ")} } from "vitest";`;
-      },
-    );
-  } else {
-    output = `import { ${importParts.join(", ")} } from "vitest";\n${output}`;
+  if (importParts.length === 0) return source;
+
+  const vitestImport =
+    /import\s*\{([^}]*)\}\s*from\s*["']vitest["'];?/;
+
+  if (vitestImport.test(source)) {
+    return source.replace(vitestImport, (_match, existing: string) => {
+      const existingParts = existing
+        .split(",")
+        .map((part) => part.trim())
+        .filter(Boolean);
+      const merged = [...new Set([...existingParts, ...importParts])].sort();
+      return `import { ${merged.join(", ")} } from "vitest";`;
+    });
   }
+
+  return `import { ${importParts.join(", ")} } from "vitest";\n${source}`;
+}
+
+function migrateSource(source: string): string {
+  let output = source;
+
+  // Remove explicit Jest globals imports. Required Vitest imports are rebuilt below.
+  output = output.replace(
+    /^import\s*\{[^}]*\}\s*from\s*["']@jest\/globals["'];?\s*$/gm,
+    "",
+  );
+
+  // Jest's focused test helper.
+  output = output.replace(/\bfit\s*\(/g, "it.only(");
+  output = output.replace(/\bfit\.(each|failing)\b/g, "it.only.$1");
+
+  // Jest's failing API is called "fails" in Vitest.
+  output = output.replace(
+    /\b(it|test)(\.(?:only|skip))?\.failing\b/g,
+    "$1$2.fails",
+  );
+
+  // Jest APIs with Vitest name changes.
+  for (const [jestName, vitestName] of Object.entries(JEST_API_RENAMES)) {
+    output = output.replace(
+      new RegExp(`\\bjest\\.${jestName}\\b`, "g"),
+      `vi.${vitestName}`,
+    );
+  }
+
+  // disableAutomock has no meaningful Vitest equivalent.
+  output = output.replace(
+    /^\s*jest\.disableAutomock\(\);?\s*$/gm,
+    "",
+  );
+
+  // Flag unsupported automocking instead of silently changing semantics.
+  if (/\bjest\.enableAutomock\b/.test(output)) {
+    throw new Error(
+      'jest.enableAutomock() is not supported by Vitest; migrate this usage manually.',
+    );
+  }
+
+  // Remaining runtime Jest object APIs map directly to vi.
+  output = output.replace(/\bjest\.(?=[A-Za-z_$][\w$]*\s*\()/g, "vi.");
+
+  // TypeScript Jest namespace types become Vitest type imports.
+  for (const typeName of JEST_TYPE_NAMES) {
+    output = output.replace(
+      new RegExp(`\\bjest\\.${typeName}\\b`, "g"),
+      typeName,
+    );
+  }
+
+  // Snapshot formatting used by older Jest serializers.
+  output = output.replace(/\bArray \[/g, "[");
+  output = output.replace(/\bObject \{/g, "{");
+
+  return output;
+}
+
+const codemod: Codemod<TypeScript> = (root) => {
+  const rootNode = root.root();
+  const original = rootNode.text();
+  let output = migrateSource(original);
+
+  if (output === original) return null;
+
+  const runtimeImports = new Set<string>();
+  const typeImports = new Set<string>();
+
+  if (/\bvi\./.test(output)) runtimeImports.add("vi");
+  if (/\bit\.only\b/.test(output) && !/\b(?:const|let|var|function|class)\s+it\b/.test(output)) {
+    runtimeImports.add("it");
+  }
+
+  for (const globalName of JEST_GLOBALS) {
+    const callPattern = new RegExp(`\\b${globalName}(?:\\.|\\s*\\()`);
+    if (callPattern.test(output)) runtimeImports.add(globalName);
+  }
+
+  for (const typeName of JEST_TYPE_NAMES) {
+    const typePattern = new RegExp(`\\b${typeName}(?:\\s*<|\\b)`);
+    if (typePattern.test(output)) typeImports.add(typeName);
+  }
+
+  output = mergeVitestImport(
+    output,
+    [...runtimeImports],
+    [...typeImports],
+  );
 
   return output;
 };
