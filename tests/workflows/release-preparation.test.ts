@@ -37,14 +37,37 @@ test("prepare release uses least privilege and only version-changing modes", () 
 });
 
 test("release and publish support explicit target branches", () => {
-  for (const workflow of [release, publish]) {
-    assert.match(workflow, /target-branch:/);
-    assert.match(workflow, /ref: \$\{\{ inputs\.target-branch \}\}/);
-    assert.match(workflow, /persist-credentials: false/);
-    assert.match(workflow, /permissions: \{\}/);
+  for (const [name, workflow] of [
+    ["release", release],
+    ["publish", publish],
+  ] as const) {
+    assert.match(
+      workflow,
+      /^ {6}target-branch:/m,
+      `${name} should define the target-branch input`,
+    );
+    assert.match(
+      workflow,
+      /ref: \$\{\{ inputs\.target-branch \}\}/,
+      `${name} checkout should use inputs.target-branch`,
+    );
+    assert.match(
+      workflow,
+      /persist-credentials: false/,
+      `${name} checkout should disable persisted credentials`,
+    );
+    assert.match(
+      workflow,
+      /^permissions: \{\}$/m,
+      `${name} should default to no workflow-level permissions`,
+    );
   }
 
-  assert.match(release, /"HEAD:\$\{\{ inputs\.target-branch \}\}"/);
+  assert.match(
+    release,
+    /git push origin\s+\\\s*"HEAD:\$\{\{ inputs\.target-branch \}\}"\s+\\\s*--follow-tags/,
+    "release should push the release commit and tags to inputs.target-branch",
+  );
 });
 
 test("local mutation workflows use scoped concurrency keys", () => {
