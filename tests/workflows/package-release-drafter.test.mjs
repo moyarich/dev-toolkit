@@ -20,14 +20,12 @@ const discovery = readFileSync(
 );
 
 test("release drafter discovers publishable packages dynamically", () => {
-  assert.match(
-    workflow,
-    /uses: \.\/\.github\/workflows\/reusable_discover-packages\.yml/,
+  assert.ok(
+    workflow.includes("uses: ./.github/workflows/reusable_discover-packages.yml"),
   );
   assert.match(workflow, /require-publish-config: true/);
-  assert.match(
-    workflow,
-    /matrix: \$\{\{ fromJSON\(needs\.discover-packages\.outputs\.matrix/,
+  assert.ok(
+    workflow.includes("matrix: ${{ fromJSON(needs.discover-packages.outputs.matrix"),
   );
   assert.doesNotMatch(workflow, /directory: workspace-tools/);
   assert.doesNotMatch(workflow, /type: choice/);
@@ -41,18 +39,17 @@ test("release drafter generates one package config template at runtime", () => {
   assert.match(workflow, /replaceAll("{{PACKAGE_NAME}}"/);
   assert.match(workflow, /replaceAll("{{PACKAGE_DIRECTORY}}"/);
 
-  assert.match(template, /name-template: "{{PACKAGE_NAME}} v$RESOLVED_VERSION"/);
-  assert.match(
-    template,
-    /tag-template: "{{PACKAGE_DIRECTORY}}@$RESOLVED_VERSION"/,
+  assert.ok(
+    template.includes('name-template: "{{PACKAGE_NAME}} v$RESOLVED_VERSION"'),
   );
-  assert.match(
-    template,
-    /tag-prefix: "{{PACKAGE_DIRECTORY}}@"/,
+  assert.ok(
+    template.includes('tag-template: "{{PACKAGE_DIRECTORY}}@$RESOLVED_VERSION"'),
   );
-  assert.match(
-    template,
-    /- "{{PACKAGE_DIRECTORY}}/**"/,
+  assert.ok(
+    template.includes('tag-prefix: "{{PACKAGE_DIRECTORY}}@"'),
+  );
+  assert.ok(
+    template.includes('- "{{PACKAGE_DIRECTORY}}/**"'),
   );
 });
 
