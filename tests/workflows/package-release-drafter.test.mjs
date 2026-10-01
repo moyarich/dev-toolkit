@@ -56,20 +56,20 @@ test("release drafter generates one package config template at runtime", () => {
   );
 });
 
-test("first package release uses repository history and 0.1.0", () => {
-  assert.match(workflow, /commitish: main/);
+test("first package release uses package git history and 0.1.0", () => {
   assert.match(workflow, /gh api/);
   assert.match(workflow, /\.draft == false/);
   assert.match(workflow, /startswith\(\$prefix\)/);
   assert.match(workflow, /PREVIOUS_TAG/);
-  assert.match(workflow, /git rev-list --max-parents=0 HEAD \| tail -n 1/);
-  assert.match(workflow, /SOURCE="first commit on main"/);
+  assert.match(workflow, /SOURCE="full package Git history"/);
   assert.match(workflow, /VERSION="0\.1\.0"/);
-  assert.match(
-    workflow,
-    /version: \$\{\{ steps\.baseline\.outputs\.version \}\}/,
-  );
-  assert.match(workflow, /previous-tag=/);
+  assert.match(workflow, /git log \\/);
+  assert.match(workflow, /-- "\$PACKAGE_DIRECTORY"/);
+  assert.match(workflow, /Create or update first package draft/);
+  assert.match(workflow, /Create or update subsequent package draft/);
+  assert.match(workflow, /tag_name=/);
+  assert.match(workflow, /html_url=/);
+  assert.doesNotMatch(workflow, /git rev-list --max-parents=0 HEAD/);
 });
 
 test("shared discovery workflow exposes reusable package metadata", () => {
