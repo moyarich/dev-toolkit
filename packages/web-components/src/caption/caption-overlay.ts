@@ -2,10 +2,7 @@ import styleSheet from "./caption-overlay-style.css" with { type: "css" };
 
 export type CaptionPointer = "bubble" | "arrow";
 export type CaptionPlacementName =
-  | "top-left"
-  | "top-right"
-  | "bottom-left"
-  | "bottom-right";
+  "top-left" | "top-right" | "bottom-left" | "bottom-right";
 export type CaptionSide = "top" | "right" | "bottom" | "left";
 
 export type CaptionPlacement =
@@ -176,8 +173,9 @@ export class CaptionOverlay extends HTMLElement {
     }
 
     return (
-      CaptionOverlay.placements.get(CaptionOverlay.defaults.placement as string) ??
-      "auto"
+      CaptionOverlay.placements.get(
+        CaptionOverlay.defaults.placement as string,
+      ) ?? "auto"
     );
   }
 }

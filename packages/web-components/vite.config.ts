@@ -14,10 +14,7 @@ export default defineConfig({
     lib: {
       entry: {
         index: resolve(import.meta.dirname, "src/index.ts"),
-        caption: resolve(
-          import.meta.dirname,
-          "src/caption/caption-overlay.ts",
-        ),
+        caption: resolve(import.meta.dirname, "src/caption/caption-overlay.ts"),
         "caption-element": resolve(
           import.meta.dirname,
           "src/caption/caption-overlay.ts",
