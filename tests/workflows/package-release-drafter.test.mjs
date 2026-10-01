@@ -22,12 +22,12 @@ const discovery = readFileSync(
 test("release drafter discovers publishable packages dynamically", () => {
   assert.match(
     workflow,
-    /uses: ./.github/workflows/reusable_discover-packages.yml/,
+    /uses: \\.\\/\\.github\\/workflows\\/reusable_discover-packages\\.yml/,
   );
   assert.match(workflow, /require-publish-config: true/);
   assert.match(
     workflow,
-    /matrix: ${{ fromJSON(needs.discover-packages.outputs.matrix/,
+    /matrix: \\${{ fromJSON\\(needs\\.discover-packages\\.outputs\\.matrix/,
   );
   assert.doesNotMatch(workflow, /directory: workspace-tools/);
   assert.doesNotMatch(workflow, /type: choice/);
