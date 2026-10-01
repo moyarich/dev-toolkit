@@ -1,12 +1,18 @@
 name: Package . Workspace Tools . Release
 
 run-name: >-
-  Workspace Tools Release · ${{ inputs.version-mode }} ·
+  Workspace Tools Release · ${{ inputs.target-branch }} · ${{ inputs.version-mode }} ·
   dry-run=${{ inputs.dry-run }} · publish=${{ inputs.publish }}
 
 on:
   workflow_dispatch:
     inputs:
+      target-branch:
+        description: Release target branch
+        required: true
+        default: main
+        type: string
+
       version-mode:
         description: Version — bump, use package.json, or enter an exact version
         required: true
@@ -78,12 +84,12 @@ on:
         type: string
 
 concurrency:
-  group: workspace-tools-package-mutation
+  group: >-
+    ${{ github.workflow }}-${{ inputs.target-branch }}-
+    ${{ inputs.exact-version || inputs.version-bump || inputs.version-mode }}
   cancel-in-progress: false
 
-permissions:
-  contents: write
-  packages: write
+permissions: {}
 
 jobs:
   release-approval:
@@ -111,10 +117,14 @@ jobs:
   release:
     name: "package: @moyarich/workspace-tools | dir: packages/workspace-tools"
     needs: release-approval
+    permissions:
+      contents: write
+      packages: write
     if: ${{ always() && (inputs.dry-run || needs.release-approval.result == 'success') }}
     uses: ./.github/workflows/reusable_npm-release.yml
     with:
       package: packages/workspace-tools
+      target-branch: ${{ inputs.target-branch }}
       version-mode: ${{ inputs.version-mode }}
       version-bump: ${{ inputs.version-bump }}
       exact-version: ${{ inputs.exact-version }}
