@@ -24,7 +24,9 @@
   "scripts": {
     "build": "vite build --config vite.config.ts",
     "test": "vitest run --passWithNoTests",
-    "typecheck": "tsc -p tsconfig.json"
+    "typecheck": "tsc -p tsconfig.json",
+    "storybook": "npm exec --yes --package=storybook@10.6.0 --package=@storybook/web-components-vite@10.6.0 -- storybook dev -p 6006 -c .storybook",
+    "build-storybook": "npm exec --yes --package=storybook@10.6.0 --package=@storybook/web-components-vite@10.6.0 -- storybook build -c .storybook"
   },
   "repository": {
     "type": "git",
