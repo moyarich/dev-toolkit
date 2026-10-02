@@ -1,17 +1,16 @@
 # Changelog
 
-## Unreleased
-
-### Changed
-
-- Build VS Code extension helper CLIs into `dist/bin` and package the built `dist/` output.
-
 ## 0.1.0
 
 ### Added
 
 - Reusable VS Code extension development and publishing tools.
-- `vs-code-publish` CLI.
-- `run-extension-dev` CLI.
+- `vs-code-publish` CLI for packaging and publishing extensions.
+- `run-extension-dev` CLI for launching local extension development environments.
 - Commander-based CLI handling and interactive prompts.
-- Package-bin builds using `@moyarich/vite-plugin-package-bin`.
+- Package-local getting-started, development, publishing, and CLI documentation.
+
+### Changed
+
+- Build VS Code extension helper CLIs into `dist/bin` and publish the built `dist/` output.
+- Use `@moyarich/vite-plugin-package-bin` for executable package builds.
