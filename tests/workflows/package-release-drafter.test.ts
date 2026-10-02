@@ -143,7 +143,6 @@ test("tagged draft releases are preserved for the release workflow", () => {
   );
 });
 
-
 test("push drafting selects only packages changed by the pushed commits", () => {
   assert.match(workflow, /Select packages for drafting/);
   assert.match(workflow, /git diff --name-only "\$BEFORE_SHA" "\$AFTER_SHA"/);
