@@ -124,8 +124,21 @@ jobs:
             TOOL_PACKAGE_ROOT="$TOOL_ROOT/node_modules/@moyarich/readme-screenshots"
             "$TOOL_ROOT/node_modules/.bin/playwright" install --with-deps chromium
           fi
-          test -f "$TOOL_PACKAGE_ROOT/bin/readme-screenshots.mjs"
+          TOOL_BIN_ROOT=""
+          for CANDIDATE in "$TOOL_PACKAGE_ROOT/dist/bin" "$TOOL_PACKAGE_ROOT/bin"; do
+            if [ -f "$CANDIDATE/readme-screenshots.mjs" ]; then
+              TOOL_BIN_ROOT="$CANDIDATE"
+              break
+            fi
+          done
+
+          if [ -z "$TOOL_BIN_ROOT" ]; then
+            echo "Unable to resolve packaged CLI directory under $TOOL_PACKAGE_ROOT." >&2
+            exit 1
+          fi
+
           echo "SCREENSHOT_TOOLS_ROOT=$TOOL_PACKAGE_ROOT" >> "$GITHUB_ENV"
+          echo "SCREENSHOT_TOOLS_BIN=$TOOL_BIN_ROOT" >> "$GITHUB_ENV"
       - name: Start site
         env:
           START_COMMAND: ${{ inputs.start-command }}
@@ -144,8 +157,8 @@ jobs:
           DEMO_OUTPUT_DIR: ${{ inputs.output-directory }}
         run: |
           case "${{ inputs.config }}" in
-            "") node "$SCREENSHOT_TOOLS_ROOT/bin/readme-screenshots.mjs" ;;
-            *) node "$SCREENSHOT_TOOLS_ROOT/bin/readme-screenshots.mjs" "${{ inputs.config }}" ;;
+            "") node "$SCREENSHOT_TOOLS_BIN/readme-screenshots.mjs" ;;
+            *) node "$SCREENSHOT_TOOLS_BIN/readme-screenshots.mjs" "${{ inputs.config }}" ;;
           esac
       - name: Commit screenshots when changed
         env:

@@ -7,7 +7,7 @@ const root = resolve(import.meta.dirname, "..");
 function invoke(...args: string[]) {
   const result = spawnSync(
     process.execPath,
-    ["bin/readme-screenshots.mjs", ...args],
+    ["dist/bin/readme-screenshots.mjs", ...args],
     {
       cwd: root,
       encoding: "utf8",

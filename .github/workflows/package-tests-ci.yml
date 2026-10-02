@@ -64,8 +64,8 @@ jobs:
             echo
             echo "| Setting | Value |"
             echo "| --- | --- |"
-            echo "| Command | `npm run checks` |"
-            echo "| Node.js | `${{ inputs.node-version || '24' }}` |"
+            printf '| Command | `%s` |\n' 'npm run checks'
+            printf '| Node.js | `%s` |\n' "${{ inputs.node-version || '24' }}"
             echo "| Result | **${{ job.status }}** |"
           } >> "$GITHUB_STEP_SUMMARY"
 

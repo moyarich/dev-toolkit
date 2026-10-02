@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- Move workspace tool executables to `dist/bin` and use `dist/` as the packaged build boundary.
+
+- Pack workspace packages once and publish the exact generated tarball to each selected registry.
+- Allow `workspace-publish` to retain tarballs with `--artifact-directory`.
+- Retain packed npm tarballs as GitHub Actions artifacts in the reusable publish workflow.
+
 ## 0.1.2
 
 ### Changed

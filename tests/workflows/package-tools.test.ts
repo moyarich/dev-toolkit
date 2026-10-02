@@ -10,7 +10,7 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { resolve, join } from "node:path";
-import { spawnSync } from "node:child_process";
+import { spawnSync, type SpawnSyncReturns } from "node:child_process";
 import { test } from "vitest";
 
 const workflows = resolve(import.meta.dirname, "../../.github/workflows");
@@ -22,9 +22,10 @@ fs.appendFileSync(process.env.CALL_LOG, args.join(' ') + '\\n');
 const prefix = args.indexOf('--prefix');
 const root = prefix < 0 ? path.join(process.cwd(), 'packages', process.env.TOOL_PACKAGE) : path.join(args[prefix + 1], 'node_modules/@moyarich', process.env.TOOL_PACKAGE);
 if (!process.env.SKIP_ARTIFACTS) {
-  fs.mkdirSync(path.join(root, 'bin'), {recursive:true});
+  const outputDir = prefix < 0 ? 'dist/bin' : 'bin';
+  fs.mkdirSync(path.join(root, outputDir), {recursive:true});
   for (const command of JSON.parse(process.env.TOOL_COMMANDS)) {
-    fs.writeFileSync(path.join(root, 'bin', command + '.mjs'), 'console.log(' + JSON.stringify(command) + ');\\n', {mode:0o644});
+    fs.writeFileSync(path.join(root, outputDir, command + '.mjs'), 'console.log(' + JSON.stringify(command) + ');\\n', {mode:0o644});
   }
 }
 if (prefix >= 0) {
@@ -45,6 +46,9 @@ for (const file of [
   const variable = screenshot
     ? "SCREENSHOT_TOOLS_ROOT"
     : "WORKSPACE_TOOLS_ROOT";
+  const binVariable = screenshot
+    ? "SCREENSHOT_TOOLS_BIN"
+    : "WORKSPACE_TOOLS_BIN";
   const text = readFileSync(join(workflows, file), "utf8");
   const step = text
     .split(
@@ -60,13 +64,13 @@ for (const file of [
     ...new Set(
       [
         ...text.matchAll(
-          /node "\$(?:WORKSPACE_TOOLS_ROOT|SCREENSHOT_TOOLS_ROOT)\/bin\/([^"/]+)\.mjs"/g,
+          /node "\$(?:WORKSPACE_TOOLS_BIN|SCREENSHOT_TOOLS_BIN)\/([^"/]+)\.mjs"/g,
         ),
       ].map((match) => match[0]),
     ),
   ];
   const commands = invocations.map((command) => {
-    const match = command.match(/\/bin\/([^/]+)\.mjs/);
+    const match = command.match(/_TOOLS_BIN\/([^/]+)\.mjs/);
     assert.ok(match, `Unable to resolve CLI command from: ${command}`);
     return match[1];
   });
@@ -122,27 +126,45 @@ for (const file of [
         assert.equal(result.status, 0, result.stderr);
         const calls = readFileSync(log, "utf8");
         const output = readFileSync(envFile, "utf8");
-        const root = output.trim().slice(`${variable}=`.length);
-        assert.ok(output.startsWith(`${variable}=`));
+        const values = new Map(
+          output
+            .trim()
+            .split("\n")
+            .filter(Boolean)
+            .map((line) => {
+              const separator = line.indexOf("=");
+              return [line.slice(0, separator), line.slice(separator + 1)];
+            }),
+        );
+        const root = values.get(variable);
+        const binRoot = values.get(binVariable);
+        assert.ok(root);
+        assert.ok(binRoot);
         if (local) {
           assert.match(calls, /^run build\n$/);
           assert.equal(root, join(directory, "packages", packageName));
+          assert.equal(binRoot, join(root, "dist/bin"));
         } else {
           assert.ok(calls.includes(`@moyarich/${packageName}@latest`));
           assert.ok(root.endsWith(`/node_modules/@moyarich/${packageName}`));
+          assert.equal(binRoot, join(root, "bin"));
         }
         for (const [index, invocation] of invocations.entries()) {
           assert.equal(
             existsSync(join(directory, "node_modules/.bin", commands[index])),
             false,
           );
-          const invoked = spawnSync(
+          const invoked: SpawnSyncReturns<string> = spawnSync(
             "bash",
             ["-e", "-c", `${invocation} --help`],
             {
               cwd: directory,
               encoding: "utf8",
-              env: { ...env, [variable]: root },
+              env: {
+                ...env,
+                [variable]: root,
+                [binVariable]: binRoot,
+              },
             },
           );
           assert.equal(invoked.status, 0, invoked.stderr);
@@ -154,6 +176,20 @@ for (const file of [
     });
   }
 }
+
+test("npm publish workflow retains the exact packed tarball", () => {
+  const text = readFileSync(
+    join(workflows, "reusable_npm-publish.yml"),
+    "utf8",
+  );
+
+  assert.match(text, /--artifact-directory="\$ARTIFACT_DIRECTORY"/);
+  assert.match(text, /uses: actions\/upload-artifact@v7/);
+  assert.match(
+    text,
+    /path: \$\{\{ runner\.temp \}\}\/npm-package-artifacts\/\*\.tgz/,
+  );
+});
 
 test("package-lock workflow repairs before validating with npm ci", () => {
   const text = readFileSync(

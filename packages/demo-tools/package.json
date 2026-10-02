@@ -4,34 +4,33 @@
   "description": "Strategy-first tooling for creating automated demos, screenshots, and recordings.",
   "type": "module",
   "bin": {
-    "demo": "./bin/demo.mjs",
-    "demo-strategy": "./bin/demo-strategy.mjs"
+    "demo": "./dist/bin/demo.mjs",
+    "demo-strategy": "./dist/bin/demo-strategy.mjs"
   },
   "exports": {
-    ".": "./src/index.ts",
-    "./strategy": "./src/strategy/index.ts",
-    "./utils": "./src/utils/index.ts",
-    "./vscode": "./src/vscode/index.ts",
-    "./capture": "./src/capture/index.ts",
-    "./browser": "./src/browser/index.ts",
-    "./components": "./src/components/index.ts",
-    "./generate": "./src/generate/index.ts"
+    ".": "./dist/index.mjs",
+    "./strategy": "./dist/strategy.mjs",
+    "./utils": "./dist/utils.mjs",
+    "./vscode": "./dist/vscode.mjs",
+    "./capture": "./dist/capture.mjs",
+    "./browser": "./dist/browser.mjs",
+    "./components": "./dist/components.mjs",
+    "./generate": "./dist/generate.mjs"
   },
   "files": [
-    "bin",
-    "src",
+    "dist",
     "docs",
     "README.md",
     "CHANGELOG.md"
   ],
   "scripts": {
-    "build": "vite build --config vite.config.ts",
+    "build": "vite build --config vite.lib.config.ts && vite build --config vite.config.ts",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json",
-    "lint": "eslint \"src/**/*.ts\" \"tests/**/*.ts\" vite.config.ts && prettier --check \"src/**/*.{ts,cjs}\" \"tests/**/*.ts\" \"vite.config.ts\" \"eslint.config.mjs\" \"prettier.config.mjs\" \"package.json\"",
-    "lint:eslint": "eslint \"src/**/*.ts\" \"tests/**/*.ts\" vite.config.ts",
-    "format": "prettier --write \"src/**/*.{ts,cjs}\" \"tests/**/*.ts\" \"vite.config.ts\" \"eslint.config.mjs\" \"prettier.config.mjs\" \"package.json\"",
-    "format:check": "prettier --check \"src/**/*.{ts,cjs}\" \"tests/**/*.ts\" \"vite.config.ts\" \"eslint.config.mjs\" \"prettier.config.mjs\" \"package.json\""
+    "lint": "eslint \"src/**/*.ts\" \"tests/**/*.ts\" vite.config.ts vite.lib.config.ts && prettier --check \"src/**/*.{ts,cjs}\" \"tests/**/*.ts\" \"vite.config.ts\" \"vite.lib.config.ts\" \"eslint.config.mjs\" \"prettier.config.mjs\" \"package.json\"",
+    "lint:eslint": "eslint \"src/**/*.ts\" \"tests/**/*.ts\" vite.config.ts vite.lib.config.ts",
+    "format": "prettier --write \"src/**/*.{ts,cjs}\" \"tests/**/*.ts\" \"vite.config.ts\" \"vite.lib.config.ts\" \"eslint.config.mjs\" \"prettier.config.mjs\" \"package.json\"",
+    "format:check": "prettier --check \"src/**/*.{ts,cjs}\" \"tests/**/*.ts\" \"vite.config.ts\" \"vite.lib.config.ts\" \"eslint.config.mjs\" \"prettier.config.mjs\" \"package.json\""
   },
   "engines": {
     "node": ">=24"

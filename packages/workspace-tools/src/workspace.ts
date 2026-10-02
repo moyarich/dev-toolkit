@@ -11,6 +11,7 @@ export interface WorkspaceManifest {
   optionalDependencies?: Record<string, string>;
   devDependencies?: Record<string, string>;
   publishConfig?: { registry?: string };
+  files?: string[];
 }
 
 export interface WorkspacePackage {

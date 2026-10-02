@@ -4,12 +4,11 @@
   "description": "Reusable vs-code extension tools.",
   "type": "module",
   "bin": {
-    "vs-code-publish": "./bin/vs-code-publish.mjs",
-    "run-extension-dev": "./bin/run-extension-dev.mjs"
+    "vs-code-publish": "./dist/bin/vs-code-publish.mjs",
+    "run-extension-dev": "./dist/bin/run-extension-dev.mjs"
   },
   "files": [
-    "bin",
-    "src",
+    "dist",
     "docs",
     "README.md",
     "CHANGELOG.md"

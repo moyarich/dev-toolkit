@@ -4,15 +4,14 @@
   "description": "Reusable workspace release and publishing tools.",
   "type": "module",
   "bin": {
-    "workspace-release": "./bin/workspace-release.mjs",
-    "workspace-publish": "./bin/workspace-publish.mjs",
-    "workspace-dependency-check": "./bin/workspace-dependency-check.mjs",
-    "workspace-package-lock": "./bin/workspace-package-lock.mjs",
-    "discover-packages": "./bin/discover-packages.mjs"
+    "workspace-release": "./dist/bin/workspace-release.mjs",
+    "workspace-publish": "./dist/bin/workspace-publish.mjs",
+    "workspace-dependency-check": "./dist/bin/workspace-dependency-check.mjs",
+    "workspace-package-lock": "./dist/bin/workspace-package-lock.mjs",
+    "discover-packages": "./dist/bin/discover-packages.mjs"
   },
   "files": [
-    "bin",
-    "src",
+    "dist",
     "README.md",
     "CHANGELOG.md"
   ],

@@ -5,7 +5,7 @@ import { expect, test } from "vitest";
 test("built publish CLI shows help without publishing", () => {
   const result = spawnSync(
     process.execPath,
-    ["bin/vs-code-publish.mjs", "--help"],
+    ["dist/bin/vs-code-publish.mjs", "--help"],
     {
       cwd: resolve(import.meta.dirname, ".."),
       encoding: "utf8",

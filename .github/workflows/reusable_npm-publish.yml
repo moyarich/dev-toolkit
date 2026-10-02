@@ -176,8 +176,21 @@ jobs:
               @moyarich/workspace-tools@latest
             TOOL_PACKAGE_ROOT="$TOOL_ROOT/node_modules/@moyarich/workspace-tools"
           fi
-          test -f "$TOOL_PACKAGE_ROOT/bin/workspace-publish.mjs"
+          TOOL_BIN_ROOT=""
+          for CANDIDATE in "$TOOL_PACKAGE_ROOT/dist/bin" "$TOOL_PACKAGE_ROOT/bin"; do
+            if [ -f "$CANDIDATE/workspace-publish.mjs" ]; then
+              TOOL_BIN_ROOT="$CANDIDATE"
+              break
+            fi
+          done
+
+          if [ -z "$TOOL_BIN_ROOT" ]; then
+            echo "Unable to resolve packaged CLI directory under $TOOL_PACKAGE_ROOT." >&2
+            exit 1
+          fi
+
           echo "WORKSPACE_TOOLS_ROOT=$TOOL_PACKAGE_ROOT" >> "$GITHUB_ENV"
+          echo "WORKSPACE_TOOLS_BIN=$TOOL_BIN_ROOT" >> "$GITHUB_ENV"
       - name: Resolve publish plan
         id: plan
         env:
@@ -185,7 +198,7 @@ jobs:
         shell: bash
         run: |
           PLAN="$(
-            node "$WORKSPACE_TOOLS_ROOT/bin/workspace-publish.mjs" \
+            node "$WORKSPACE_TOOLS_BIN/workspace-publish.mjs" \
               "$PACKAGE_SELECTOR" \
               --registry="${{ inputs.registry }}" \
               --tag="${{ inputs.tag }}" \
@@ -226,10 +239,15 @@ jobs:
         run: |
           set -euo pipefail
 
+          ARTIFACT_DIRECTORY="$RUNNER_TEMP/npm-package-artifacts"
+          rm -rf "$ARTIFACT_DIRECTORY"
+          mkdir -p "$ARTIFACT_DIRECTORY"
+
           PUBLISH_ARGS=(
             "$PACKAGE_SELECTOR"
             --registry="${{ inputs.registry }}"
             --tag="${{ inputs.tag }}"
+            --artifact-directory="$ARTIFACT_DIRECTORY"
             --json
           )
 
@@ -242,7 +260,7 @@ jobs:
           fi
 
           RESULT="$(
-            node "$WORKSPACE_TOOLS_ROOT/bin/workspace-publish.mjs" "${PUBLISH_ARGS[@]}"
+            node "$WORKSPACE_TOOLS_BIN/workspace-publish.mjs" "${PUBLISH_ARGS[@]}"
           )"
 
           echo "$RESULT" | jq -e --argjson dryRun "$DRY_RUN" '
@@ -267,6 +285,15 @@ jobs:
 
           echo "$RESULT" | jq .
 
+      - name: Upload packed npm artifact
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: npm-package-${{ steps.plan.outputs.version || 'unresolved' }}
+          path: ${{ runner.temp }}/npm-package-artifacts/*.tgz
+          if-no-files-found: ignore
+          retention-days: 14
+
       - name: Publish summary
         if: ${{ always() }}
         run: |
@@ -281,6 +308,7 @@ jobs:
             echo "| Requested version | \`${{ inputs.version || 'package version' }}\` |"
             echo "| Registry | \`${{ inputs.registry }}\` |"
             echo "| Distribution tag | \`${{ inputs.tag }}\` |"
+            echo "| Packed artifact | \`npm-package-${{ steps.plan.outputs.version || 'unresolved' }}\` |"
             echo "| Verify Git release tag | **${{ inputs.verify-git-tag }}** |"
             echo "| Node.js | \`${{ inputs.node-version }}\` |"
             echo "| Publish status | \`${{ steps.publish.outputs.status || 'unresolved' }}\` |"

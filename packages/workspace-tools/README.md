@@ -34,10 +34,14 @@ Release modes:
 Validate and publish a workspace package.
 
 ```sh
-workspace-publish <package> [--registry=github|npm|both] [--tag=latest] [--access=public|restricted] [--ls] [--with-dependencies[=true|false]] [--dry-run[=true|false]]
+workspace-publish <package> [--registry=github|npm|both] [--tag=latest] [--access=public|restricted] [--artifact-directory=<dir>] [--ls] [--with-dependencies] [--dry-run]
 ```
 
-Use `--ls` to print the resolved publish plan without validating or publishing. Combine `--ls --dry-run` to print that plan and then validate/test/pack it without publishing. Use `--with-dependencies` (or `--with-dependencies=true`) to include internal workspace dependencies first in dependency order; `--with-dependencies=false` selects only the requested package.\n\nGitHub Packages uses `_GITHUB_TOKEN`. npm publishing uses `_NPM_TOKEN`.
+Use `--ls` to print the resolved publish plan without validating or publishing. Combine `--ls --dry-run` to print that plan and then validate, test, build, and create the package tarball without publishing. Use `--with-dependencies` to include internal workspace dependencies first in dependency order.
+
+`workspace-publish` now packs each package exactly once and promotes that same `.tgz` to every selected registry. Use `--artifact-directory=<dir>` to keep the generated tarball; otherwise a temporary directory is used and cleaned after the operation. GitHub Packages receives the tarball with `npm publish <tarball>`, while npm staged publishing receives the same tarball with `npm stage publish <tarball>`.
+
+GitHub Packages uses `_GITHUB_TOKEN`. npm publishing uses `_NPM_TOKEN`.
 
 ## Reusable workflows
 

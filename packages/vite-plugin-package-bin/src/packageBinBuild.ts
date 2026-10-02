@@ -53,10 +53,11 @@ export async function discoverCliEntries(
   entryOptions: PackageBinBuildOptions["entries"] = defaultEntries,
   root = process.cwd(),
   bins?: PackageBins,
+  defaultBinPattern = "./bin/{name}.mjs",
 ): Promise<Record<string, string>> {
   const entryRules = (
     Array.isArray(entryOptions) ? entryOptions : [entryOptions]
-  ).map((entry) => ({ bin: "./bin/{name}.mjs", ...entry }));
+  ).map((entry) => ({ bin: defaultBinPattern, ...entry }));
   const managedBins = bins ?? (await readManagedPackageBins(root));
   const candidates = new Map<string, string[]>();
 
@@ -206,13 +207,29 @@ export function packageBinBuild(options: PackageBinBuildOptions): Plugin {
     async buildStart() {
       const root = resolvedConfig.root;
       const bins = await readManagedPackageBins(root);
-      const entries = await discoverCliEntries(options.entries, root, bins);
+      const outDir = options.outDir ?? "bin";
+      const entryOptions = options.entries ?? [
+        {
+          pattern: "src/**/*.ts",
+          bin: `./${outDir}/{name}.mjs`,
+        },
+        {
+          pattern: "src/cli/**/*.sh",
+          bin: `./${outDir}/{name}.sh`,
+        },
+      ];
+
+      const entries = await discoverCliEntries(
+        entryOptions,
+        root,
+        bins,
+        `./${outDir}/{name}.mjs`,
+      );
 
       if (Object.keys(entries).length === 0) {
         throw new Error("No managed package bins were found");
       }
 
-      const outDir = options.outDir ?? "bin";
       if (options.emptyOutDir) {
         await rm(resolve(root, outDir), { recursive: true, force: true });
       }

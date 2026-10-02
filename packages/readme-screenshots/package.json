@@ -4,11 +4,10 @@
   "description": "Reusable Playwright README screenshot generator.",
   "type": "module",
   "bin": {
-    "readme-screenshots": "./bin/readme-screenshots.mjs"
+    "readme-screenshots": "./dist/bin/readme-screenshots.mjs"
   },
   "files": [
-    "bin",
-    "src",
+    "dist",
     "README.md",
     "CHANGELOG.md"
   ],

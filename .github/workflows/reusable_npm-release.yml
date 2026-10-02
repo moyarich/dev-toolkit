@@ -317,9 +317,21 @@ jobs:
               @moyarich/workspace-tools@latest
             TOOL_PACKAGE_ROOT="$TOOL_ROOT/node_modules/@moyarich/workspace-tools"
           fi
-          test -f "$TOOL_PACKAGE_ROOT/bin/workspace-release.mjs"
-          test -f "$TOOL_PACKAGE_ROOT/bin/workspace-publish.mjs"
+          TOOL_BIN_ROOT=""
+          for CANDIDATE in "$TOOL_PACKAGE_ROOT/dist/bin" "$TOOL_PACKAGE_ROOT/bin"; do
+            if [ -f "$CANDIDATE/workspace-release.mjs" ] && [ -f "$CANDIDATE/workspace-publish.mjs" ]; then
+              TOOL_BIN_ROOT="$CANDIDATE"
+              break
+            fi
+          done
+
+          if [ -z "$TOOL_BIN_ROOT" ]; then
+            echo "Unable to resolve packaged CLI directory under $TOOL_PACKAGE_ROOT." >&2
+            exit 1
+          fi
+
           echo "WORKSPACE_TOOLS_ROOT=$TOOL_PACKAGE_ROOT" >> "$GITHUB_ENV"
+          echo "WORKSPACE_TOOLS_BIN=$TOOL_BIN_ROOT" >> "$GITHUB_ENV"
 
       - name: Restore tracked files after build
         run: git restore --worktree -- .
@@ -515,7 +527,7 @@ jobs:
           fi
 
           RELEASE_JSON="$(
-            node "$WORKSPACE_TOOLS_ROOT/bin/workspace-release.mjs" "${RELEASE_ARGS[@]}"
+            node "$WORKSPACE_TOOLS_BIN/workspace-release.mjs" "${RELEASE_ARGS[@]}"
           )"
 
           echo "$RELEASE_JSON" | jq -e '
@@ -678,7 +690,7 @@ jobs:
             echo '```text'
 
             PUBLISH_JSON="$(
-              node "$WORKSPACE_TOOLS_ROOT/bin/workspace-publish.mjs" "${PUBLISH_ARGS[@]}"
+              node "$WORKSPACE_TOOLS_BIN/workspace-publish.mjs" "${PUBLISH_ARGS[@]}"
             )"
 
             echo "$PUBLISH_JSON" | jq -e '
