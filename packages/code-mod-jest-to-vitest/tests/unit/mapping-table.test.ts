@@ -83,7 +83,10 @@ function manualTypeMigration(
 function manualMigration(
   jestSymbol: string,
   detail: string,
-  reversibility: Extract<Reversibility, "lossy" | "unsupported"> = "unsupported",
+  reversibility: Extract<
+    Reversibility,
+    "lossy" | "unsupported"
+  > = "unsupported",
 ): ProposedMapping {
   return {
     name: `jest.${jestSymbol}`,
@@ -199,8 +202,18 @@ const proposedMappings: ProposedMapping[] = [
   vitestType("Spied", "MockInstance", "semantic", "conditional-spy-type"),
   vitestType("SpiedClass", "MockInstance", "semantic", "constructor-spy-type"),
   vitestType("SpiedFunction", "MockInstance", "semantic", "function-spy-type"),
-  vitestType("SpiedGetter", "MockInstance", "semantic", "getter-signature-rewrite"),
-  vitestType("SpiedSetter", "MockInstance", "semantic", "setter-signature-rewrite"),
+  vitestType(
+    "SpiedGetter",
+    "MockInstance",
+    "semantic",
+    "getter-signature-rewrite",
+  ),
+  vitestType(
+    "SpiedSetter",
+    "MockInstance",
+    "semantic",
+    "setter-signature-rewrite",
+  ),
   vitestType("SpyInstance", "MockInstance", "semantic"),
 
   // A direct call and a detached reference are different transformations.
@@ -412,9 +425,7 @@ describe("Jest to Vitest mapping model", () => {
         mappings.filter((mapping) => mapping.targetKey === targetKey),
       )) {
       expect(
-        targetMappings.every(
-          ({ reversibility }) => reversibility !== "exact",
-        ),
+        targetMappings.every(({ reversibility }) => reversibility !== "exact"),
       ).toBe(true);
     }
   });
@@ -451,9 +462,8 @@ describe("Jest to Vitest mapping model", () => {
 
   it("captures structural migrations that are not simple renames", () => {
     expect(
-      mappings.find(
-        ({ sourceKey }) => sourceKey === "jest.setTimeout.call",
-      )?.target,
+      mappings.find(({ sourceKey }) => sourceKey === "jest.setTimeout.call")
+        ?.target,
     ).toEqual({
       framework: "vitest",
       namespace: "vi",
@@ -535,9 +545,7 @@ describe("Jest to Vitest mapping model", () => {
 
   it("maps SpyInstance to Vitest MockInstance", () => {
     expect(
-      mappings.find(
-        ({ sourceKey }) => sourceKey === "jest.SpyInstance.type",
-      ),
+      mappings.find(({ sourceKey }) => sourceKey === "jest.SpyInstance.type"),
     ).toMatchObject({
       targetKey: "vitest.MockInstance.type",
       reversibility: "semantic",

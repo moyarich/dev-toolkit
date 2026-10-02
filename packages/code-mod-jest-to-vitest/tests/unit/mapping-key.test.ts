@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  createMappingKey,
-  defineMapping,
-} from "../../src/mapping.ts";
+import { createMappingKey, defineMapping } from "../../src/mapping.ts";
 
 describe("semantic mapping keys", () => {
   it("creates a Jest call key", () => {

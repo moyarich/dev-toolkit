@@ -14,11 +14,7 @@ export type Framework = "jest" | "vitest";
  * `jest.advanceTimersByTime` as a callback is a reference that needs binding.
  */
 export type MappingRole =
-  | "call"
-  | "reference"
-  | "type"
-  | "bound-reference"
-  | "config";
+  "call" | "reference" | "type" | "bound-reference" | "config";
 
 /**
  * Semantic identity for one side of a Jest → Vitest mapping.
@@ -48,11 +44,7 @@ export type MappingIdentity = {
  * - `unsupported`: there is no safe direct Vitest equivalent and manual
  *   migration is required.
  */
-export type Reversibility =
-  | "exact"
-  | "semantic"
-  | "lossy"
-  | "unsupported";
+export type Reversibility = "exact" | "semantic" | "lossy" | "unsupported";
 
 /**
  * Creates a deterministic key for indexing a semantic mapping.
