@@ -57,6 +57,12 @@ version-resolver:
   default: patch
 
 template: |
-  ## What's Changed
+  ## Release notes
 
   $CHANGES
+
+  ## Install
+
+  ```sh
+  npm install {{PACKAGE_NAME}}@$RESOLVED_VERSION --registry=https://npm.pkg.github.com
+  ```

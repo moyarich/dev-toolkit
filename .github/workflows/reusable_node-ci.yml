@@ -61,6 +61,12 @@ jobs:
         run: npm ci --prefer-offline --no-audit --no-fund
         env:
           NODE_AUTH_TOKEN: ${{ secrets.package-token || github.token }}
+      - name: Install Zsh for shell package tests
+        if: ${{ inputs.package-directory == 'packages/moyarich-auto-glow-md' || inputs.package-directory == '@moyarich/auto-glow-md' }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes zsh
+
       - name: Build selected workspace and local dependencies
         env:
           WORKSPACE: ${{ inputs.package-directory }}
@@ -165,6 +171,12 @@ jobs:
           WORKSPACE: ${{ inputs.package-directory }}
         run: |
           if [ "$WORKSPACE" = "." ]; then npm run typecheck --if-present; else npm run typecheck --workspace "$WORKSPACE" --if-present; fi
+
+      - name: Validate package tarball
+        if: ${{ inputs.package-directory != '.' }}
+        env:
+          WORKSPACE: ${{ inputs.package-directory }}
+        run: npm pack --workspace "$WORKSPACE" --dry-run
 
       - name: CI summary
         if: ${{ always() }}

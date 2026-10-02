@@ -1,86 +1,30 @@
 # Changelog
 
-## Unreleased
-
-### Changed
-
-- Move workspace tool executables to `dist/bin` and use `dist/` as the packaged build boundary.
-
-- Pack workspace packages once and publish the exact generated tarball to each selected registry.
-- Allow `workspace-publish` to retain tarballs with `--artifact-directory`.
-- Retain packed npm tarballs as GitHub Actions artifacts in the reusable publish workflow.
-
-## 0.1.2
-
-### Changed
-
-- Package release.
-
-## 0.1.1
-
-### Added
-
-- color release preview output
-- protect private workspaces from release
-- protect private workspaces from publishing
-- check dependencies before release
-- check dependencies before publish
-- add shared dependency checks
-- confirm interactive releases
-- confirm interactive publishing
-- report registry publish state
-- compose list and dry run
-- add publish plan listing
-- publish workspace dependencies first
-- add dependency publish option
-- resolve publish dependency order
-- resolve workspace selectors
-- prepare package release
-- verify versions against package registry
-- expose dry-run CLI flag
-- add non-mutating dry run
-- generate package changelog
-- align workspace publishing behavior
-- migrate reusable release tooling
-
-### Changed
-
-- updaded workflow
-- use Commander for publish CLI
-- allow configured workspace paths
-- cover manifest workspace discovery
-- derive workspace locations from manifest
-- cover dependency checks
-- expose dependency classification
-- document publish listing
-- document dependency publishing
-- cover dependency publish option
-- verify categorized release notes
-- generate useful package release notes
-- cover changelog section
-- document reusable release workflow
-- cover release parsing and selector safety
-- expose release argument parser
-- add package-local MoyaForge MDX guides
-- cover workspace release helpers
-- scaffold reusable dev toolkit
-
-### Fixed
-
-- clarify release preview version
-- clean release dry-run output
-- reject unsafe package selectors
-- keep package install tree clean
-- expose release version modes
-- distinguish unpublished packages from registry errors
-- resolve previous package release reliably
-
 ## 0.1.0
 
 ### Added
 
-- Workspace-aware package release and publishing commands.
-- Release modes for npm version bumps, exact SemVer releases, and the current package version.
-- Non-mutating release dry runs with registry and changelog previews.
-- Package-scoped changelog generation for releases.
-- GitHub Packages and npm publishing support.
+- Workspace package discovery with reusable metadata for GitHub Actions.
+- `workspace-release` with bump, exact-version, package-json, dry-run, JSON, and interactive selection modes.
+- `workspace-publish` with registry selection, dependency ordering, dry-run plans, JSON output, and interactive confirmation.
+- Dependency checks and safe workspace-selector validation before release or publish operations.
+- Registry-state checks that distinguish unpublished packages from registry failures.
+- Git-tag verification and conflict guardrails for releases and publishing.
+- Package-scoped changelog generation from commit history.
+- `workspace-package-lock` and reusable package-discovery CLIs.
+- Package-local release, publish, and CLI documentation.
+
+### Changed
+
+- Standardize the package on Node 24, TypeScript, Commander, Vitest, and Vite-built CLI entry points.
+- Build executables into `dist/bin` and use `dist/` as the package runtime boundary.
+- Pack each workspace package once and publish the exact generated tarball to selected registries.
+- Support retaining packed tarballs as local artifacts and GitHub Actions artifacts.
+
+### Fixed
+
+- Keep release dry runs non-mutating and produce clean human and JSON output.
+- Resolve previous package releases and unpublished-package versions reliably.
+- Reject unsafe package selectors and prevent publishing private workspaces.
+- Preserve required subprocess diagnostics without polluting JSON results.
+- Report existing tag conflicts without moving tags.
