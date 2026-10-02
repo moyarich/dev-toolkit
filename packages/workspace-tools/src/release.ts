@@ -911,6 +911,7 @@ ${section}`);
     registry: registryFor(pkg),
     currentVersion: pkg.manifest.version,
     nextVersion: version,
+    identity,
     tag,
     changelog,
     git: {
