@@ -142,7 +142,6 @@ test("standalone publish finalizes the canonical GitHub draft after publication"
   assert.match(publishWrapper, /contents: write/);
 });
 
-
 test("release resolves the target before ensuring a draft and performing mutation", () => {
   const preview = release.indexOf("- name: Resolve target release");
   const draft = release.indexOf("- name: Ensure matching GitHub draft");

@@ -320,14 +320,14 @@ Editing a published GitHub Release does not require moving or recreating its rel
 
 ## Valid release states
 
-| Git tag | Draft release | Published release | Meaning |
-| --- | --- | --- | --- |
-| no | no | no | No release prepared yet |
-| no | yes | no | Normal pre-release draft |
-| yes | yes | no | Valid release in progress |
-| yes | no | yes | Completed release |
-| yes | no | no | Orphan tag; workflow blocks |
-| yes | yes | yes | Inconsistent state; investigate |
+| Git tag | Draft release | Published release | Meaning                         |
+| ------- | ------------- | ----------------- | ------------------------------- |
+| no      | no            | no                | No release prepared yet         |
+| no      | yes           | no                | Normal pre-release draft        |
+| yes     | yes           | no                | Valid release in progress       |
+| yes     | no            | yes               | Completed release               |
+| yes     | no            | no                | Orphan tag; workflow blocks     |
+| yes     | yes           | yes               | Inconsistent state; investigate |
 
 A Git tag with a matching draft is deliberately accepted because release-only runs leave the release in that state.
 
@@ -335,14 +335,14 @@ A Git tag with neither a matching draft nor a published GitHub Release is treate
 
 ## Workflow responsibilities
 
-| Stage | Responsibility |
-| --- | --- |
-| Draft workflow | Proactively prepare release notes |
-| Release workflow | Resolve target version and ensure its draft exists |
-| `workspace-release-identity` | Produce canonical name/tag |
-| Release operation | Version, commit, tag |
-| Publish operation | Publish package |
-| Finalization | Change existing GitHub Release from draft → published |
+| Stage                        | Responsibility                                        |
+| ---------------------------- | ----------------------------------------------------- |
+| Draft workflow               | Proactively prepare release notes                     |
+| Release workflow             | Resolve target version and ensure its draft exists    |
+| `workspace-release-identity` | Produce canonical name/tag                            |
+| Release operation            | Version, commit, tag                                  |
+| Publish operation            | Publish package                                       |
+| Finalization                 | Change existing GitHub Release from draft → published |
 
 ## Safety rules
 
