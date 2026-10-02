@@ -1,0 +1,33 @@
+# Run an extension locally
+
+`run-extension-dev` builds and opens a local VS Code extension in an Extension Development Host.
+
+```sh
+run-extension-dev [directory]
+```
+
+Useful options include:
+
+```text
+--code-command <command>
+--debug-port <port>
+--no-compile
+--no-open-devtools
+--no-new-window
+--no-fzf
+```
+
+When the process is interactive and the external `fzf` command is available, the CLI can fuzzy-select the extension directory and VS Code executable automatically.
+
+Disable that behavior with:
+
+```sh
+run-extension-dev --no-fzf
+```
+
+You can also configure the executable and debug port with:
+
+```text
+CODE_COMMAND
+EXTENSION_DEBUG_PORT
+```

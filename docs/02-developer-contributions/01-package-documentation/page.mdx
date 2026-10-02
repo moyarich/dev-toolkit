@@ -1,0 +1,144 @@
+# Package documentation
+
+Package documentation in `dev-toolkit` follows the same MoyaForge-friendly structure used by `packages/web-components/docs`.
+
+Do not place unrelated loose Markdown files directly under a package's `docs/` directory. Use an ordered navigation structure with a root `page.mdx` and a `page.mdx` for each documentation page.
+
+## Recommended folder tree
+
+```text
+packages/
+└── my-package/
+    ├── README.md
+    ├── CHANGELOG.md
+    ├── package.json
+    └── docs/
+        ├── page.mdx
+        ├── 01-getting-started/
+        │   └── page.mdx
+        ├── 02-guides/
+        │   ├── 01-first-workflow/
+        │   │   └── page.mdx
+        │   └── 02-advanced-workflow/
+        │       └── page.mdx
+        └── 03-reference/
+            ├── 01-cli/
+            │   └── page.mdx
+            └── 02-api/
+                └── page.mdx
+```
+
+The numeric prefixes define a stable, human-readable navigation order.
+
+## Root documentation page
+
+Every package documentation tree should begin with:
+
+```text
+docs/page.mdx
+```
+
+Use it as a concise landing page and navigation index:
+
+```mdx
+# My Package
+
+`@moyarich/my-package` provides ...
+
+## Start here
+
+- [Getting started](./01-getting-started/page.mdx)
+- [First workflow](./02-guides/01-first-workflow/page.mdx)
+- [CLI reference](./03-reference/01-cli/page.mdx)
+```
+
+## Recommended sections
+
+Use these sections when they fit the package:
+
+```text
+01-getting-started/
+02-guides/
+03-reference/
+```
+
+Packages can add domain-specific sections when useful. For example, `web-components` uses `02-components/`.
+
+Prefer semantic folder names over forcing every package into an identical taxonomy.
+
+## One page per directory
+
+Each navigable document should use:
+
+```text
+<ordered-name>/page.mdx
+```
+
+Prefer:
+
+```text
+docs/02-guides/01-release/page.mdx
+```
+
+instead of:
+
+```text
+docs/release.md
+docs/guides-release.md
+```
+
+This keeps routing, navigation, and future documentation rendering predictable.
+
+## README versus docs
+
+The package `README.md` should stay concise:
+
+- package purpose
+- minimal installation or usage
+- links into `docs/`
+
+Detailed guides, tutorials, architecture notes, and reference material belong under `docs/`.
+
+## package.json
+
+Publishable packages should normally include documentation in `package.json#files`:
+
+```json
+{
+  "files": ["bin", "src", "docs", "README.md", "CHANGELOG.md"]
+}
+```
+
+Adjust the runtime directories for the package, but keep `docs` when the package documentation should ship with the published artifact.
+
+## Adding a new guide
+
+For a second guide under `02-guides`:
+
+```sh
+mkdir -p packages/my-package/docs/02-guides/02-new-guide
+```
+
+Create:
+
+```text
+packages/my-package/docs/02-guides/02-new-guide/page.mdx
+```
+
+Then add it to `docs/page.mdx` or the appropriate parent/index page.
+
+## Documentation checklist
+
+Before merging package documentation:
+
+- `docs/page.mdx` exists
+- navigable pages use `page.mdx`
+- ordered folders use two-digit numeric prefixes
+- page names are descriptive and hyphenated
+- links are relative and point to `page.mdx`
+- detailed content is kept out of the package README
+- `package.json#files` includes `docs` when docs should be published
+- obsolete loose `.md` files are removed after migration
+- examples use current package names and commands
+
+Use `packages/web-components/docs` as the reference implementation when creating or restructuring package documentation.

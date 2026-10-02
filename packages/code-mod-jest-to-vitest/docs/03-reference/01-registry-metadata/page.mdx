@@ -1,0 +1,44 @@
+# Registry metadata
+
+The codemod keeps its package and registry identities aligned.
+
+```text
+package.json      @moyarich/code-mod-jest-to-vitest
+codemod.yaml      @moyarich/code-mod-jest-to-vitest
+.codemodrc.json   @moyarich/code-mod-jest-to-vitest
+```
+
+## .codemodrc.json
+
+```json
+{
+  "$schema": "https://codemod-utils.s3.us-west-1.amazonaws.com/configuration_schema.json",
+  "version": "0.1.0",
+  "private": false,
+  "name": "@moyarich/code-mod-jest-to-vitest",
+  "engine": "jssg",
+  "applicability": {
+    "from": [["jest", ">=", "26.0.0"]]
+  },
+  "meta": {
+    "tags": ["migration", "jest", "vitest"],
+    "git": "https://github.com/moyarich/dev-toolkit/tree/main/packages/code-mod-jest-to-vitest"
+  }
+}
+```
+
+## Publishing
+
+The package-specific workflow delegates to the reusable Codemod publisher:
+
+```text
+.github/workflows/package-code-mod-jest-to-vitest-publish.yml
+    ↓
+.github/workflows/reusable_codemod-publish.yml
+    ↓
+codemod/publish-action@v1
+    ↓
+Codemod Registry
+```
+
+Real publishes use GitHub OIDC and the protected `release` environment. Dry runs validate the package without mutating the registry.
