@@ -1,0 +1,16 @@
+name: Temporary format PR 99
+
+on:
+  push:
+    branches:
+      - refactor/shared-release-identity
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    uses: ./.github/workflows/reusable_format.yml
+    with:
+      commit: true
+      node-version: "24"
