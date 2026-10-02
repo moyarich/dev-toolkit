@@ -35,6 +35,108 @@ jobs:
       require-publish-config: true
       node-version: "24"
 
+  select-packages:
+    name: "Select packages for drafting"
+    needs: discover-packages
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.select.outputs.matrix }}
+      has-packages: ${{ steps.select.outputs.has-packages }}
+      count: ${{ steps.select.outputs.count }}
+
+    steps:
+      - name: Checkout repository history
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Select affected packages
+        id: select
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_PACKAGE: ${{ inputs.package }}
+          BEFORE_SHA: ${{ github.event.before }}
+          AFTER_SHA: ${{ github.sha }}
+          PACKAGES_JSON: ${{ needs.discover-packages.outputs.packages }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            if [ "$INPUT_PACKAGE" = "all" ]; then
+              SELECTED="$PACKAGES_JSON"
+            else
+              SELECTED="$(
+                jq -c --arg selector "$INPUT_PACKAGE" '
+                  [
+                    .[] |
+                    select(.name == $selector or .directory == $selector)
+                  ]
+                ' <<< "$PACKAGES_JSON"
+              )"
+            fi
+          else
+            if [ -n "$BEFORE_SHA" ] &&
+               [ "$BEFORE_SHA" != "0000000000000000000000000000000000000000" ] &&
+               git cat-file -e "$BEFORE_SHA^{commit}" 2>/dev/null; then
+              CHANGED_FILES="$(git diff --name-only "$BEFORE_SHA" "$AFTER_SHA")"
+            else
+              CHANGED_FILES="$(git diff-tree --root --no-commit-id --name-only -r "$AFTER_SHA")"
+            fi
+
+            SELECTED="$(
+              PACKAGES_JSON="$PACKAGES_JSON" CHANGED_FILES="$CHANGED_FILES" node --input-type=module <<'NODE'
+          const packages = JSON.parse(process.env.PACKAGES_JSON || "[]");
+          const files = (process.env.CHANGED_FILES || "")
+            .split("\n")
+            .map((file) => file.trim())
+            .filter(Boolean);
+
+          const selected = packages.filter((pkg) =>
+            files.some(
+              (file) =>
+                file === pkg.directory || file.startsWith(`${pkg.directory}/`),
+            ),
+          );
+
+          process.stdout.write(JSON.stringify(selected));
+          NODE
+            )"
+          fi
+
+          COUNT="$(jq 'length' <<< "$SELECTED")"
+          MATRIX="$(jq -cn --argjson packages "$SELECTED" '{include: $packages}')"
+
+          {
+            echo "matrix=$MATRIX"
+            echo "count=$COUNT"
+            if [ "$COUNT" -gt 0 ]; then
+              echo "has-packages=true"
+            else
+              echo "has-packages=false"
+            fi
+          } >> "$GITHUB_OUTPUT"
+
+          {
+            echo "# Draft package selection"
+            echo
+            echo "| Setting | Value |"
+            echo "| --- | --- |"
+            echo "| Trigger | `$EVENT_NAME` |"
+            echo "| Selected packages | **$COUNT** |"
+            echo
+            if [ "$EVENT_NAME" = "push" ]; then
+              echo "> Root and shared-tooling changes do not implicitly draft every package."
+              echo "> Only changed files under a publishable package directory select that package."
+              echo
+            fi
+            echo '~~~json'
+            jq . <<< "$SELECTED"
+            echo '~~~'
+          } >> "$GITHUB_STEP_SUMMARY"
+
   validate-selection:
     name: "Validate package selector"
     needs: discover-packages
@@ -68,16 +170,23 @@ jobs:
     name: "package: ${{ matrix.name }} | dir: ${{ matrix.directory }}"
     needs:
       - discover-packages
+      - select-packages
       - validate-selection
     if: >-
       ${{ needs.discover-packages.result == 'success' &&
-          needs.discover-packages.outputs.has-packages == 'true' &&
+          needs.select-packages.result == 'success' &&
+          needs.select-packages.outputs.has-packages == 'true' &&
           (github.event_name != 'workflow_dispatch' ||
            needs.validate-selection.result == 'success') }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-      matrix: ${{ fromJSON(needs.discover-packages.outputs.matrix || '{"include":[]}') }}
+      matrix: ${{ fromJSON(needs.select-packages.outputs.matrix || '{"include":[]}') }}
+
+    concurrency:
+      group: draft-package-${{ github.repository }}-${{ matrix.directory }}
+      cancel-in-progress: true
+
 
     steps:
       - name: Decide whether package is selected
@@ -490,6 +599,8 @@ jobs:
 
           BODY="$(
             {
+              echo "<!-- dev-toolkit-release-draft:candidate package=$PACKAGE_NAME -->"
+              echo
               echo "## Release notes"
               echo
               echo "$NOTES"
