@@ -204,7 +204,6 @@ const proposedMappings: ProposedMapping[] = [
   vitestType("SpyInstance", "MockInstance", "semantic"),
 
   // A direct call and a detached reference are different transformations.
-  viCall("advanceTimersByTime"),
   {
     name: "jest.advanceTimersByTime reference",
     source: {
@@ -222,17 +221,7 @@ const proposedMappings: ProposedMapping[] = [
   },
 ];
 
-// Remove the duplicate call entry used above so the table keeps one source
-// identity while still placing the detached-reference mapping beside it.
-const uniqueProposedMappings = proposedMappings.filter(
-  (mapping, index, all) =>
-    all.findIndex(
-      (candidate) =>
-        createMappingKey(candidate.source) === createMappingKey(mapping.source),
-    ) === index,
-);
-
-const mappings = uniqueProposedMappings.map(defineMapping);
+const mappings = proposedMappings.map(defineMapping);
 
 /**
  * Builds a reverse index because a Vitest target can intentionally represent
