@@ -26,13 +26,9 @@ on:
         required: false
         default: "24"
         type: string
-    secrets:
-      package-token:
-        required: false
 
 permissions:
   contents: write
-  packages: read
 
 jobs:
   format:
@@ -51,14 +47,26 @@ jobs:
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: ${{ inputs.node-version }}
-          cache: npm
-          registry-url: https://npm.pkg.github.com
-          scope: "@moyarich"
 
-      - name: Install workspace dependencies
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.package-token || github.token }}
-        run: npm ci --ignore-scripts
+      - name: Resolve Prettier version
+        id: prettier
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          PRETTIER_VERSION="$(
+            node -e '
+              const pkg = require("./package.json");
+              const version = pkg.devDependencies?.prettier;
+              if (!version) {
+                console.error("package.json must declare devDependencies.prettier");
+                process.exit(1);
+              }
+              process.stdout.write(version);
+            '
+          )"
+
+          echo "version=$PRETTIER_VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Format repository
         id: format
@@ -66,7 +74,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          npm run format
+          npx --yes "prettier@${{ steps.prettier.outputs.version }}" . --write
 
           git status --short > /tmp/format-status.txt
 
@@ -75,6 +83,15 @@ jobs:
           else
             echo "changed=false" >> "$GITHUB_OUTPUT"
           fi
+
+      - name: Verify formatting
+        id: verify
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          npx --yes "prettier@${{ steps.prettier.outputs.version }}" . --check
 
       - name: Commit formatting changes
         if: ${{ inputs.commit && steps.format.outputs.changed == 'true' }}
@@ -89,6 +106,13 @@ jobs:
           git commit -m "style: format repository"
           git push origin "HEAD:${{ github.ref_name }}"
 
+      - name: Fail if formatting verification failed
+        if: ${{ always() && steps.verify.outcome == 'failure' }}
+        shell: bash
+        run: |
+          echo "Prettier --check still fails after Prettier --write." >&2
+          exit 1
+
       - name: Format summary
         if: ${{ always() }}
         shell: bash
@@ -99,9 +123,11 @@ jobs:
             echo "| Setting | Value |"
             echo "| --- | --- |"
             printf '| Node.js | `%s` |\n' "${{ inputs.node-version || '24' }}"
+            printf '| Prettier | `%s` |\n' "${{ steps.prettier.outputs.version || 'unknown' }}"
             printf '| Commit requested | **%s** |\n' "${{ inputs.commit }}"
             printf '| Branch | `%s` |\n' "${{ github.ref_name }}"
             echo "| Changes detected | **${{ steps.format.outputs.changed || 'unknown' }}** |"
+            echo "| Verification | **${{ steps.verify.outcome || 'unknown' }}** |"
             echo "| Result | **${{ job.status }}** |"
 
             if [ -s /tmp/format-status.txt ]; then
@@ -115,7 +141,7 @@ jobs:
               if [ "${{ inputs.commit }}" != "true" ]; then
                 echo
                 echo "> [!NOTE]"
-                echo "> Preview only. Formatting changes were not committed."
+                echo "> Preview only. Formatting changes were written in the runner but not committed."
               fi
             else
               echo
