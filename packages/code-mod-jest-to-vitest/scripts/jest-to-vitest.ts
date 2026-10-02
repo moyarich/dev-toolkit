@@ -202,7 +202,7 @@ function migrateSource(source: string): string {
   return output;
 }
 
-const codemod: Codemod<TypeScript> = (root) => {
+const codemod: Codemod<TypeScript> = async (root) => {
   const rootNode = root.root();
   const original = rootNode.text();
 
