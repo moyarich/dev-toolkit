@@ -13,104 +13,150 @@ type ProposedMapping = {
   reversibility: Reversibility;
 };
 
+/**
+ * Creates a Jest runtime-call mapping to a `vi.*` API.
+ */
+function viCall(
+  jestSymbol: string,
+  vitestSymbol = jestSymbol,
+  reversibility: Reversibility = "exact",
+): ProposedMapping {
+  return {
+    name: `jest.${jestSymbol}`,
+    source: { framework: "jest", symbol: jestSymbol, role: "call" },
+    target: {
+      framework: "vitest",
+      namespace: "vi",
+      symbol: vitestSymbol,
+      role: "call",
+    },
+    reversibility,
+  };
+}
+
+/**
+ * Creates a Jest namespace type mapping to a type exported by `vitest`.
+ */
+function vitestType(
+  jestSymbol: string,
+  vitestSymbol = jestSymbol,
+  reversibility: Reversibility = "exact",
+): ProposedMapping {
+  return {
+    name: `jest.${jestSymbol}`,
+    source: { framework: "jest", symbol: jestSymbol, role: "type" },
+    target: {
+      framework: "vitest",
+      symbol: vitestSymbol,
+      role: "type",
+    },
+    reversibility,
+  };
+}
+
+/**
+ * Creates an explicitly one-way mapping for APIs that cannot be translated
+ * safely without project-specific or human decisions.
+ */
+function manualMigration(
+  jestSymbol: string,
+  detail: string,
+  reversibility: Extract<Reversibility, "lossy" | "unsupported"> = "unsupported",
+): ProposedMapping {
+  return {
+    name: `jest.${jestSymbol}`,
+    source: { framework: "jest", symbol: jestSymbol, role: "call" },
+    target: {
+      framework: "vitest",
+      symbol: reversibility === "lossy" ? "removed" : "unsupported",
+      role: "reference",
+      detail,
+    },
+    reversibility,
+  };
+}
+
+/**
+ * Jest-object API coverage used as the semantic contract for the codemod.
+ *
+ * This table intentionally distinguishes exact renames from migrations that
+ * change async behavior, collapse multiple Jest APIs into one Vitest API, or
+ * require manual work.
+ */
 const proposedMappings: ProposedMapping[] = [
+  // Module mocking.
+  manualMigration("disableAutomock", "no-equivalent", "lossy"),
+  manualMigration("enableAutomock", "manual-automock-setup"),
+  viCall("createMockFromModule", "importMock", "lossy"),
+  viCall("genMockFromModule", "importMock", "lossy"),
+  viCall("mock", "mock", "semantic"),
+  viCall("mocked"),
+  viCall("unmock", "unmock", "semantic"),
+  viCall("deepUnmock", "unmock", "lossy"),
+  viCall("doMock", "doMock", "semantic"),
+  viCall("dontMock", "doUnmock", "semantic"),
+  viCall("setMock", "mock", "lossy"),
+  viCall("requireActual", "importActual", "semantic"),
+  viCall("requireMock", "importMock", "lossy"),
+  viCall("resetModules", "resetModules", "semantic"),
+  manualMigration("isolateModules", "no-direct-equivalent"),
+  manualMigration("isolateModulesAsync", "no-direct-equivalent"),
+
+  // Mock functions.
+  viCall("fn"),
+  viCall("isMockFunction"),
+  manualMigration("replaceProperty", "use-spyOn-or-stub-api"),
+  viCall("spyOn"),
+  viCall("clearAllMocks"),
+  viCall("resetAllMocks", "resetAllMocks", "semantic"),
+  viCall("restoreAllMocks"),
+
+  // Fake timers.
+  viCall("useFakeTimers", "useFakeTimers", "semantic"),
+  viCall("useRealTimers"),
+  viCall("runAllTicks"),
+  viCall("runAllTimers"),
+  viCall("runAllTimersAsync"),
+  manualMigration("runAllImmediates", "legacy-timers-only"),
+  viCall("advanceTimersByTime"),
+  viCall("advanceTimersByTimeAsync"),
+  viCall("runOnlyPendingTimers"),
+  viCall("runOnlyPendingTimersAsync"),
+  viCall("advanceTimersToNextTimer"),
+  viCall("advanceTimersToNextTimerAsync"),
+  viCall("clearAllTimers"),
+  viCall("getTimerCount"),
   {
-    name: "jest.fn",
-    source: {
-      framework: "jest",
-      symbol: "fn",
-      role: "call",
-    },
+    name: "jest.now",
+    source: { framework: "jest", symbol: "now", role: "call" },
     target: {
       framework: "vitest",
-      namespace: "vi",
-      symbol: "fn",
+      symbol: "Date.now",
       role: "call",
+      detail: "mocked-clock",
     },
-    reversibility: "exact",
+    reversibility: "semantic",
   },
+  viCall("setSystemTime"),
+  viCall("getRealSystemTime"),
+
+  // Miscellaneous Jest-object APIs.
+  manualMigration("getSeed", "read-vitest-config-seed"),
+  manualMigration("isEnvironmentTornDown", "no-direct-equivalent"),
   {
-    name: "jest.spyOn",
-    source: {
-      framework: "jest",
-      symbol: "spyOn",
-      role: "call",
-    },
+    name: "jest.retryTimes",
+    source: { framework: "jest", symbol: "retryTimes", role: "call" },
     target: {
       framework: "vitest",
-      namespace: "vi",
-      symbol: "spyOn",
-      role: "call",
-    },
-    reversibility: "exact",
-  },
-  {
-    name: "jest.requireActual",
-    source: {
-      framework: "jest",
-      symbol: "requireActual",
-      role: "call",
-    },
-    target: {
-      framework: "vitest",
-      namespace: "vi",
-      symbol: "importActual",
-      role: "call",
+      symbol: "retry",
+      role: "config",
+      detail: "test-or-config-option",
     },
     reversibility: "semantic",
   },
   {
-    name: "jest.requireMock",
-    source: {
-      framework: "jest",
-      symbol: "requireMock",
-      role: "call",
-    },
-    target: {
-      framework: "vitest",
-      namespace: "vi",
-      symbol: "importMock",
-      role: "call",
-    },
-    reversibility: "lossy",
-  },
-  {
-    name: "jest.createMockFromModule",
-    source: {
-      framework: "jest",
-      symbol: "createMockFromModule",
-      role: "call",
-    },
-    target: {
-      framework: "vitest",
-      namespace: "vi",
-      symbol: "importMock",
-      role: "call",
-    },
-    reversibility: "lossy",
-  },
-  {
-    name: "jest.genMockFromModule",
-    source: {
-      framework: "jest",
-      symbol: "genMockFromModule",
-      role: "call",
-    },
-    target: {
-      framework: "vitest",
-      namespace: "vi",
-      symbol: "importMock",
-      role: "call",
-    },
-    reversibility: "lossy",
-  },
-  {
     name: "jest.setTimeout",
-    source: {
-      framework: "jest",
-      symbol: "setTimeout",
-      role: "call",
-    },
+    source: { framework: "jest", symbol: "setTimeout", role: "call" },
     target: {
       framework: "vitest",
       namespace: "vi",
@@ -120,21 +166,22 @@ const proposedMappings: ProposedMapping[] = [
     },
     reversibility: "semantic",
   },
-  {
-    name: "jest.advanceTimersByTime call",
-    source: {
-      framework: "jest",
-      symbol: "advanceTimersByTime",
-      role: "call",
-    },
-    target: {
-      framework: "vitest",
-      namespace: "vi",
-      symbol: "advanceTimersByTime",
-      role: "call",
-    },
-    reversibility: "exact",
-  },
+
+  // Jest namespace types supported by the transform.
+  vitestType("Mock"),
+  vitestType("Mocked"),
+  vitestType("MockedClass"),
+  vitestType("MockedFunction"),
+  vitestType("MockedObject"),
+  vitestType("Spied"),
+  vitestType("SpiedClass"),
+  vitestType("SpiedFunction"),
+  vitestType("SpiedGetter"),
+  vitestType("SpiedSetter"),
+  vitestType("SpyInstance", "MockInstance", "semantic"),
+
+  // A direct call and a detached reference are different transformations.
+  viCall("advanceTimersByTime"),
   {
     name: "jest.advanceTimersByTime reference",
     source: {
@@ -150,54 +197,24 @@ const proposedMappings: ProposedMapping[] = [
     },
     reversibility: "semantic",
   },
-  {
-    name: "jest.SpyInstance",
-    source: {
-      framework: "jest",
-      symbol: "SpyInstance",
-      role: "type",
-    },
-    target: {
-      framework: "vitest",
-      symbol: "MockInstance",
-      role: "type",
-    },
-    reversibility: "semantic",
-  },
-  {
-    name: "jest.disableAutomock",
-    source: {
-      framework: "jest",
-      symbol: "disableAutomock",
-      role: "call",
-    },
-    target: {
-      framework: "vitest",
-      symbol: "removed",
-      role: "reference",
-      detail: "no-equivalent",
-    },
-    reversibility: "lossy",
-  },
-  {
-    name: "jest.enableAutomock",
-    source: {
-      framework: "jest",
-      symbol: "enableAutomock",
-      role: "call",
-    },
-    target: {
-      framework: "vitest",
-      symbol: "unsupported",
-      role: "reference",
-      detail: "manual-migration",
-    },
-    reversibility: "unsupported",
-  },
 ];
 
-const mappings = proposedMappings.map(defineMapping);
+// Remove the duplicate call entry used above so the table keeps one source
+// identity while still placing the detached-reference mapping beside it.
+const uniqueProposedMappings = proposedMappings.filter(
+  (mapping, index, all) =>
+    all.findIndex(
+      (candidate) =>
+        createMappingKey(candidate.source) === createMappingKey(mapping.source),
+    ) === index,
+);
 
+const mappings = uniqueProposedMappings.map(defineMapping);
+
+/**
+ * Builds a reverse index because a Vitest target can intentionally represent
+ * more than one Jest source API.
+ */
 function buildReverseIndex() {
   const reverseIndex = new Map<string, string[]>();
 
@@ -210,149 +227,257 @@ function buildReverseIndex() {
   return reverseIndex;
 }
 
+/**
+ * Prints the mapping contract in Markdown-friendly text when the unit tests run.
+ */
 function printMappingReport() {
   const reverseIndex = buildReverseIndex();
 
-  console.log("\nJest → Vitest mapping table");
-  console.log("=".repeat(96));
+  console.log("\n## Jest → Vitest mapping table\n");
+  console.log("| Mapping | Source | Target | Reversibility |");
+  console.log("| --- | --- | --- | --- |");
 
   for (const mapping of mappings) {
     const reverseCandidates = reverseIndex.get(mapping.targetKey) ?? [];
-    const ambiguous = reverseCandidates.length > 1;
+    const suffix =
+      reverseCandidates.length > 1
+        ? ` (shared by ${reverseCandidates.length} Jest APIs)`
+        : "";
 
     console.log(
-      [
-        mapping.name,
-        `  source: ${mapping.sourceKey}`,
-        `  target: ${mapping.targetKey}`,
-        `  reversibility: ${mapping.reversibility}`,
-        ambiguous
-          ? `  reverse candidates: ${reverseCandidates.join(", ")}`
-          : `  reverse candidate: ${reverseCandidates[0] ?? "none"}`,
-      ].join("\n"),
+      `| ${mapping.name} | \`${mapping.sourceKey}\` | \`${mapping.targetKey}\` | ${mapping.reversibility}${suffix} |`,
     );
-
-    console.log("-".repeat(96));
   }
 }
 
-
-describe("proposed Jest to Vitest mapping model", () => {
+describe("Jest to Vitest mapping model", () => {
   printMappingReport();
-  it("generates stable source and target keys from semantic metadata", () => {
+
+  it("covers the documented Jest object runtime API surface", () => {
+    const expectedRuntimeApis = [
+      "disableAutomock",
+      "enableAutomock",
+      "createMockFromModule",
+      "genMockFromModule",
+      "mock",
+      "mocked",
+      "unmock",
+      "deepUnmock",
+      "doMock",
+      "dontMock",
+      "setMock",
+      "requireActual",
+      "requireMock",
+      "resetModules",
+      "isolateModules",
+      "isolateModulesAsync",
+      "fn",
+      "isMockFunction",
+      "replaceProperty",
+      "spyOn",
+      "clearAllMocks",
+      "resetAllMocks",
+      "restoreAllMocks",
+      "useFakeTimers",
+      "useRealTimers",
+      "runAllTicks",
+      "runAllTimers",
+      "runAllTimersAsync",
+      "runAllImmediates",
+      "advanceTimersByTime",
+      "advanceTimersByTimeAsync",
+      "runOnlyPendingTimers",
+      "runOnlyPendingTimersAsync",
+      "advanceTimersToNextTimer",
+      "advanceTimersToNextTimerAsync",
+      "clearAllTimers",
+      "getTimerCount",
+      "now",
+      "setSystemTime",
+      "getRealSystemTime",
+      "getSeed",
+      "isEnvironmentTornDown",
+      "retryTimes",
+      "setTimeout",
+    ];
+
+    const mappedRuntimeApis = mappings
+      .filter(({ source }) => source.role === "call")
+      .map(({ source }) => source.symbol);
+
+    expect(new Set(mappedRuntimeApis)).toEqual(new Set(expectedRuntimeApis));
+  });
+
+  it("covers every Jest namespace type supported by the codemod", () => {
     expect(
-      mappings.map(({ name, sourceKey, targetKey }) => ({
-        name,
-        sourceKey,
-        targetKey,
-      })),
-    ).toEqual([
-      {
-        name: "jest.fn",
-        sourceKey: "jest.fn.call",
-        targetKey: "vitest.vi.fn.call",
-      },
-      {
-        name: "jest.spyOn",
-        sourceKey: "jest.spyOn.call",
-        targetKey: "vitest.vi.spyOn.call",
-      },
-      {
-        name: "jest.requireActual",
-        sourceKey: "jest.requireActual.call",
-        targetKey: "vitest.vi.importActual.call",
-      },
-      {
-        name: "jest.requireMock",
-        sourceKey: "jest.requireMock.call",
-        targetKey: "vitest.vi.importMock.call",
-      },
-      {
-        name: "jest.createMockFromModule",
-        sourceKey: "jest.createMockFromModule.call",
-        targetKey: "vitest.vi.importMock.call",
-      },
-      {
-        name: "jest.genMockFromModule",
-        sourceKey: "jest.genMockFromModule.call",
-        targetKey: "vitest.vi.importMock.call",
-      },
-      {
-        name: "jest.setTimeout",
-        sourceKey: "jest.setTimeout.call",
-        targetKey: "vitest.vi.setConfig.config.testTimeout",
-      },
-      {
-        name: "jest.advanceTimersByTime call",
-        sourceKey: "jest.advanceTimersByTime.call",
-        targetKey: "vitest.vi.advanceTimersByTime.call",
-      },
-      {
-        name: "jest.advanceTimersByTime reference",
-        sourceKey: "jest.advanceTimersByTime.reference",
-        targetKey: "vitest.vi.advanceTimersByTime.bound-reference",
-      },
-      {
-        name: "jest.SpyInstance",
-        sourceKey: "jest.SpyInstance.type",
-        targetKey: "vitest.MockInstance.type",
-      },
-      {
-        name: "jest.disableAutomock",
-        sourceKey: "jest.disableAutomock.call",
-        targetKey: "vitest.removed.reference.no-equivalent",
-      },
-      {
-        name: "jest.enableAutomock",
-        sourceKey: "jest.enableAutomock.call",
-        targetKey: "vitest.unsupported.reference.manual-migration",
-      },
-    ]);
+      mappings
+        .filter(({ source }) => source.role === "type")
+        .map(({ source }) => source.symbol)
+        .sort(),
+    ).toEqual(
+      [
+        "Mock",
+        "Mocked",
+        "MockedClass",
+        "MockedFunction",
+        "MockedObject",
+        "Spied",
+        "SpiedClass",
+        "SpiedFunction",
+        "SpiedGetter",
+        "SpiedSetter",
+        "SpyInstance",
+      ].sort(),
+    );
   });
 
   it("keeps source identities unique", () => {
     const sourceKeys = mappings.map(({ sourceKey }) => sourceKey);
-
     expect(new Set(sourceKeys).size).toBe(sourceKeys.length);
   });
 
-  it("allows multiple Jest APIs to intentionally share one Vitest target", () => {
-    const reverseIndex = new Map<string, string[]>();
+  it("maps direct equivalents to the vi namespace", () => {
+    for (const symbol of [
+      "fn",
+      "isMockFunction",
+      "spyOn",
+      "clearAllMocks",
+      "restoreAllMocks",
+      "useRealTimers",
+      "runAllTicks",
+      "runAllTimers",
+      "runAllTimersAsync",
+      "advanceTimersByTime",
+      "advanceTimersByTimeAsync",
+      "runOnlyPendingTimers",
+      "runOnlyPendingTimersAsync",
+      "advanceTimersToNextTimer",
+      "advanceTimersToNextTimerAsync",
+      "clearAllTimers",
+      "getTimerCount",
+      "setSystemTime",
+      "getRealSystemTime",
+    ]) {
+      const mapping = mappings.find(
+        ({ sourceKey }) => sourceKey === `jest.${symbol}.call`,
+      );
 
-    for (const mapping of mappings) {
-      const sources = reverseIndex.get(mapping.targetKey) ?? [];
-      sources.push(mapping.sourceKey);
-      reverseIndex.set(mapping.targetKey, sources);
+      expect(mapping?.targetKey).toBe(`vitest.vi.${symbol}.call`);
     }
+  });
 
-    expect(reverseIndex.get("vitest.vi.importMock.call")).toEqual([
-      "jest.requireMock.call",
+  it("records renamed module APIs explicitly", () => {
+    const expected = {
+      "jest.requireActual.call": "vitest.vi.importActual.call",
+      "jest.requireMock.call": "vitest.vi.importMock.call",
+      "jest.createMockFromModule.call": "vitest.vi.importMock.call",
+      "jest.genMockFromModule.call": "vitest.vi.importMock.call",
+      "jest.dontMock.call": "vitest.vi.doUnmock.call",
+      "jest.setMock.call": "vitest.vi.mock.call",
+      "jest.deepUnmock.call": "vitest.vi.unmock.call",
+    };
+
+    for (const [sourceKey, targetKey] of Object.entries(expected)) {
+      expect(
+        mappings.find((mapping) => mapping.sourceKey === sourceKey)?.targetKey,
+      ).toBe(targetKey);
+    }
+  });
+
+  it("allows multiple Jest APIs to intentionally share one Vitest target", () => {
+    expect(buildReverseIndex().get("vitest.vi.importMock.call")).toEqual([
       "jest.createMockFromModule.call",
       "jest.genMockFromModule.call",
+      "jest.requireMock.call",
     ]);
   });
 
-  it("marks shared reverse targets as lossy", () => {
-    const importMockMappings = mappings.filter(
-      ({ targetKey }) => targetKey === "vitest.vi.importMock.call",
-    );
-
-    expect(
-      importMockMappings.map(({ reversibility }) => reversibility),
-    ).toEqual(["lossy", "lossy", "lossy"]);
+  it("never marks a shared reverse target as exactly reversible", () => {
+    for (const targetMappings of [...buildReverseIndex().entries()]
+      .filter(([, sources]) => sources.length > 1)
+      .map(([targetKey]) =>
+        mappings.filter((mapping) => mapping.targetKey === targetKey),
+      )) {
+      expect(
+        targetMappings.every(
+          ({ reversibility }) => reversibility !== "exact",
+        ),
+      ).toBe(true);
+    }
   });
 
-  it("distinguishes call and reference semantics for the same Jest API", () => {
-    const timerMappings = mappings.filter(
-      ({ source }) => source.symbol === "advanceTimersByTime",
+  it("models Jest-only APIs as explicit manual migrations", () => {
+    for (const symbol of [
+      "enableAutomock",
+      "isolateModules",
+      "isolateModulesAsync",
+      "replaceProperty",
+      "runAllImmediates",
+      "getSeed",
+      "isEnvironmentTornDown",
+    ]) {
+      const mapping = mappings.find(
+        ({ sourceKey }) => sourceKey === `jest.${symbol}.call`,
+      );
+
+      expect(mapping?.reversibility).toBe("unsupported");
+      expect(mapping?.target.symbol).toBe("unsupported");
+    }
+  });
+
+  it("models intentionally removed automock behavior separately", () => {
+    const mapping = mappings.find(
+      ({ sourceKey }) => sourceKey === "jest.disableAutomock.call",
     );
 
+    expect(mapping).toMatchObject({
+      targetKey: "vitest.removed.reference.no-equivalent",
+      reversibility: "lossy",
+    });
+  });
+
+  it("captures structural migrations that are not simple renames", () => {
     expect(
-      timerMappings.map(({ sourceKey, targetKey, reversibility }) => ({
-        sourceKey,
-        targetKey,
-        reversibility,
-      })),
+      mappings.find(
+        ({ sourceKey }) => sourceKey === "jest.setTimeout.call",
+      )?.target,
+    ).toEqual({
+      framework: "vitest",
+      namespace: "vi",
+      symbol: "setConfig",
+      role: "config",
+      detail: "testTimeout",
+    });
+
+    expect(
+      mappings.find(({ sourceKey }) => sourceKey === "jest.retryTimes.call")
+        ?.target,
+    ).toEqual({
+      framework: "vitest",
+      symbol: "retry",
+      role: "config",
+      detail: "test-or-config-option",
+    });
+
+    expect(
+      mappings.find(({ sourceKey }) => sourceKey === "jest.now.call")?.target,
+    ).toEqual({
+      framework: "vitest",
+      symbol: "Date.now",
+      role: "call",
+      detail: "mocked-clock",
+    });
+  });
+
+  it("distinguishes timer calls from detached timer references", () => {
+    expect(
+      mappings
+        .filter(({ source }) => source.symbol === "advanceTimersByTime")
+        .map(({ sourceKey, targetKey, reversibility }) => ({
+          sourceKey,
+          targetKey,
+          reversibility,
+        })),
     ).toEqual([
       {
         sourceKey: "jest.advanceTimersByTime.call",
@@ -367,133 +492,53 @@ describe("proposed Jest to Vitest mapping model", () => {
     ]);
   });
 
-  it("supports structural target details when the target API is broader than the Jest API", () => {
-    const timeout = mappings.find(
-      ({ sourceKey }) => sourceKey === "jest.setTimeout.call",
-    );
-
-    expect(timeout?.target).toEqual({
-      framework: "vitest",
-      namespace: "vi",
-      symbol: "setConfig",
-      role: "config",
-      detail: "testTimeout",
-    });
-
-    expect(createMappingKey(timeout!.target)).toBe(
-      "vitest.vi.setConfig.config.testTimeout",
-    );
-  });
-
-  it("does not treat a shared reverse target as exactly reversible", () => {
-    const byTarget = new Map<string, typeof mappings>();
-
-    for (const mapping of mappings) {
-      const entries = byTarget.get(mapping.targetKey) ?? [];
-      entries.push(mapping);
-      byTarget.set(mapping.targetKey, entries);
-    }
-
-    const sharedTargets = [...byTarget.values()].filter(
-      (entries) => entries.length > 1,
-    );
-
-    for (const entries of sharedTargets) {
-      expect(entries.every(({ reversibility }) => reversibility !== "exact")).toBe(
-        true,
-      );
-    }
-  });
-
-  it("keeps structurally different uses of the same symbol from colliding", () => {
-    const callKey = createMappingKey({
-      framework: "jest",
-      symbol: "advanceTimersByTime",
-      role: "call",
-    });
-    const referenceKey = createMappingKey({
-      framework: "jest",
-      symbol: "advanceTimersByTime",
-      role: "reference",
-    });
-
-    expect(callKey).not.toBe(referenceKey);
-  });
-
-  it("uses target detail to prevent broader config APIs from colliding", () => {
-    const testTimeout = createMappingKey({
-      framework: "vitest",
-      namespace: "vi",
-      symbol: "setConfig",
-      role: "config",
-      detail: "testTimeout",
-    });
-    const hookTimeout = createMappingKey({
-      framework: "vitest",
-      namespace: "vi",
-      symbol: "setConfig",
-      role: "config",
-      detail: "hookTimeout",
-    });
-
-    expect(testTimeout).not.toBe(hookTimeout);
-  });
-
-  it("models APIs with no Vitest equivalent as explicitly one-way", () => {
+  it("maps SpyInstance to Vitest MockInstance", () => {
     expect(
-      mappings
-        .filter(({ source }) =>
-          ["disableAutomock", "enableAutomock"].includes(source.symbol),
-        )
-        .map(({ sourceKey, targetKey, reversibility }) => ({
-          sourceKey,
-          targetKey,
-          reversibility,
-        })),
-    ).toEqual([
-      {
-        sourceKey: "jest.disableAutomock.call",
-        targetKey: "vitest.removed.reference.no-equivalent",
-        reversibility: "lossy",
-      },
-      {
-        sourceKey: "jest.enableAutomock.call",
-        targetKey: "vitest.unsupported.reference.manual-migration",
-        reversibility: "unsupported",
-      },
-    ]);
+      mappings.find(
+        ({ sourceKey }) => sourceKey === "jest.SpyInstance.type",
+      ),
+    ).toMatchObject({
+      targetKey: "vitest.MockInstance.type",
+      reversibility: "semantic",
+    });
   });
 
-  it("makes reverse lookup return candidates instead of pretending it is one-to-one", () => {
-    const reverseLookup = (targetKey: string) =>
-      mappings
-        .filter((mapping) => mapping.targetKey === targetKey)
-        .map((mapping) => mapping.sourceKey);
-
-    expect(reverseLookup("vitest.vi.importMock.call")).toEqual([
-      "jest.requireMock.call",
-      "jest.createMockFromModule.call",
-      "jest.genMockFromModule.call",
-    ]);
+  it("uses target detail to keep broader config mappings distinct", () => {
+    expect(
+      createMappingKey({
+        framework: "vitest",
+        namespace: "vi",
+        symbol: "setConfig",
+        role: "config",
+        detail: "testTimeout",
+      }),
+    ).not.toBe(
+      createMappingKey({
+        framework: "vitest",
+        namespace: "vi",
+        symbol: "setConfig",
+        role: "config",
+        detail: "hookTimeout",
+      }),
+    );
   });
 
   it("would detect an accidental duplicate source mapping", () => {
     const duplicate = defineMapping({
-      source: {
-        framework: "jest",
-        symbol: "fn",
-        role: "call",
-      },
+      source: { framework: "jest", symbol: "fn", role: "call" },
       target: {
         framework: "vitest",
         namespace: "vi",
         symbol: "mocked",
         role: "call",
       },
-      reversibility: "semantic",
+      reversibility: "semantic" as const,
     });
 
-    const sourceKeys = [...mappings.map(({ sourceKey }) => sourceKey), duplicate.sourceKey];
+    const sourceKeys = [
+      ...mappings.map(({ sourceKey }) => sourceKey),
+      duplicate.sourceKey,
+    ];
 
     expect(new Set(sourceKeys).size).toBeLessThan(sourceKeys.length);
   });
