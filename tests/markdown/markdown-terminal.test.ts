@@ -154,7 +154,7 @@ afterAll(() => {
   rmSync(TEMP_DIR, { recursive: true, force: true });
 });
 
-describe("terminal Markdown fixtures", () => {
+describe("Markdown terminal output", () => {
   it("has at least one Markdown fixture", () => {
     expect(MARKDOWN_FILES.length).toBeGreaterThan(0);
   });
@@ -166,7 +166,7 @@ describe("terminal Markdown fixtures", () => {
       for (const producer of producers) {
         const run = producer.available() ? it : it.skip;
 
-        run(`prints unchanged Markdown through ${producer.name}`, () => {
+        run(`prints Markdown unchanged through ${producer.name}`, () => {
           expect(printMarkdownWith(producer, file)).toBe(expected);
         });
       }
