@@ -174,3 +174,29 @@ test("release preview and real release must resolve the same canonical identity"
   assert.match(release, /\.identity\.tagName == \$expectedTag/);
   assert.match(release, /\.identity\.releaseName == \$expectedName/);
 });
+
+
+test("release removes only superseded automation-owned untagged candidate drafts", () => {
+  assert.match(release, /dev-toolkit-release-draft:candidate package=\$PACKAGE_NAME/);
+  assert.match(release, /SUPERSEDED_DRAFTS/);
+  assert.match(release, /\.tag_name != \$target/);
+  assert.match(release, /contains\(\$marker\)/);
+  assert.match(release, /refs\/tags\/\$DRAFT_TAG/);
+  assert.match(release, /--method DELETE/);
+  assert.match(release, /Superseded candidate drafts/);
+});
+
+test("failed releases report that the prepared draft is retained for retry", () => {
+  assert.match(release, /steps\.draft\.outcome/);
+  assert.match(release, /steps\.release\.outcome/);
+  assert.match(release, /draft retained for retry/);
+  assert.match(release, /Release commit\/tag: \*\*not completed\*\*/);
+});
+
+test("publishing is retry-safe across partially published registries", () => {
+  assert.match(publish, /workspace-publish\.mjs/);
+  assert.match(
+    publish,
+    /GitHub Release remains a draft while staged registry publication awaits completion/,
+  );
+});
