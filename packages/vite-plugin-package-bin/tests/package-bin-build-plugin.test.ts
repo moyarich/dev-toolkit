@@ -1,8 +1,9 @@
 import { beforeEach, expect, test, vi } from "vitest";
 
-const { build, chmod, glob, readFile, rm } = vi.hoisted(() => ({
+const { build, chmod, copyFile, glob, readFile, rm } = vi.hoisted(() => ({
   build: vi.fn(),
   chmod: vi.fn(),
+  copyFile: vi.fn(),
   glob: vi.fn(),
   readFile: vi.fn(),
   rm: vi.fn(),
@@ -11,6 +12,7 @@ const { build, chmod, glob, readFile, rm } = vi.hoisted(() => ({
 vi.mock("node:fs/promises", async (importOriginal) => ({
   ...(await importOriginal<typeof import("node:fs/promises")>()),
   chmod,
+  copyFile,
   glob,
   readFile,
   rm,
@@ -28,11 +30,12 @@ import { packageBinBuild } from "../src/packageBinBuild.ts";
 beforeEach(() => {
   vi.clearAllMocks();
 
-  glob.mockReturnValue(
-    (async function* () {
-      yield "src/release.ts";
-    })(),
-  );
+  glob.mockImplementation((pattern: string) => {
+    return (async function* () {
+      if (pattern === "src/**/*.ts") yield "src/release.ts";
+      if (pattern === "src/cli/**/*.sh") yield "src/cli/install.sh";
+    })();
+  });
 
   readFile.mockImplementation(async (path: unknown) => {
     const value = String(path);
@@ -40,6 +43,7 @@ beforeEach(() => {
       return JSON.stringify({
         bin: {
           release: "./bin/release.mjs",
+          install: "./bin/install.sh",
         },
       });
     }
@@ -50,10 +54,11 @@ beforeEach(() => {
   });
 
   build.mockResolvedValue({});
+  copyFile.mockResolvedValue(undefined);
   rm.mockResolvedValue(undefined);
 });
 
-test("builds package bins using mocked filesystem and Vite modules", async () => {
+test("builds Node package bins and copies shell package bins", async () => {
   const plugin = packageBinBuild({ emptyOutDir: true });
 
   const configResolved =
@@ -77,12 +82,13 @@ test("builds package bins using mocked filesystem and Vite modules", async () =>
   await buildStart?.call({} as never, {} as never);
 
   expect(glob).toHaveBeenCalledWith("src/**/*.ts", { cwd: "/repo" });
+  expect(glob).toHaveBeenCalledWith("src/cli/**/*.sh", { cwd: "/repo" });
   expect(rm).toHaveBeenCalledWith("/repo/bin", {
     recursive: true,
     force: true,
   });
+
   expect(build).toHaveBeenCalledTimes(1);
-  expect(chmod).toHaveBeenCalledWith("/repo/bin/release.mjs", 0o755);
   expect(build).toHaveBeenCalledWith(
     expect.objectContaining({
       logLevel: "silent",
@@ -91,4 +97,11 @@ test("builds package bins using mocked filesystem and Vite modules", async () =>
       }),
     }),
   );
+
+  expect(chmod).toHaveBeenCalledWith("/repo/bin/release.mjs", 0o755);
+  expect(copyFile).toHaveBeenCalledWith(
+    "/repo/src/cli/install.sh",
+    "/repo/bin/install.sh",
+  );
+  expect(chmod).toHaveBeenCalledWith("/repo/bin/install.sh", 0o755);
 });
