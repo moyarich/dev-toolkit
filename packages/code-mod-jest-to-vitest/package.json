@@ -21,11 +21,13 @@
   },
   "scripts": {
     "build": "vite build --config vite.config.ts",
-    "test": "npx codemod jssg test scripts/jest-to-vitest.ts --language typescript",
+    "test": "npm run test:unit && npm run test:jssg",
     "typecheck": "tsc -p tsconfig.json",
     "validate": "npx codemod workflow validate -w workflow.yaml",
     "jest-to-vitest": "node ./bin/jest-to-vitest.mjs",
-    "audit": "node ./bin/jest-to-vitest.mjs --audit-only"
+    "audit": "node ./bin/jest-to-vitest.mjs --audit-only",
+    "test:jssg": "npx codemod jssg test scripts/jest-to-vitest.ts --language typescript",
+    "test:unit": "vitest run tests/project-migration.test.ts"
   },
   "repository": {
     "type": "git",
@@ -38,7 +40,8 @@
   },
   "devDependencies": {
     "@moyarich/vite-plugin-package-bin": "0.1.0",
-    "@codemod.com/jssg-types": "^1.6.3"
+    "@codemod.com/jssg-types": "^1.6.3",
+    "vitest": "^5.0.2"
   },
   "license": "MIT"
 }
