@@ -8,7 +8,8 @@
     "workspace-publish": "./dist/bin/workspace-publish.mjs",
     "workspace-dependency-check": "./dist/bin/workspace-dependency-check.mjs",
     "workspace-package-lock": "./dist/bin/workspace-package-lock.mjs",
-    "discover-packages": "./dist/bin/discover-packages.mjs"
+    "discover-packages": "./dist/bin/discover-packages.mjs",
+    "workspace-release-identity": "./dist/bin/workspace-release-identity.mjs"
   },
   "files": [
     "dist",
