@@ -57,6 +57,8 @@ version-resolver:
   default: patch
 
 template: |
+  <!-- dev-toolkit-release-draft:candidate package={{PACKAGE_NAME}} -->
+
   ## Release notes
 
   $CHANGES
