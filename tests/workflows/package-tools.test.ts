@@ -38,7 +38,6 @@ for (const file of [
   "reusable_npm-prepare-release.yml",
   "reusable_npm-release.yml",
   "reusable_npm-publish.yml",
-  "reusable_npm-package-lock.yml",
   "reusable_readme-screenshots.yml",
 ]) {
   const screenshot = file.includes("screenshots");
