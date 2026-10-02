@@ -11,6 +11,7 @@ import { tmpdir } from "node:os";
 import { basename, dirname, extname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
+import { migrateProject } from "../project-migration.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const packageRoot = resolve(__dirname, "../..");
@@ -96,7 +97,7 @@ function audit(targetDir: string): boolean {
     ...packageJson.devDependencies,
   };
 
-  for (const dependency of ["jest", "ts-jest", "@types/jest"]) {
+  for (const dependency of ["jest", "ts-jest", "@types/jest", "@swc/jest"]) {
     if (deps[dependency]) {
       problems.push(`Jest dependency remains: ${dependency}`);
     }
@@ -180,6 +181,12 @@ function copyForDryRun(source: string, destination: string): void {
 }
 
 function migrate(targetDir: string): void {
+  const projectMigration = migrateProject(targetDir);
+
+  for (const warning of projectMigration.warnings) {
+    console.warn(`Migration warning: ${warning}`);
+  }
+
   run(
     "npx",
     ["--yes", "codemod", "workflow", "run", "-w", workflowPath],
