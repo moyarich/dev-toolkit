@@ -277,12 +277,12 @@ jobs:
                 echo
                 echo "| Would-have-created | Value |"
                 echo "| --- | --- |"
-                echo "| Package | `$PACKAGE_NAME` |"
-                echo "| Directory | `$PACKAGE_DIRECTORY` |"
-                echo "| Version | `$WOULD_VERSION` |"
-                echo "| Tag | `$WOULD_TAG` |"
-                echo "| Release name | `$WOULD_NAME` |"
-                echo "| Existing Git tag | `$EXISTING_GIT_TAG` |"
+                echo "| Package | \`$PACKAGE_NAME\` |"
+                echo "| Directory | \`$PACKAGE_DIRECTORY\` |"
+                echo "| Version | \`$WOULD_VERSION\` |"
+                echo "| Tag | \`$WOULD_TAG\` |"
+                echo "| Release name | \`$WOULD_NAME\` |"
+                echo "| Existing Git tag | \`$EXISTING_GIT_TAG\` |"
                 echo "| Result | **Blocked — release history requires reconciliation** |"
                 echo
                 echo "## Would-have-created release content"
