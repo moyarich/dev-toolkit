@@ -187,7 +187,6 @@ jobs:
       group: draft-package-${{ github.repository }}-${{ matrix.directory }}
       cancel-in-progress: true
 
-
     steps:
       - name: Decide whether package is selected
         id: selected
