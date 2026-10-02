@@ -52,8 +52,9 @@ Reload Zsh:
 Oh My Zsh discovers the plugin directly from:
 
     moyarich-auto-glow-md/
-    ├── bin/
-    │   └── moyarich-auto-glow-md
+    ├── src/
+    │   └── cli/
+    │       └── moyarich-auto-glow-md.sh
     ├── lib/
     │   └── core.zsh
     ├── test/
@@ -117,19 +118,41 @@ Commands that modify the current shell bypass the capture path, including:
 
 There is no Node runtime dependency.
 
-## Direct shell CLI
+## Run the CLI from source
 
-The same shell runtime can be exercised without loading Oh My Zsh:
+The shell CLI source lives under `src/cli/`, not in `bin/`:
 
-    ./bin/moyarich-auto-glow-md -- printf '# Hello\n'
+    zsh src/cli/moyarich-auto-glow-md.sh -- printf '# Hello\n'
 
-You can also run normal commands through it:
+You can run normal commands through the source CLI while developing:
 
-    ./bin/moyarich-auto-glow-md -- git status
-    ./bin/moyarich-auto-glow-md -- python script.py
-    ./bin/moyarich-auto-glow-md -- go test ./...
+    zsh src/cli/moyarich-auto-glow-md.sh -- git status
+    zsh src/cli/moyarich-auto-glow-md.sh -- python script.py
+    zsh src/cli/moyarich-auto-glow-md.sh -- go test ./...
 
-The CLI is a Zsh script and shares its implementation with the Oh My Zsh plugin through `lib/core.zsh`.
+The source CLI shares its implementation with the Oh My Zsh plugin through `lib/core.zsh`.
+
+## Build
+
+The `bin/` directory is generated output and is not the source location.
+
+Build the package:
+
+    npm run build --workspace @moyarich/auto-glow-md
+
+The Vite package-bin plugin copies:
+
+    src/cli/moyarich-auto-glow-md.sh
+
+to:
+
+    bin/moyarich-auto-glow-md.sh
+
+and makes the generated file executable.
+
+You can test the generated CLI with:
+
+    npm run test:built-cli --workspace @moyarich/auto-glow-md
 
 ## Development
 
@@ -137,7 +160,7 @@ Syntax-check the shell files and run the behavioral tests:
 
     zsh -n moyarich-auto-glow-md.plugin.zsh
     zsh -n lib/core.zsh
-    zsh -n bin/moyarich-auto-glow-md
+    zsh -n src/cli/moyarich-auto-glow-md.sh
     sh -n install.sh
     zsh test/run-tests.zsh
 
@@ -149,7 +172,7 @@ Or run only the behavioral shell tests:
 
     npm run test:shell --workspace @moyarich/auto-glow-md
 
-The tests exercise Markdown detection, bypass behavior, command output, exit-status preservation, and the directly runnable shell CLI.
+The tests exercise Markdown detection, bypass behavior, command output, exit-status preservation, and the source shell CLI. The build-specific test verifies the generated `bin/moyarich-auto-glow-md.sh` command.
 
 npm is only a monorepo development convenience. It is not required to install or run the plugin or CLI.
 
