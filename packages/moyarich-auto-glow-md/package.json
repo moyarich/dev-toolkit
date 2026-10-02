@@ -3,14 +3,21 @@
   "version": "0.1.0",
   "description": "Shell-native Oh My Zsh plugin that automatically renders Markdown terminal output with Glow.",
   "private": true,
+  "bin": {
+    "moyarich-auto-glow-md": "./bin/moyarich-auto-glow-md"
+  },
   "files": [
+    "bin",
+    "lib",
     "moyarich-auto-glow-md.plugin.zsh",
     "install.sh",
     "README.md",
-    "docs"
+    "docs",
+    "test"
   ],
   "scripts": {
-    "test": "zsh -n moyarich-auto-glow-md.plugin.zsh && sh -n install.sh"
+    "test": "zsh -n moyarich-auto-glow-md.plugin.zsh && zsh -n lib/core.zsh && zsh -n bin/moyarich-auto-glow-md && sh -n install.sh && zsh test/run-tests.zsh",
+    "test:shell": "zsh test/run-tests.zsh"
   },
   "repository": {
     "type": "git",
