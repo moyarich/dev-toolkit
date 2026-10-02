@@ -111,9 +111,7 @@ test("reusable release and publish define target-branch only for workflow_call",
 });
 
 test("release workflow keeps GitHub releases draft until package publication completes", () => {
-  assert.match(release, /Verify matching GitHub draft/);
-  assert.match(release, /No matching GitHub draft release exists/);
-  assert.match(release, /DRAFT_NAME.*RELEASE_NAME/s);
+  assert.match(release, /Ensure matching GitHub draft/);
   assert.match(release, /Publish GitHub Release draft/);
   assert.match(release, /-F draft=false/);
   assert.match(release, /GitHub Release: \*\*draft\*\*/);
@@ -142,4 +140,38 @@ test("standalone publish finalizes the canonical GitHub draft after publication"
   assert.match(publish, /canonical Git tag does not exist/);
   assert.match(publish, /contents: write/);
   assert.match(publishWrapper, /contents: write/);
+});
+
+
+test("release resolves the target before ensuring a draft and performing mutation", () => {
+  const preview = release.indexOf("- name: Resolve target release");
+  const draft = release.indexOf("- name: Ensure matching GitHub draft");
+  const perform = release.indexOf("- name: Perform release");
+  const push = release.indexOf("- name: Push release commit and tag");
+
+  assert.ok(preview >= 0);
+  assert.ok(draft > preview);
+  assert.ok(perform > draft);
+  assert.ok(push > perform);
+  assert.match(release, /"--dry-run"/);
+  assert.match(release, /\.nextVersion/);
+  assert.match(release, /\.identity\.tagName/);
+  assert.match(release, /\.identity\.releaseName/);
+});
+
+test("release creates a missing target draft and reuses an existing one", () => {
+  assert.match(release, /select\(\.draft == true and \.tag_name == \$tag\)/);
+  assert.match(release, /--method POST/);
+  assert.match(release, /--method PATCH/);
+  assert.match(release, /ACTION="created"/);
+  assert.match(release, /ACTION="reused"/);
+  assert.match(release, /-f body="\$BODY"/);
+  assert.match(release, /A published GitHub Release already exists/);
+});
+
+test("release preview and real release must resolve the same canonical identity", () => {
+  assert.match(release, /--arg expectedTag "\$RELEASE_TAG"/);
+  assert.match(release, /--arg expectedName "\$RELEASE_NAME"/);
+  assert.match(release, /\.identity\.tagName == \$expectedTag/);
+  assert.match(release, /\.identity\.releaseName == \$expectedName/);
 });
