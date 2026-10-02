@@ -533,6 +533,7 @@ jobs:
 
           PACKAGE_NAME="$(jq -r '.package.name' <<< "$RELEASE_JSON")"
           PACKAGE_SELECTOR="$(jq -r '.package.selector' <<< "$RELEASE_JSON")"
+          PACKAGE_DIRECTORY="$(jq -r '.package.directory' <<< "$RELEASE_JSON")"
           PACKAGE_VERSION="$(jq -r '.nextVersion' <<< "$RELEASE_JSON")"
           RELEASE_TAG="$(jq -r '.identity.tagName' <<< "$RELEASE_JSON")"
           RELEASE_NAME="$(jq -r '.identity.releaseName' <<< "$RELEASE_JSON")"
@@ -541,6 +542,7 @@ jobs:
           {
             echo "PACKAGE_NAME=$PACKAGE_NAME"
             echo "PACKAGE_SELECTOR=$PACKAGE_SELECTOR"
+            echo "PACKAGE_DIRECTORY=$PACKAGE_DIRECTORY"
             echo "PACKAGE_VERSION=$PACKAGE_VERSION"
             echo "RELEASE_TAG=$RELEASE_TAG"
             echo "RELEASE_NAME=$RELEASE_NAME"
@@ -596,6 +598,53 @@ jobs:
           RELEASES="$(
             gh api --paginate --slurp "repos/$GH_REPO/releases?per_page=100"
           )"
+
+          CANDIDATE_MARKER="<!-- dev-toolkit-release-draft:candidate package=$PACKAGE_NAME -->"
+
+          mapfile -t SUPERSEDED_DRAFTS < <(
+            jq -r \
+              --arg prefix "$PACKAGE_DIRECTORY@" \
+              --arg target "$RELEASE_TAG" \
+              --arg marker "$CANDIDATE_MARKER" \'\n                [
+                  .[][] |
+                  select(
+                    .draft == true and
+                    .tag_name != $target and
+                    (.tag_name | startswith($prefix)) and
+                    ((.body // "") | contains($marker))
+                  )
+                ][]
+                | [.id, .tag_name]
+                | @tsv
+              \' <<< "$RELEASES"
+          )
+
+          REMOVED_CANDIDATES=0
+
+          for ITEM in "${SUPERSEDED_DRAFTS[@]}"; do
+            DRAFT_ID="${ITEM%%$\'\\t\'*}"
+            DRAFT_TAG="${ITEM#*$\'\\t\'}"
+
+            if git rev-parse --verify --quiet "refs/tags/$DRAFT_TAG" >/dev/null; then
+              continue
+            fi
+
+            gh api --method DELETE "repos/$GH_REPO/releases/$DRAFT_ID"
+            REMOVED_CANDIDATES=$((REMOVED_CANDIDATES + 1))
+          done
+
+          if [ "$REMOVED_CANDIDATES" -gt 0 ]; then
+            {
+              echo "## Superseded candidate drafts"
+              echo
+              printf "Removed **%s** automation-owned, untagged candidate draft(s) for `%s`.\n" "$REMOVED_CANDIDATES" "$PACKAGE_NAME"
+              echo
+            } >> "$GITHUB_STEP_SUMMARY"
+
+            RELEASES="$(
+              gh api --paginate --slurp "repos/$GH_REPO/releases?per_page=100"
+            )"
+          fi
 
           PUBLISHED_ID="$(
             jq -r --arg tag "$RELEASE_TAG" '
@@ -902,6 +951,15 @@ jobs:
             if [ "${{ job.status }}" != "success" ]; then
               echo "### ❌ Release failed"
               echo
+
+              if [ "${{ steps.draft.outcome }}" = "success" ] &&
+                 [ "${{ steps.release.outcome }}" != "success" ]; then
+                echo "Draft prepared: **yes**"
+                echo "Release commit/tag: **not completed**"
+                echo "GitHub Release: **draft retained for retry**"
+                echo
+              fi
+
               echo "Review the workflow logs above for the failing step."
 
             elif [ "${{ steps.execution.outputs.dry-run }}" = "true" ]; then
