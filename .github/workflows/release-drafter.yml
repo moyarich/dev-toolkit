@@ -340,7 +340,7 @@ jobs:
 
       - name: Create or update first package draft
         id: first-draft
-        if: ${{ steps.selected.outputs.value == 'true' && steps.baseline.outputs.previous-tag == '' }}
+        if: ${{ steps.selected.outputs.value == 'true' && steps.baseline.outputs.previous-tag == '' && steps.baseline.outputs.existing-draft-id == '' }}
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
@@ -351,8 +351,31 @@ jobs:
         run: |
           set -euo pipefail
 
-          TAG="$PACKAGE_DIRECTORY@$VERSION"
-          NAME="$PACKAGE_NAME v$VERSION"
+          IDENTITY="$(
+            PACKAGE_NAME="$PACKAGE_NAME" \
+            PACKAGE_DIRECTORY="$PACKAGE_DIRECTORY" \
+            VERSION="$VERSION" \
+            node --experimental-strip-types --input-type=module <<'NODE'
+          import { releaseIdentity } from "./packages/workspace-tools/src/release-identity.ts";
+
+          process.stdout.write(
+            JSON.stringify(
+              releaseIdentity(
+                {
+                  directory: process.env.PACKAGE_DIRECTORY,
+                  manifest: {
+                    name: process.env.PACKAGE_NAME,
+                    version: process.env.VERSION,
+                  },
+                },
+                process.env.VERSION,
+              ),
+            ),
+          );
+          NODE
+          )"
+          TAG="$(jq -r '.tagName' <<< "$IDENTITY")"
+          NAME="$(jq -r '.releaseName' <<< "$IDENTITY")"
 
           CHANGELOG_PATH="$PACKAGE_DIRECTORY/CHANGELOG.md"
 
@@ -520,7 +543,7 @@ jobs:
 
       - name: Create or update subsequent package draft
         id: drafter
-        if: ${{ steps.selected.outputs.value == 'true' && steps.baseline.outputs.previous-tag != '' }}
+        if: ${{ steps.selected.outputs.value == 'true' && steps.baseline.outputs.previous-tag != '' && steps.baseline.outputs.existing-draft-id == '' }}
         uses: release-drafter/release-drafter@v7.7.0
         with:
           config-name: file:release-drafter-package-generated.yml
@@ -539,7 +562,12 @@ jobs:
             echo "| Release | Value |"
             echo "| --- | --- |"
             echo "| Package | \`${{ matrix.name }}\` |"
-            echo "| Name | \`${{ steps.first-draft.outputs.name || steps.drafter.outputs.name }}\` |"
-            echo "| Tag | \`${{ steps.first-draft.outputs.tag_name || steps.drafter.outputs.tag_name }}\` |"
-            echo "| Draft | [Open package draft release](${{ steps.first-draft.outputs.html_url || steps.drafter.outputs.html_url }}) |"
+            echo "| Name | \`${{ steps.baseline.outputs.existing-draft-name || steps.first-draft.outputs.name || steps.drafter.outputs.name }}\` |"
+            echo "| Tag | \`${{ steps.baseline.outputs.existing-git-tag || steps.first-draft.outputs.tag_name || steps.drafter.outputs.tag_name }}\` |"
+            echo "| Draft | [Open package draft release](${{ steps.baseline.outputs.existing-draft-url || steps.first-draft.outputs.html_url || steps.drafter.outputs.html_url }}) |"
+
+            if [ -n "${{ steps.baseline.outputs.existing-draft-id }}" ]; then
+              echo
+              echo "> Existing tagged draft detected. The draft was left unchanged for the release workflow to finalize."
+            fi
           } >> "$GITHUB_STEP_SUMMARY"
