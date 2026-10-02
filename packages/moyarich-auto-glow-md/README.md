@@ -134,25 +134,30 @@ The source CLI shares its implementation with the Oh My Zsh plugin through `lib/
 
 ## Build
 
-The `bin/` directory is generated output and is not the source location.
+`dist/` is the publishable runtime package. Source, tests, and development docs stay outside it.
 
 Build the package:
 
     npm run build --workspace @moyarich/auto-glow-md
 
-The Vite package-bin plugin copies:
+The build assembles:
 
-    src/cli/moyarich-auto-glow-md.sh
+    dist/
+    ├── bin/
+    │   └── moyarich-auto-glow-md.sh
+    ├── lib/
+    │   └── core.zsh
+    ├── moyarich-auto-glow-md.plugin.zsh
+    ├── install.sh
+    └── README.md
 
-to:
+The shell CLI is copied from `src/cli/` into `dist/bin/` and made executable. The runtime library, plugin entry file, installer, and README are copied into `dist/`.
 
-    bin/moyarich-auto-glow-md.sh
+Only `dist/` is included in the package tarball.
 
-and makes the generated file executable.
+You can validate the assembled runtime package with:
 
-You can test the generated CLI with:
-
-    npm run test:built-cli --workspace @moyarich/auto-glow-md
+    npm run test:dist --workspace @moyarich/auto-glow-md
 
 ## Development
 
@@ -172,7 +177,7 @@ Or run only the behavioral shell tests:
 
     npm run test:shell --workspace @moyarich/auto-glow-md
 
-The tests exercise Markdown detection, bypass behavior, command output, exit-status preservation, and the source shell CLI. The build-specific test verifies the generated `bin/moyarich-auto-glow-md.sh` command.
+The tests exercise Markdown detection, bypass behavior, command output, exit-status preservation, and the source shell CLI. `test:dist` validates the assembled `dist/` runtime package, including the generated CLI.
 
 npm is only a monorepo development convenience. It is not required to install or run the plugin or CLI.
 
