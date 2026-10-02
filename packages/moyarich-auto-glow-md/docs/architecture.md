@@ -1,27 +1,71 @@
 # Architecture
 
-moyarich-auto-glow-md has two integration layers.
+moyarich-auto-glow-md is a shell-native Oh My Zsh plugin.
 
-1. ZLE wrapper: the Oh My Zsh plugin wraps accept-line so commands can be routed transparently without aliasing individual executables.
-2. PTY CLI: moyarich-auto-glow-md runs the command through node-pty, preserving TTY behavior while inspecting terminal-facing output.
+It runs directly from Zsh and depends on Glow for Markdown rendering. There is no Node.js runtime, generated JavaScript CLI, or node-pty layer.
 
 ## Flow
 
     ZLE accept-line
           |
-          v
-    moyarich-auto-glow-md
+          +-- shell-state command -----------> normal Zsh execution
           |
-          v
-       node-pty
-          |
-          v
-       command
-          |
-          +-- ordinary output --------> terminal
-          |
-          +-- Markdown detected -> glow -> terminal
+          +-- other command
+                 |
+                 +-- capture command output
+                 |
+                 +-- Markdown detected -> glow
+                 |
+                 +-- otherwise -> print unchanged
 
-Shell-state commands such as cd, export, source, and alias bypass the PTY so their effects remain in the current shell.
+The plugin bypasses commands that must modify the current shell, such as cd, export, source, alias, setopt, pushd, jobs, fg, bg, exec, and exit.
 
-The Markdown classifier is deliberately conservative and currently recognizes headings, fenced code blocks, and Markdown tables.
+## Recursion guard
+
+The plugin uses the environment variable `MOYARICH_AUTO_GLOW_CHILD` as an internal recursion guard.
+
+Before a command is evaluated through the auto-glow runtime, the command is executed with:
+
+```zsh
+MOYARICH_AUTO_GLOW_CHILD=1
+```
+
+The plugin entry point starts with:
+
+```zsh
+[[ -n "${MOYARICH_AUTO_GLOW_CHILD:-}" ]] && return
+```
+
+This prevents a command launched by `moyarich-auto-glow-md` from loading the plugin again and wrapping itself recursively.
+
+The variable is intended for internal runtime use. Users normally do not need to set it manually.
+
+Execution flow:
+
+```text
+interactive Zsh
+    |
+    +-- plugin active
+            |
+            +-- run command with MOYARICH_AUTO_GLOW_CHILD=1
+                    |
+                    +-- child shell sees guard
+                    |
+                    +-- plugin entry point returns immediately
+                    |
+                    +-- command executes once
+```
+
+## Oh My Zsh entry point
+
+Oh My Zsh loads the package directly through:
+
+    moyarich-auto-glow-md.plugin.zsh
+
+The plugin directory can therefore be symlinked directly into:
+
+    $ZSH_CUSTOM/plugins/moyarich-auto-glow-md
+
+## Tradeoff
+
+The shell-native implementation captures output before classifying it. This keeps installation and runtime dependencies minimal, but it is less suitable for commands that require continuous TTY streaming or full-screen terminal behavior.
