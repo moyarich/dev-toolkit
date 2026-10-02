@@ -4,20 +4,16 @@
   "description": "Shell-native Oh My Zsh plugin that automatically renders Markdown terminal output with Glow.",
   "private": true,
   "bin": {
-    "moyarich-auto-glow-md": "./bin/moyarich-auto-glow-md.sh"
+    "moyarich-auto-glow-md": "./dist/bin/moyarich-auto-glow-md.sh"
   },
   "files": [
-    "bin",
-    "lib",
-    "moyarich-auto-glow-md.plugin.zsh",
-    "install.sh",
-    "README.md"
+    "dist"
   ],
   "scripts": {
     "build": "vite build --config vite.config.ts",
     "test": "zsh -n moyarich-auto-glow-md.plugin.zsh && zsh -n lib/core.zsh && zsh -n src/cli/moyarich-auto-glow-md.sh && sh -n install.sh && zsh test/run-tests.zsh",
     "test:shell": "zsh test/run-tests.zsh",
-    "test:built-cli": "npm run build && MOYARICH_AUTO_GLOW_DISABLE_RENDER=1 ./bin/moyarich-auto-glow-md.sh -- printf '%s' '# CLI works'"
+    "test:dist": "npm run build && zsh -n dist/moyarich-auto-glow-md.plugin.zsh && zsh -n dist/lib/core.zsh && zsh -n dist/bin/moyarich-auto-glow-md.sh && sh -n dist/install.sh && MOYARICH_AUTO_GLOW_DISABLE_RENDER=1 ./dist/bin/moyarich-auto-glow-md.sh -- printf '%s' '# CLI works'"
   },
   "devDependencies": {
     "@moyarich/vite-plugin-package-bin": "0.1.0"
