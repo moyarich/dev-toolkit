@@ -110,45 +110,36 @@ test("reusable release and publish define target-branch only for workflow_call",
   }
 });
 
-test(
-  "release workflow keeps GitHub releases draft until package publication completes",
-  () => {
-    assert.match(release, /Verify matching GitHub draft/);
-    assert.match(release, /No matching GitHub draft release exists/);
-    assert.match(release, /DRAFT_NAME.*RELEASE_NAME/s);
-    assert.match(release, /Publish GitHub Release draft/);
-    assert.match(release, /-F draft=false/);
-    assert.match(release, /GitHub Release: \*\*draft\*\*/);
-    assert.match(release, /Package publication: \*\*not requested\*\*/);
-    assert.match(release, /status == "staged"/);
-    assert.match(
-      release,
-      /remains a draft until registry publication is complete/,
-    );
-  },
-);
+test("release workflow keeps GitHub releases draft until package publication completes", () => {
+  assert.match(release, /Verify matching GitHub draft/);
+  assert.match(release, /No matching GitHub draft release exists/);
+  assert.match(release, /DRAFT_NAME.*RELEASE_NAME/s);
+  assert.match(release, /Publish GitHub Release draft/);
+  assert.match(release, /-F draft=false/);
+  assert.match(release, /GitHub Release: \*\*draft\*\*/);
+  assert.match(release, /Package publication: \*\*not requested\*\*/);
+  assert.match(release, /status == "staged"/);
+  assert.match(
+    release,
+    /remains a draft until registry publication is complete/,
+  );
+});
 
-test(
-  "release workflow consumes canonical release identity from workspace-release",
-  () => {
-    assert.match(release, /\.identity\.tagName/);
-    assert.match(release, /\.identity\.releaseName/);
-    assert.match(release, /RELEASE_TAG/);
-    assert.match(release, /RELEASE_NAME/);
-  },
-);
+test("release workflow consumes canonical release identity from workspace-release", () => {
+  assert.match(release, /\.identity\.tagName/);
+  assert.match(release, /\.identity\.releaseName/);
+  assert.match(release, /RELEASE_TAG/);
+  assert.match(release, /RELEASE_NAME/);
+});
 
-test(
-  "standalone publish finalizes the canonical GitHub draft after publication",
-  () => {
-    assert.match(publish, /releaseIdentity\.tagName/);
-    assert.match(publish, /releaseIdentity\.releaseName/);
-    assert.match(publish, /Verify matching GitHub draft/);
-    assert.match(publish, /Publish GitHub Release draft/);
-    assert.match(publish, /-F draft=false/);
-    assert.match(publish, /status == "staged"/);
-    assert.match(publish, /canonical Git tag does not exist/);
-    assert.match(publish, /contents: write/);
-    assert.match(publishWrapper, /contents: write/);
-  },
-);
+test("standalone publish finalizes the canonical GitHub draft after publication", () => {
+  assert.match(publish, /releaseIdentity\.tagName/);
+  assert.match(publish, /releaseIdentity\.releaseName/);
+  assert.match(publish, /Verify matching GitHub draft/);
+  assert.match(publish, /Publish GitHub Release draft/);
+  assert.match(publish, /-F draft=false/);
+  assert.match(publish, /status == "staged"/);
+  assert.match(publish, /canonical Git tag does not exist/);
+  assert.match(publish, /contents: write/);
+  assert.match(publishWrapper, /contents: write/);
+});
