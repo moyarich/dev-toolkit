@@ -22,9 +22,11 @@ export type MigrationResult = {
 };
 
 export function migrateTestScript(script: string): string {
-  let output = script.replace(/\s*--runInBand\b/g, "");
+  let output = script
+    .replace(/\s*--runInBand\b/g, "")
+    .replace(/\b--watchAll\b/g, "--watch");
 
-  const usesWatch = /\bjest\b[^&|;]*(?:--watch\b|--watchAll\b)/.test(output);
+  const usesWatch = /\bjest\b[^&|;]*--watch\b/.test(output);
   output = output.replace(/\bjest\b/g, usesWatch ? "vitest" : "vitest run");
 
   return output.replace(/\s{2,}/g, " ").trim();
