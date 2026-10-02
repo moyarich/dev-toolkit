@@ -52,19 +52,26 @@ test("release drafter generates one package config template at runtime", () => {
   assert.ok(template.includes('- "{{PACKAGE_DIRECTORY}}/**"'));
 });
 
-test("first package release uses package git history and 0.1.0", () => {
+test("first package release uses curated changelog notes with commit fallback", () => {
   assert.match(workflow, /gh api/);
   assert.match(workflow, /\.draft == false/);
   assert.match(workflow, /startswith\(\$prefix\)/);
   assert.match(workflow, /PREVIOUS_TAG/);
   assert.match(workflow, /SOURCE="full package Git history"/);
   assert.match(workflow, /VERSION="0\.1\.0"/);
+  assert.match(workflow, /CHANGELOG_PATH="\$PACKAGE_DIRECTORY\/CHANGELOG\.md"/);
+  assert.match(workflow, /line\.trim\(\) === heading/);
+  assert.match(workflow, /if \[ -z "\$NOTES" \]; then/);
   assert.match(workflow, /git log \\/);
   assert.match(workflow, /-- "\$PACKAGE_DIRECTORY"/);
+  assert.match(workflow, /groups = new Map/);
+  assert.match(workflow, /seen = new Set/);
   assert.match(workflow, /Create or update first package draft/);
   assert.match(workflow, /Create or update subsequent package draft/);
   assert.match(workflow, /tag_name=/);
   assert.match(workflow, /html_url=/);
+  assert.match(workflow, /## Release notes/);
+  assert.match(workflow, /npm install \$PACKAGE_NAME@\$VERSION/);
   assert.doesNotMatch(workflow, /git rev-list --max-parents=0 HEAD/);
 });
 
@@ -116,4 +123,13 @@ test("blocked release summary includes generated release content", () => {
   assert.match(workflow, /WOULD_BODY/);
   assert.match(workflow, /## Would-have-created release content/);
   assert.match(workflow, /## What's Changed/);
+});
+
+
+test("release draft template includes install guidance", () => {
+  assert.match(template, /## Release notes/);
+  assert.match(
+    template,
+    /npm install \{\{PACKAGE_NAME\}\}@\$RESOLVED_VERSION --registry=https:\/\/npm\.pkg\.github\.com/,
+  );
 });
