@@ -108,6 +108,12 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      - name: Setup Node.js
+        if: ${{ steps.selected.outputs.value == 'true' }}
+        uses: actions/setup-node@v7 # v7
+        with:
+          node-version: "24"
+
       - name: Generate package Release Drafter config
         if: ${{ steps.selected.outputs.value == 'true' }}
         env:
@@ -117,17 +123,32 @@ jobs:
         run: |
           set -euo pipefail
 
-          node --input-type=module <<'NODE'
+          node --experimental-strip-types --input-type=module <<'NODE'
           import { readFileSync, writeFileSync } from "node:fs";
+          import { releaseIdentity } from "./packages/workspace-tools/src/release-identity.ts";
 
           const template = readFileSync(
             ".github/release-drafter-package-template.yml",
             "utf8",
           );
 
+          const identity = releaseIdentity(
+            {
+              directory: process.env.PACKAGE_DIRECTORY,
+              manifest: {
+                name: process.env.PACKAGE_NAME,
+                version: "$RESOLVED_VERSION",
+              },
+            },
+            "$RESOLVED_VERSION",
+          );
+
           const config = template
-            .replaceAll("{{PACKAGE_NAME}}", process.env.PACKAGE_NAME)
-            .replaceAll("{{PACKAGE_DIRECTORY}}", process.env.PACKAGE_DIRECTORY);
+            .replaceAll("{{PACKAGE_NAME}}", identity.packageName)
+            .replaceAll("{{PACKAGE_DIRECTORY}}", identity.packageDirectory)
+            .replaceAll("{{RELEASE_NAME_TEMPLATE}}", identity.releaseName)
+            .replaceAll("{{TAG_TEMPLATE}}", identity.tagName)
+            .replaceAll("{{TAG_PREFIX}}", identity.tagPrefix);
 
           writeFileSync(
             ".github/release-drafter-package-generated.yml",
