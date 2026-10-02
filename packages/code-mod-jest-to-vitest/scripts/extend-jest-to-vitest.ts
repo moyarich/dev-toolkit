@@ -75,9 +75,7 @@ function mergeVitestImport(
   return `import { ${importParts.join(", ")} } from "vitest";\n${source}`;
 }
 
-function migrateJestRuntimeApis(
-  rootNode: SgNode<TypeScript>,
-): string {
+function migrateJestRuntimeApis(rootNode: SgNode<TypeScript>): string {
   const calls = rootNode.findAll({
     rule: { pattern: "jest.$METHOD($$$ARGS)" },
   });
