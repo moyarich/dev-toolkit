@@ -409,6 +409,7 @@ export function serializePublishPlan(
       name: pkg.manifest.name,
       version: pkg.manifest.version,
       directory: pkg.directory,
+      releaseIdentity: releaseIdentity(pkg),
       registries,
       publishable: Object.values(registries).includes("missing"),
     })),
