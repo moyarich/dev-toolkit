@@ -77,13 +77,31 @@ function mergeVitestImport(
 
 function migrateJestRuntimeApis(rootNode: SgNode<TypeScript>): string {
   const calls = rootNode.findAll({
-    rule: { pattern: "jest.$METHOD($$$ARGS)" },
+    rule: { pattern: "jest.$METHOD($$ARGS)" },
+  });
+  const timerReferences = rootNode.findAll({
+    rule: { pattern: "jest.advanceTimersByTime" },
   });
 
-  if (calls.length === 0) return rootNode.text();
+  if (calls.length === 0 && timerReferences.length === 0) {
+    return rootNode.text();
+  }
 
   const edits: Edit[] = [];
   const asyncFunctions = new Set<number>();
+
+  for (const timerReference of timerReferences) {
+    const parent = timerReference.parent();
+    const isDirectCall =
+      parent?.kind() === "call_expression" &&
+      parent.field("function")?.id() === timerReference.id();
+
+    if (!isDirectCall) {
+      edits.push(
+        timerReference.replace("vi.advanceTimersByTime.bind(vi)"),
+      );
+    }
+  }
 
   for (const call of calls) {
     const method = call.getMatch("METHOD")?.text();
@@ -100,9 +118,21 @@ function migrateJestRuntimeApis(rootNode: SgNode<TypeScript>): string {
     if (method === "disableAutomock") continue;
 
     const replacementName = JEST_API_RENAMES[method] ?? method;
-    let replacement = call
-      .text()
-      .replace(new RegExp(`^jest\\.${method}`), `vi.${replacementName}`);
+    let replacement: string;
+
+    if (method === "setTimeout") {
+      const args = call.getMultipleMatches("ARGS");
+      if (args.length !== 1) {
+        throw new Error(
+          "jest.setTimeout() must have exactly one timeout argument.",
+        );
+      }
+      replacement = `vi.setConfig({ testTimeout: ${args[0]!.text()} })`;
+    } else {
+      replacement = call
+        .text()
+        .replace(new RegExp(`^jest\\.${method}`), `vi.${replacementName}`);
+    }
 
     if (
       JEST_ASYNC_APIS.has(method) &&
