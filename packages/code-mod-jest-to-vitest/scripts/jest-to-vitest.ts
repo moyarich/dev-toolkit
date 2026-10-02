@@ -168,9 +168,6 @@ function migrateJestRuntimeApis(rootNode: SgNode<TypeScript>): string {
 }
 
 function migrateSource(source: string): string {
-  if (/from\s*["\']@playwright\/test["\']|require\(\s*["\']@playwright\/test["\']\s*\)/.test(source)) {
-    return source;
-  }
   let output = source;
 
   // Remove explicit Jest globals imports. Required Vitest imports are rebuilt below.
@@ -210,6 +207,15 @@ function migrateSource(source: string): string {
 const codemod: Codemod<TypeScript> = (root) => {
   const rootNode = root.root();
   const original = rootNode.text();
+
+  if (
+    /from\s*["']@playwright\/test["']|require\(\s*["']@playwright\/test["']\s*\)/.test(
+      original,
+    )
+  ) {
+    return null;
+  }
+
   const runtimeMigrated = migrateJestRuntimeApis(rootNode);
   let output = migrateSource(runtimeMigrated);
 
