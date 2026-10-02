@@ -1,0 +1,40 @@
+{
+  "name": "@moyarich/vscode-test-cleaner",
+  "version": "0.1.0",
+  "description": "Discover and safely remove VS Code test environments created by @vscode/test-electron.",
+  "type": "module",
+  "bin": {
+    "vscode-test-clean": "./dist/bin/vscode-test-clean.mjs"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "CHANGELOG.md"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "build": "vite build --config vite.config.ts",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@inquirer/prompts": "^8.7.2",
+    "chalk": "^6.0.1",
+    "commander": "^15.0.0"
+  },
+  "devDependencies": {
+    "@moyarich/vite-plugin-package-bin": "0.1.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/moyarich/dev-toolkit.git",
+    "directory": "packages/vscode-test-cleaner"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
+    "access": "public"
+  },
+  "license": "MIT"
+}
