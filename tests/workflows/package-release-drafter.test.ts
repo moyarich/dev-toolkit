@@ -40,15 +40,13 @@ test("release drafter generates one package config template at runtime", () => {
   assert.ok(workflow.includes('replaceAll("{{PACKAGE_NAME}}"'));
   assert.ok(workflow.includes('replaceAll("{{PACKAGE_DIRECTORY}}"'));
 
-  assert.ok(
-    template.includes('name-template: "{{PACKAGE_NAME}} v$RESOLVED_VERSION"'),
-  );
-  assert.ok(
-    template.includes(
-      'tag-template: "{{PACKAGE_DIRECTORY}}@$RESOLVED_VERSION"',
-    ),
-  );
-  assert.ok(template.includes('tag-prefix: "{{PACKAGE_DIRECTORY}}@"'));
+  assert.ok(template.includes('name-template: "{{RELEASE_NAME_TEMPLATE}}"'));
+  assert.ok(template.includes('tag-template: "{{TAG_TEMPLATE}}"'));
+  assert.ok(template.includes('tag-prefix: "{{TAG_PREFIX}}"'));
+  assert.match(workflow, /releaseIdentity/);
+  assert.match(workflow, /identity\.releaseName/);
+  assert.match(workflow, /identity\.tagName/);
+  assert.match(workflow, /identity\.tagPrefix/);
   assert.ok(template.includes('- "{{PACKAGE_DIRECTORY}}/**"'));
 });
 
@@ -102,11 +100,14 @@ test("release drafter uses only supported action inputs", () => {
   );
 });
 
-test("first release is blocked when package tags exist without a published release", () => {
+test("tagged drafts are valid release-in-progress state while orphan tags are blocked", () => {
   assert.match(workflow, /git tag --list "\$PACKAGE_DIRECTORY@\*"/);
   assert.match(workflow, /EXISTING_GIT_TAG/);
-  assert.match(workflow, /Refusing to treat this package as a first release/);
-  assert.match(workflow, /existing-git-tag=/);
+  assert.match(workflow, /EXISTING_DRAFT_ID/);
+  assert.match(workflow, /select\(\.draft == true and \.tag_name == \$tag\)/);
+  assert.match(workflow, /existing tagged draft release/);
+  assert.match(workflow, /Found orphan package Git tag/);
+  assert.match(workflow, /existing-draft-id=/);
 });
 
 test("blocked first release writes would-have-created details to the summary", () => {
@@ -115,6 +116,7 @@ test("blocked first release writes would-have-created details to the summary", (
   assert.match(workflow, /WOULD_VERSION/);
   assert.match(workflow, /WOULD_TAG/);
   assert.match(workflow, /WOULD_NAME/);
+  assert.match(workflow, /releaseIdentity/);
   assert.match(workflow, /release history requires reconciliation/);
 });
 
@@ -130,5 +132,17 @@ test("release draft template includes install guidance", () => {
   assert.match(
     template,
     /npm install \{\{PACKAGE_NAME\}\}@\$RESOLVED_VERSION --registry=https:\/\/npm\.pkg\.github\.com/,
+  );
+});
+
+
+test("tagged draft releases are preserved for the release workflow", () => {
+  assert.match(
+    workflow,
+    /steps\.baseline\.outputs\.existing-draft-id == ''/,
+  );
+  assert.match(
+    workflow,
+    /Existing tagged draft detected\. The draft was left unchanged/,
   );
 });
