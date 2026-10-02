@@ -1,6 +1,7 @@
 import { parse } from "codemod:ast-grep";
 import type TypeScript from "codemod:ast-grep/langs/typescript";
 import { describe, expect, it } from "vitest";
+import { classifyMemberRole } from "../../src/mapping.ts";
 
 function classifyAdvanceTimersByTime(source: string): {
   kind: string;
@@ -16,15 +17,10 @@ function classifyAdvanceTimersByTime(source: string): {
     throw new Error("jest.advanceTimersByTime was not found");
   }
 
-  const parent = member.parent();
-  const isDirectCall =
-    parent?.kind() === "call_expression" &&
-    parent.field("function")?.id() === member.id();
-
   return {
     kind: member.kind(),
-    parentKind: parent?.kind() ?? null,
-    role: isDirectCall ? "call" : "reference",
+    parentKind: member.parent()?.kind() ?? null,
+    role: classifyMemberRole(member),
   };
 }
 
