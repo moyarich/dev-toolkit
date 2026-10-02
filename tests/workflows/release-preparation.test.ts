@@ -129,3 +129,16 @@ test("release workflow consumes canonical release identity from workspace-releas
   assert.match(release, /RELEASE_TAG/);
   assert.match(release, /RELEASE_NAME/);
 });
+
+
+test("standalone publish finalizes the canonical GitHub draft after publication", () => {
+  assert.match(publish, /releaseIdentity\.tagName/);
+  assert.match(publish, /releaseIdentity\.releaseName/);
+  assert.match(publish, /Verify matching GitHub draft/);
+  assert.match(publish, /Publish GitHub Release draft/);
+  assert.match(publish, /-F draft=false/);
+  assert.match(publish, /status == "staged"/);
+  assert.match(publish, /canonical Git tag does not exist/);
+  assert.match(publish, /contents: write/);
+  assert.match(publishWrapper, /contents: write/);
+});
