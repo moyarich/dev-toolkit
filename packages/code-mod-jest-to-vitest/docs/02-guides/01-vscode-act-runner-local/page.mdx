@@ -17,9 +17,9 @@ ReferenceError: jest is not defined
 The repository also contained TypeScript Jest namespace types such as:
 
 ```ts
-jest.Mock
-jest.Mocked<T>
-jest.MockedFunction<T>
+jest.Mock;
+jest.Mocked<T>;
+jest.MockedFunction<T>;
 ```
 
 Those cases are now explicitly covered by the codemod.
@@ -84,13 +84,13 @@ npm run audit \
 The shared VS Code mock originally contained calls such as:
 
 ```ts
-jest.fn()
+jest.fn();
 ```
 
 They must become:
 
 ```ts
-vi.fn()
+vi.fn();
 ```
 
 with the required import:
@@ -104,13 +104,13 @@ import { vi } from "vitest";
 Code such as:
 
 ```ts
-(vscode.window.showWarningMessage as jest.Mock)
+vscode.window.showWarningMessage as jest.Mock;
 ```
 
 must become:
 
 ```ts
-(vscode.window.showWarningMessage as Mock)
+vscode.window.showWarningMessage as Mock;
 ```
 
 with:

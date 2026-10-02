@@ -43,12 +43,7 @@ A typical package looks like:
     "command-a": "./bin/command-a.mjs",
     "command-b": "./bin/command-b.mjs"
   },
-  "files": [
-    "bin",
-    "src",
-    "README.md",
-    "CHANGELOG.md"
-  ],
+  "files": ["bin", "src", "README.md", "CHANGELOG.md"],
   "engines": {
     "node": ">=24"
   },
@@ -188,10 +183,7 @@ Use the package-level TypeScript configuration:
     "types": ["node"],
     "skipLibCheck": true
   },
-  "include": [
-    "src/**/*.ts",
-    "vite.config.ts"
-  ]
+  "include": ["src/**/*.ts", "vite.config.ts"]
 }
 ```
 
@@ -199,11 +191,7 @@ If the package contains other TypeScript sources such as migration scripts, incl
 
 ```json
 {
-  "include": [
-    "src/**/*.ts",
-    "scripts/**/*.ts",
-    "vite.config.ts"
-  ]
+  "include": ["src/**/*.ts", "scripts/**/*.ts", "vite.config.ts"]
 }
 ```
 
@@ -314,7 +302,6 @@ Then use the repository's reusable package release/publish workflows instead of 
 - generated binaries are built before publish
 - package tests run independently through npm workspaces
 
-
 ## Hello World package example
 
 The following example creates a complete CLI package named `@moyarich/hello-world`.
@@ -362,11 +349,7 @@ Create `packages/hello-world/package.json`:
   "bin": {
     "hello-world": "./bin/hello-world.mjs"
   },
-  "files": [
-    "bin",
-    "src",
-    "README.md"
-  ],
+  "files": ["bin", "src", "README.md"],
   "engines": {
     "node": ">=24"
   },
@@ -506,11 +489,7 @@ Create `packages/hello-world/tsconfig.json`:
     "types": ["node"],
     "skipLibCheck": true
   },
-  "include": [
-    "src/**/*.ts",
-    "tests/**/*.ts",
-    "vite.config.ts"
-  ]
+  "include": ["src/**/*.ts", "tests/**/*.ts", "vite.config.ts"]
 }
 ```
 

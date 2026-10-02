@@ -5,9 +5,7 @@
   "name": "@moyarich/code-mod-jest-to-vitest",
   "engine": "jssg",
   "applicability": {
-    "from": [
-      ["jest", ">=", "26.0.0"]
-    ]
+    "from": [["jest", ">=", "26.0.0"]]
   },
   "meta": {
     "tags": ["migration", "jest", "vitest"],

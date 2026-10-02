@@ -162,7 +162,6 @@ See:
 - `./docs/02-guides/02-migration-coverage/page.mdx` for the migration coverage matrix
 - `./docs/02-guides/01-vscode-act-runner-local/page.mdx` for the real repository audit that motivated the implementation
 
-
 ## Build
 
 This package follows the same build convention as `packages/vs-code-ext-tools`:
@@ -174,7 +173,6 @@ npm test --workspace @moyarich/code-mod-jest-to-vitest
 ```
 
 The CLI source lives at `src/cli/jest-to-vitest.ts`. Vite uses `@moyarich/vite-plugin-package-bin` to generate `bin/jest-to-vitest.mjs`.
-
 
 ## `.codemodrc.json`
 
@@ -188,9 +186,7 @@ The package includes Codemod registry metadata in `.codemodrc.json`:
   "name": "@moyarich/code-mod-jest-to-vitest",
   "engine": "jssg",
   "applicability": {
-    "from": [
-      ["jest", ">=", "26.0.0"]
-    ]
+    "from": [["jest", ">=", "26.0.0"]]
   },
   "meta": {
     "tags": ["migration", "jest", "vitest"],

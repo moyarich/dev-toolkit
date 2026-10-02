@@ -59,8 +59,7 @@ function mergeVitestImport(
 
   if (importParts.length === 0) return source;
 
-  const vitestImport =
-    /import\s*\{([^}]*)\}\s*from\s*["']vitest["'];?/;
+  const vitestImport = /import\s*\{([^}]*)\}\s*from\s*["']vitest["'];?/;
 
   if (vitestImport.test(source)) {
     return source.replace(vitestImport, (_match, existing: string) => {
@@ -103,10 +102,9 @@ function migrateJestRuntimeApis(
     if (method === "disableAutomock") continue;
 
     const replacementName = JEST_API_RENAMES[method] ?? method;
-    let replacement = call.text().replace(
-      new RegExp(`^jest\\.${method}`),
-      `vi.${replacementName}`,
-    );
+    let replacement = call
+      .text()
+      .replace(new RegExp(`^jest\\.${method}`), `vi.${replacementName}`);
 
     if (
       JEST_ASYNC_APIS.has(method) &&
@@ -160,10 +158,7 @@ function migrateSource(source: string): string {
   );
 
   // disableAutomock has no meaningful Vitest equivalent.
-  output = output.replace(
-    /^\s*jest\.disableAutomock\(\);?\s*$/gm,
-    "",
-  );
+  output = output.replace(/^\s*jest\.disableAutomock\(\);?\s*$/gm, "");
 
   // TypeScript Jest namespace types become Vitest type imports.
   for (const typeName of JEST_TYPE_NAMES) {
@@ -209,11 +204,7 @@ const codemod: Codemod<TypeScript> = (root) => {
     if (typePattern.test(output)) typeImports.add(typeName);
   }
 
-  output = mergeVitestImport(
-    output,
-    [...runtimeImports],
-    [...typeImports],
-  );
+  output = mergeVitestImport(output, [...runtimeImports], [...typeImports]);
 
   return output;
 };

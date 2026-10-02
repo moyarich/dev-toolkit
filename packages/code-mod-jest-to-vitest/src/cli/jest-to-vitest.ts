@@ -62,7 +62,9 @@ function walk(dir, results = []) {
       continue;
     }
 
-    if ([".js", ".jsx", ".mjs", ".cjs", ".ts", ".tsx"].includes(extname(path))) {
+    if (
+      [".js", ".jsx", ".mjs", ".cjs", ".ts", ".tsx"].includes(extname(path))
+    ) {
       results.push(path);
     }
   }
@@ -184,16 +186,12 @@ if (auditOnly) {
 
     migrate(previewTarget);
 
-    console.log("\nDry-run diff (no files in the source project were changed):\n");
+    console.log(
+      "\nDry-run diff (no files in the source project were changed):\n",
+    );
     run(
       "git",
-      [
-        "diff",
-        "--no-index",
-        "--",
-        target,
-        previewTarget,
-      ],
+      ["diff", "--no-index", "--", target, previewTarget],
       process.cwd(),
       { allowFailure: true },
     );
