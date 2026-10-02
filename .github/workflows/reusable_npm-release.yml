@@ -186,12 +186,12 @@ jobs:
       packages: write
     runs-on: ubuntu-latest
     outputs:
-      package-name: ${{ steps.release.outputs.package-name }}
-      package-selector: ${{ steps.release.outputs.package-selector }}
-      package-version: ${{ steps.release.outputs.package-version }}
-      release-status: ${{ steps.release.outputs.status }}
-      can-release: ${{ steps.release.outputs.can-release }}
-      release-json: ${{ steps.release.outputs.release-json }}
+      package-name: ${{ steps.release.outputs.package-name || steps.preview.outputs.package-name }}
+      package-selector: ${{ steps.release.outputs.package-selector || steps.preview.outputs.package-selector }}
+      package-version: ${{ steps.release.outputs.package-version || steps.preview.outputs.package-version }}
+      release-status: ${{ steps.release.outputs.status || steps.preview.outputs.status }}
+      can-release: ${{ steps.release.outputs.can-release || steps.preview.outputs.can-release }}
+      release-json: ${{ steps.release.outputs.release-json || steps.preview.outputs.release-json }}
       publish-status: ${{ steps.publish.outputs.status }}
       publish-json: ${{ steps.publish.outputs.publish-json }}
 
@@ -492,10 +492,9 @@ jobs:
           git status --porcelain=v1 --untracked-files=all > /tmp/release-status-before
           git tag --list | sort > /tmp/release-tags-before
 
-      - name: Release or preview package
-        id: release
+      - name: Resolve target release
+        id: preview
         env:
-          DRY_RUN: ${{ steps.execution.outputs.dry-run }}
           VERSION_MODE: ${{ inputs.version-mode }}
           PUBLISH: ${{ inputs.publish }}
           REGISTRY: ${{ inputs.registry }}
@@ -505,25 +504,16 @@ jobs:
         run: |
           set -euo pipefail
 
-          DRY_RUN_FLAG=""
-
-          if [ "$DRY_RUN" = "true" ]; then
-            DRY_RUN_FLAG="--dry-run"
-          fi
-
           RELEASE_ARGS=(
             "${{ inputs.package }}"
             "--mode=$VERSION_MODE"
             "--json"
+            "--dry-run"
           )
 
           if [ "$VERSION_MODE" != "package-json" ]; then
             RELEASE_ARGS[0]="${{ inputs.package }}=$VERSION_REQUEST"
             RELEASE_ARGS+=("--version=$VERSION_REQUEST")
-          fi
-
-          if [ "$DRY_RUN" = "true" ]; then
-            RELEASE_ARGS+=("--dry-run")
           fi
 
           RELEASE_JSON="$(
@@ -533,6 +523,7 @@ jobs:
           echo "$RELEASE_JSON" | jq -e '
             type == "object" and
             .operation == "release" and
+            .dryRun == true and
             (.package.name | type == "string" and length > 0) and
             (.currentVersion | type == "string" and length > 0) and
             (.nextVersion | type == "string" and length > 0) and
@@ -545,6 +536,7 @@ jobs:
           PACKAGE_VERSION="$(jq -r '.nextVersion' <<< "$RELEASE_JSON")"
           RELEASE_TAG="$(jq -r '.identity.tagName' <<< "$RELEASE_JSON")"
           RELEASE_NAME="$(jq -r '.identity.releaseName' <<< "$RELEASE_JSON")"
+          CAN_RELEASE="$(jq -r '.canRelease' <<< "$RELEASE_JSON")"
 
           {
             echo "PACKAGE_NAME=$PACKAGE_NAME"
@@ -559,7 +551,7 @@ jobs:
             echo "package-selector=$PACKAGE_SELECTOR"
             echo "package-version=$PACKAGE_VERSION"
             echo "status=$(jq -r '.status' <<< "$RELEASE_JSON")"
-            echo "can-release=$(jq -r 'if has("canRelease") then .canRelease else true end' <<< "$RELEASE_JSON")"
+            echo "can-release=$CAN_RELEASE"
             echo "release-json<<EOF"
             echo "$RELEASE_JSON" | jq -c .
             echo "EOF"
@@ -568,93 +560,113 @@ jobs:
           {
             echo "# Package release"
             echo
-
-            echo "## Package"
+            echo "## Target resolution"
             echo
             echo "| Setting | Value |"
             echo "| --- | --- |"
-            echo "| Repository | \`$GH_REPO\` |"
+            echo "| Repository | `$GH_REPO` |"
+            echo "| Package | `$PACKAGE_NAME` |"
             echo "| Package selector | `${{ inputs.package }}` |"
-            echo "| Git ref | \`$GIT_REF\` |"
-            echo
-
-            echo "## Release configuration"
-            echo
-            echo "| Setting | Value |"
-            echo "| --- | --- |"
-            echo "| Version selection | \`$VERSION_MODE\` |"
-            echo "| Version request | \`${VERSION_REQUEST:-package.json version}\` |"
-            echo "| Dry run | **$DRY_RUN** |"
+            echo "| Current version | `$(jq -r '.currentVersion' <<< "$RELEASE_JSON")` |"
+            echo "| Version selection | `$VERSION_MODE` |"
+            echo "| Version request | `${VERSION_REQUEST:-package.json version}` |"
+            echo "| Resolved version | `$PACKAGE_VERSION` |"
+            echo "| Git tag | `$RELEASE_TAG` |"
+            echo "| GitHub Release | `$RELEASE_NAME` |"
+            echo "| Can release | **$CAN_RELEASE** |"
+            echo "| Dry run | **${{ steps.execution.outputs.dry-run }}** |"
             echo "| Publish after release | **$PUBLISH** |"
-
-            if [ "$PUBLISH" = "true" ]; then
-              echo "| Publish registry | \`$REGISTRY\` |"
-              echo "| Distribution tag | \`$DIST_TAG\` |"
-            fi
-
             echo
+          } >> "$GITHUB_STEP_SUMMARY"
 
-            if [ "$DRY_RUN" = "true" ]; then
-              echo "> [!NOTE]"
-              echo "> **Preview only.** No files, commits, Git tags, pushes, or packages will be changed."
-            elif [ "$PUBLISH" = "true" ]; then
-              echo "> [!IMPORTANT]"
-              echo "> This run will create and push the release commit and Git tag, then publish the package."
-            else
-              echo "> [!IMPORTANT]"
-              echo "> This run will create and push the release commit and Git tag. Package publishing is disabled."
-            fi
+          if [ "${{ steps.execution.outputs.dry-run }}" = "false" ] && [ "$CAN_RELEASE" != "true" ]; then
+            echo "::error::Resolved target is not releasable: $(jq -r '.reason // "unknown reason"' <<< "$RELEASE_JSON")"
+            exit 1
+          fi
 
-            echo
-            echo "## Release details"
-            echo
-            echo "| Resolved | Value |"
-            echo "| --- | --- |"
-            echo "| Package | \`$PACKAGE_NAME\` |"
-            echo "| Version | \`$PACKAGE_VERSION\` |"
-            echo "| Git tag | \`$RELEASE_TAG\` |"
-            echo "| GitHub Release | \`$RELEASE_NAME\` |"
-            echo "| Status | \`$(jq -r '.status' <<< "$RELEASE_JSON")\` |"
-            echo "| Can release | **$(jq -r 'if has("canRelease") then .canRelease else true end' <<< "$RELEASE_JSON")** |"
-            echo
-            echo '~~~json'
-            echo "$RELEASE_JSON" | jq .
-            echo '~~~'
-          } | tee -a "$GITHUB_STEP_SUMMARY"
-
-      - name: Verify matching GitHub draft
+      - name: Ensure matching GitHub draft
+        id: draft
         if: ${{ steps.execution.outputs.dry-run == 'false' }}
+        env:
+          PREVIEW_JSON: ${{ steps.preview.outputs.release-json }}
         shell: bash
         run: |
           set -euo pipefail
 
-          RELEASE="$(
-            gh api --paginate --slurp "repos/$GH_REPO/releases?per_page=100" |
-              jq -c --arg tag "$RELEASE_TAG" '
-                [
-                  .[][] |
-                  select(.draft == true and .tag_name == $tag)
-                ]
-                | first // empty
-              '
+          RELEASES="$(
+            gh api --paginate --slurp "repos/$GH_REPO/releases?per_page=100"
           )"
 
-          if [ -z "$RELEASE" ]; then
-            echo "::error::No matching GitHub draft release exists for $RELEASE_TAG."
-            echo "::error::Run the package draft workflow before performing a real release."
+          PUBLISHED_ID="$(
+            jq -r --arg tag "$RELEASE_TAG" '
+              [.[][] | select(.draft == false and .tag_name == $tag)]
+              | first
+              | .id // empty
+            ' <<< "$RELEASES"
+          )"
+
+          if [ -n "$PUBLISHED_ID" ]; then
+            echo "::error::A published GitHub Release already exists for $RELEASE_TAG."
             exit 1
           fi
 
-          DRAFT_NAME="$(jq -r '.name' <<< "$RELEASE")"
+          EXISTING="$(
+            jq -c --arg tag "$RELEASE_TAG" '
+              [.[][] | select(.draft == true and .tag_name == $tag)]
+              | first // empty
+            ' <<< "$RELEASES"
+          )"
 
-          if [ "$DRAFT_NAME" != "$RELEASE_NAME" ]; then
-            echo "::error::Draft release name does not match the canonical release identity."
-            echo "::error::Expected: $RELEASE_NAME"
-            echo "::error::Actual:   $DRAFT_NAME"
-            exit 1
+          NOTES="$(jq -r '.changelog // ""' <<< "$PREVIEW_JSON" | sed '1{/^## /d;}')"
+
+          BODY="$(
+            {
+              echo "## Release notes"
+              echo
+              if [ -n "$NOTES" ]; then
+                echo "$NOTES"
+              else
+                echo "- No package-specific changes found."
+              fi
+              echo
+              echo "## Install"
+              echo
+              echo '~~~sh'
+              echo "npm install $PACKAGE_NAME@$PACKAGE_VERSION --registry=https://npm.pkg.github.com"
+              echo '~~~'
+            }
+          )"
+
+          if [ -n "$EXISTING" ]; then
+            RELEASE_DRAFT_ID="$(jq -r '.id' <<< "$EXISTING")"
+
+            RELEASE="$(
+              gh api \
+                --method PATCH \
+                "repos/$GH_REPO/releases/$RELEASE_DRAFT_ID" \
+                -f tag_name="$RELEASE_TAG" \
+                -f target_commitish="$TARGET_BRANCH" \
+                -f name="$RELEASE_NAME" \
+                -F draft=true
+            )"
+
+            ACTION="reused"
+          else
+            RELEASE="$(
+              gh api \
+                --method POST \
+                "repos/$GH_REPO/releases" \
+                -f tag_name="$RELEASE_TAG" \
+                -f target_commitish="$TARGET_BRANCH" \
+                -f name="$RELEASE_NAME" \
+                -f body="$BODY" \
+                -F draft=true
+            )"
+
+            RELEASE_DRAFT_ID="$(jq -r '.id' <<< "$RELEASE")"
+            ACTION="created"
           fi
 
-          RELEASE_DRAFT_ID="$(jq -r '.id' <<< "$RELEASE")"
           RELEASE_DRAFT_URL="$(jq -r '.html_url' <<< "$RELEASE")"
 
           {
@@ -663,7 +675,12 @@ jobs:
           } >> "$GITHUB_ENV"
 
           {
-            echo
+            echo "id=$RELEASE_DRAFT_ID"
+            echo "url=$RELEASE_DRAFT_URL"
+            echo "action=$ACTION"
+          } >> "$GITHUB_OUTPUT"
+
+          {
             echo "## GitHub Release draft"
             echo
             echo "| Setting | Value |"
@@ -671,7 +688,65 @@ jobs:
             echo "| Name | `$RELEASE_NAME` |"
             echo "| Tag | `$RELEASE_TAG` |"
             echo "| State | **draft** |"
+            echo "| Action | **$ACTION** |"
             echo "| Draft | [Open release draft]($RELEASE_DRAFT_URL) |"
+            echo
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Perform release
+        id: release
+        if: ${{ steps.execution.outputs.dry-run == 'false' }}
+        env:
+          VERSION_MODE: ${{ inputs.version-mode }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          RELEASE_ARGS=(
+            "${{ inputs.package }}"
+            "--mode=$VERSION_MODE"
+            "--json"
+          )
+
+          if [ "$VERSION_MODE" != "package-json" ]; then
+            RELEASE_ARGS[0]="${{ inputs.package }}=$VERSION_REQUEST"
+            RELEASE_ARGS+=("--version=$VERSION_REQUEST")
+          fi
+
+          RELEASE_JSON="$(
+            node "$WORKSPACE_TOOLS_BIN/workspace-release.mjs" "${RELEASE_ARGS[@]}"
+          )"
+
+          echo "$RELEASE_JSON" | jq -e \
+            --arg expectedTag "$RELEASE_TAG" \
+            --arg expectedName "$RELEASE_NAME" '
+              type == "object" and
+              .operation == "release" and
+              .status == "success" and
+              .identity.tagName == $expectedTag and
+              .identity.releaseName == $expectedName
+            ' >/dev/null
+
+          {
+            echo "package-name=$(jq -r '.package.name' <<< "$RELEASE_JSON")"
+            echo "package-selector=$(jq -r '.package.selector' <<< "$RELEASE_JSON")"
+            echo "package-version=$(jq -r '.nextVersion' <<< "$RELEASE_JSON")"
+            echo "status=$(jq -r '.status' <<< "$RELEASE_JSON")"
+            echo "can-release=true"
+            echo "release-json<<EOF"
+            echo "$RELEASE_JSON" | jq -c .
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+          {
+            echo "## Release created"
+            echo
+            echo "| Setting | Value |"
+            echo "| --- | --- |"
+            echo "| Version | `$(jq -r '.nextVersion' <<< "$RELEASE_JSON")` |"
+            echo "| Git tag | `$(jq -r '.identity.tagName' <<< "$RELEASE_JSON")` |"
+            echo "| GitHub Release | **draft** |"
+            echo
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Verify dry run made no repository changes
