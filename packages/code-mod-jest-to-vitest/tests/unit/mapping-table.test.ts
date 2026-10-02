@@ -41,6 +41,7 @@ function vitestType(
   jestSymbol: string,
   vitestSymbol = jestSymbol,
   reversibility: Reversibility = "exact",
+  detail?: string,
 ): ProposedMapping {
   return {
     name: `jest.${jestSymbol}`,
@@ -49,8 +50,29 @@ function vitestType(
       framework: "vitest",
       symbol: vitestSymbol,
       role: "type",
+      ...(detail ? { detail } : {}),
     },
     reversibility,
+  };
+}
+
+/**
+ * Creates a Jest type mapping that requires a project-specific replacement.
+ */
+function manualTypeMigration(
+  jestSymbol: string,
+  detail: string,
+): ProposedMapping {
+  return {
+    name: `jest.${jestSymbol}`,
+    source: { framework: "jest", symbol: jestSymbol, role: "type" },
+    target: {
+      framework: "vitest",
+      symbol: "unsupported",
+      role: "type",
+      detail,
+    },
+    reversibility: "unsupported",
   };
 }
 
@@ -167,17 +189,18 @@ const proposedMappings: ProposedMapping[] = [
     reversibility: "semantic",
   },
 
-  // Jest namespace types supported by the transform.
+  // Jest namespace types.
   vitestType("Mock"),
   vitestType("Mocked"),
   vitestType("MockedClass"),
   vitestType("MockedFunction"),
   vitestType("MockedObject"),
-  vitestType("Spied"),
-  vitestType("SpiedClass"),
-  vitestType("SpiedFunction"),
-  vitestType("SpiedGetter"),
-  vitestType("SpiedSetter"),
+  manualTypeMigration("Replaced", "replaceProperty-has-no-direct-equivalent"),
+  vitestType("Spied", "MockInstance", "semantic", "conditional-spy-type"),
+  vitestType("SpiedClass", "MockInstance", "semantic", "constructor-spy-type"),
+  vitestType("SpiedFunction", "MockInstance", "semantic", "function-spy-type"),
+  vitestType("SpiedGetter", "MockInstance", "semantic", "getter-signature-rewrite"),
+  vitestType("SpiedSetter", "MockInstance", "semantic", "setter-signature-rewrite"),
   vitestType("SpyInstance", "MockInstance", "semantic"),
 
   // A direct call and a detached reference are different transformations.
@@ -308,7 +331,7 @@ describe("Jest to Vitest mapping model", () => {
     expect(new Set(mappedRuntimeApis)).toEqual(new Set(expectedRuntimeApis));
   });
 
-  it("covers every Jest namespace type supported by the codemod", () => {
+  it("covers the Jest namespace types that require migration decisions", () => {
     expect(
       mappings
         .filter(({ source }) => source.role === "type")
@@ -321,6 +344,7 @@ describe("Jest to Vitest mapping model", () => {
         "MockedClass",
         "MockedFunction",
         "MockedObject",
+        "Replaced",
         "Spied",
         "SpiedClass",
         "SpiedFunction",
@@ -490,6 +514,34 @@ describe("Jest to Vitest mapping model", () => {
         reversibility: "semantic",
       },
     ]);
+  });
+
+  it("does not invent a Vitest Replaced type", () => {
+    expect(
+      mappings.find(({ sourceKey }) => sourceKey === "jest.Replaced.type"),
+    ).toMatchObject({
+      targetKey:
+        "vitest.unsupported.type.replaceProperty-has-no-direct-equivalent",
+      reversibility: "unsupported",
+    });
+  });
+
+  it("maps Jest spy utility types through MockInstance semantics", () => {
+    for (const symbol of [
+      "Spied",
+      "SpiedClass",
+      "SpiedFunction",
+      "SpiedGetter",
+      "SpiedSetter",
+      "SpyInstance",
+    ]) {
+      const mapping = mappings.find(
+        ({ sourceKey }) => sourceKey === `jest.${symbol}.type`,
+      );
+
+      expect(mapping?.target.symbol).toBe("MockInstance");
+      expect(mapping?.reversibility).toBe("semantic");
+    }
   });
 
   it("maps SpyInstance to Vitest MockInstance", () => {
