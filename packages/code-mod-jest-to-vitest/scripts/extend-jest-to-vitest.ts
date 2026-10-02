@@ -1,4 +1,4 @@
-import type { Codemod } from "codemod:ast-grep";
+import type { Codemod, Edit } from "codemod:ast-grep";
 import type TypeScript from "codemod:ast-grep/langs/typescript";
 
 const JEST_TYPE_NAMES = new Set([
@@ -34,6 +34,19 @@ const JEST_API_RENAMES: Record<string, string> = {
   setMock: "mock",
 };
 
+const JEST_ASYNC_APIS = new Set([
+  "createMockFromModule",
+  "genMockFromModule",
+  "requireActual",
+  "requireMock",
+]);
+
+const FUNCTION_KINDS = new Set([
+  "arrow_function",
+  "function_declaration",
+  "function_expression",
+]);
+
 function mergeVitestImport(
   source: string,
   runtimeImports: string[],
@@ -63,6 +76,70 @@ function mergeVitestImport(
   return `import { ${importParts.join(", ")} } from "vitest";\n${source}`;
 }
 
+function migrateJestRuntimeApis(
+  rootNode: ReturnType<Parameters<Codemod<TypeScript>>[0]["root"]>,
+): string {
+  const calls = rootNode.findAll({
+    rule: { pattern: "jest.$METHOD($$$ARGS)" },
+  });
+
+  if (calls.length === 0) return rootNode.text();
+
+  const edits: Edit[] = [];
+  const asyncFunctions = new Set<number>();
+
+  for (const call of calls) {
+    const method = call.getMatch("METHOD")?.text();
+    if (!method) continue;
+
+    if (method === "enableAutomock") {
+      throw new Error(
+        "jest.enableAutomock() is not supported by Vitest; migrate this usage manually.",
+      );
+    }
+
+    // disableAutomock has no meaningful Vitest equivalent and is removed later
+    // as a complete statement so we do not leave an empty expression behind.
+    if (method === "disableAutomock") continue;
+
+    const replacementName = JEST_API_RENAMES[method] ?? method;
+    let replacement = call.text().replace(
+      new RegExp(`^jest\\.${method}`),
+      `vi.${replacementName}`,
+    );
+
+    if (
+      JEST_ASYNC_APIS.has(method) &&
+      call.parent()?.kind() !== "await_expression"
+    ) {
+      replacement = `await ${replacement}`;
+
+      const enclosingFunction = call
+        .ancestors()
+        .find((ancestor) => FUNCTION_KINDS.has(ancestor.kind()));
+
+      if (enclosingFunction) {
+        const functionText = enclosingFunction.text().trimStart();
+        if (!functionText.startsWith("async ")) {
+          const start = enclosingFunction.range().start.index;
+          if (!asyncFunctions.has(start)) {
+            edits.push({
+              startPos: start,
+              endPos: start,
+              insertedText: "async ",
+            });
+            asyncFunctions.add(start);
+          }
+        }
+      }
+    }
+
+    edits.push(call.replace(replacement));
+  }
+
+  return edits.length > 0 ? rootNode.commitEdits(edits) : rootNode.text();
+}
+
 function migrateSource(source: string): string {
   let output = source;
 
@@ -82,29 +159,11 @@ function migrateSource(source: string): string {
     "$1$2.fails",
   );
 
-  // Jest APIs with Vitest name changes.
-  for (const [jestName, vitestName] of Object.entries(JEST_API_RENAMES)) {
-    output = output.replace(
-      new RegExp(`\\bjest\\.${jestName}\\b`, "g"),
-      `vi.${vitestName}`,
-    );
-  }
-
   // disableAutomock has no meaningful Vitest equivalent.
   output = output.replace(
     /^\s*jest\.disableAutomock\(\);?\s*$/gm,
     "",
   );
-
-  // Flag unsupported automocking instead of silently changing semantics.
-  if (/\bjest\.enableAutomock\b/.test(output)) {
-    throw new Error(
-      'jest.enableAutomock() is not supported by Vitest; migrate this usage manually.',
-    );
-  }
-
-  // Remaining runtime Jest object APIs map directly to vi.
-  output = output.replace(/\bjest\.(?=[A-Za-z_$][\w$]*\s*\()/g, "vi.");
 
   // TypeScript Jest namespace types become Vitest type imports.
   for (const typeName of JEST_TYPE_NAMES) {
@@ -124,7 +183,8 @@ function migrateSource(source: string): string {
 const codemod: Codemod<TypeScript> = (root) => {
   const rootNode = root.root();
   const original = rootNode.text();
-  let output = migrateSource(original);
+  const runtimeMigrated = migrateJestRuntimeApis(rootNode);
+  let output = migrateSource(runtimeMigrated);
 
   if (output === original) return null;
 
@@ -132,7 +192,10 @@ const codemod: Codemod<TypeScript> = (root) => {
   const typeImports = new Set<string>();
 
   if (/\bvi\./.test(output)) runtimeImports.add("vi");
-  if (/\bit\.only\b/.test(output) && !/\b(?:const|let|var|function|class)\s+it\b/.test(output)) {
+  if (
+    /\bit\.only\b/.test(output) &&
+    !/\b(?:const|let|var|function|class)\s+it\b/.test(output)
+  ) {
     runtimeImports.add("it");
   }
 
