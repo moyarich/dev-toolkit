@@ -135,7 +135,6 @@ test("release draft template includes install guidance", () => {
   );
 });
 
-
 test("tagged draft releases are preserved for the release workflow", () => {
   assert.match(
     workflow,
