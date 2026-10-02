@@ -13,6 +13,7 @@ import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { execFileSync, spawnSync } from "node:child_process";
 
+import { releaseIdentity } from "./release-identity.ts";
 import {
   packageInfo,
   repositoryRoot,
@@ -319,8 +320,8 @@ export function packageRegistryState(
  * @returns {{name: string, exists: boolean, atHead: boolean, commit: string | null}}
  */
 export function packageGitTagState(root: string, pkg: PackageIdentity) {
-  const selector = pkg.directory.split("/").at(-1);
-  const name = `${selector}@${pkg.manifest.version}`;
+  const identity = releaseIdentity(pkg);
+  const name = identity.tagName;
 
   let commit = "";
 
