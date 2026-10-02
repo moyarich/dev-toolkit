@@ -774,11 +774,11 @@ jobs:
       - name: Publish GitHub Release draft
         id: github-release
         if: ${{ steps.execution.outputs.dry-run == 'false' && inputs.publish && steps.publish.outcome == 'success' }}
+        env:
+          PUBLISH_JSON: ${{ steps.publish.outputs.publish-json }}
         shell: bash
         run: |
           set -euo pipefail
-
-          PUBLISH_JSON='${{ steps.publish.outputs.publish-json }}'
 
           if jq -e '
             [.results[]? | select(.status == "staged")] | length > 0
