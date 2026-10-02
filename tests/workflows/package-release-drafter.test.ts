@@ -119,12 +119,12 @@ test(
 test(
   "blocked first release writes would-have-created details to the summary",
   () => {
-  assert.match(workflow, /## Release blocked/);
-  assert.match(workflow, /Would-have-created/);
-  assert.match(workflow, /WOULD_VERSION/);
-  assert.match(workflow, /WOULD_TAG/);
-  assert.match(workflow, /WOULD_NAME/);
-  assert.match(workflow, /releaseIdentity/);
+    assert.match(workflow, /## Release blocked/);
+    assert.match(workflow, /Would-have-created/);
+    assert.match(workflow, /WOULD_VERSION/);
+    assert.match(workflow, /WOULD_TAG/);
+    assert.match(workflow, /WOULD_NAME/);
+    assert.match(workflow, /releaseIdentity/);
     assert.match(workflow, /release history requires reconciliation/);
   },
 );
