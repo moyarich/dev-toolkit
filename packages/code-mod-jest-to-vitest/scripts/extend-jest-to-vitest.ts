@@ -1,4 +1,4 @@
-import type { Codemod, Edit } from "codemod:ast-grep";
+import type { Codemod, Edit, SgNode } from "codemod:ast-grep";
 import type TypeScript from "codemod:ast-grep/langs/typescript";
 
 const JEST_TYPE_NAMES = new Set([
@@ -76,7 +76,7 @@ function mergeVitestImport(
 }
 
 function migrateJestRuntimeApis(
-  rootNode: ReturnType<Parameters<Codemod<TypeScript>>[0]["root"]>,
+  rootNode: SgNode<TypeScript>,
 ): string {
   const calls = rootNode.findAll({
     rule: { pattern: "jest.$METHOD($$$ARGS)" },
