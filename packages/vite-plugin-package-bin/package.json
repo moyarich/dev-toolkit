@@ -13,7 +13,8 @@
     "dist",
     "src",
     "docs",
-    "README.md"
+    "README.md",
+    "CHANGELOG.md"
   ],
   "engines": {
     "node": ">=24"
