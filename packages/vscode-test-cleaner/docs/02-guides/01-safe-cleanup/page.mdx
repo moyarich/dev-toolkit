@@ -1,0 +1,51 @@
+# Safe cleanup
+
+The cleaner treats deletion as an explicit, validated operation.
+
+## Safety rules
+
+- Only discovered directories named `.vscode-test` are eligible for removal.
+- Selected paths are validated against the discovery result before deletion.
+- Deletion requires confirmation unless `--yes` is supplied.
+- `--json` reports discovery results and never deletes.
+- `--dry-run` never deletes.
+
+This prevents arbitrary user-supplied paths from being passed directly to the removal step.
+
+## Recommended automation flow
+
+Use dry-run mode first when integrating the command into scripts or CI:
+
+```sh
+vscode-test-clean --all --dry-run
+```
+
+Once the discovered targets are correct, use:
+
+```sh
+vscode-test-clean --all --yes
+```
+
+## Docker
+
+Interactive mode requires stdin and a TTY:
+
+```sh
+docker run -it <image> vscode-test-clean
+```
+
+Without `-it`, use explicit non-interactive options:
+
+```sh
+docker run <image> vscode-test-clean --all --yes
+```
+
+## fzf
+
+`fzf` is optional and is detected as an external executable. It is not an npm dependency.
+
+Disable it explicitly with:
+
+```sh
+vscode-test-clean --no-fzf --all --dry-run
+```
