@@ -198,7 +198,47 @@ const proposedMappings: ProposedMapping[] = [
 
 const mappings = proposedMappings.map(defineMapping);
 
+function buildReverseIndex() {
+  const reverseIndex = new Map<string, string[]>();
+
+  for (const mapping of mappings) {
+    const sources = reverseIndex.get(mapping.targetKey) ?? [];
+    sources.push(mapping.sourceKey);
+    reverseIndex.set(mapping.targetKey, sources);
+  }
+
+  return reverseIndex;
+}
+
+function printMappingReport() {
+  const reverseIndex = buildReverseIndex();
+
+  console.log("\nJest → Vitest mapping table");
+  console.log("=".repeat(96));
+
+  for (const mapping of mappings) {
+    const reverseCandidates = reverseIndex.get(mapping.targetKey) ?? [];
+    const ambiguous = reverseCandidates.length > 1;
+
+    console.log(
+      [
+        mapping.name,
+        `  source: ${mapping.sourceKey}`,
+        `  target: ${mapping.targetKey}`,
+        `  reversibility: ${mapping.reversibility}`,
+        ambiguous
+          ? `  reverse candidates: ${reverseCandidates.join(", ")}`
+          : `  reverse candidate: ${reverseCandidates[0] ?? "none"}`,
+      ].join("\n"),
+    );
+
+    console.log("-".repeat(96));
+  }
+}
+
+
 describe("proposed Jest to Vitest mapping model", () => {
+  printMappingReport();
   it("generates stable source and target keys from semantic metadata", () => {
     expect(
       mappings.map(({ name, sourceKey, targetKey }) => ({
