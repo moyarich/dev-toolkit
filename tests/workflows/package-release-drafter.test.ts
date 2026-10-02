@@ -125,7 +125,6 @@ test("blocked release summary includes generated release content", () => {
   assert.match(workflow, /## What's Changed/);
 });
 
-
 test("release draft template includes install guidance", () => {
   assert.match(template, /## Release notes/);
   assert.match(
