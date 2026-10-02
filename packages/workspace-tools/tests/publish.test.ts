@@ -124,7 +124,7 @@ test("packageGitTagState reports a missing package-scoped tag without invoking r
   });
 
   assert.deepEqual(state, {
-    name: "workspace-tools@999.999.999",
+    name: "packages/workspace-tools@999.999.999",
     exists: false,
     atHead: false,
     commit: null,
@@ -132,7 +132,7 @@ test("packageGitTagState reports a missing package-scoped tag without invoking r
   assert.equal(execFileSync.mock.calls.length, 1);
   assert.deepEqual(execFileSync.mock.calls[0].slice(0, 2), [
     "git",
-    ["rev-list", "-n", "1", "workspace-tools@999.999.999"],
+    ["rev-list", "-n", "1", "packages/workspace-tools@999.999.999"],
   ]);
 });
 
@@ -148,7 +148,7 @@ test("packageGitTagState compares an existing tag with HEAD using mocked Git", (
   });
 
   assert.deepEqual(state, {
-    name: "workspace-tools@1.2.3",
+    name: "packages/workspace-tools@1.2.3",
     exists: true,
     atHead: true,
     commit: "abc123",
