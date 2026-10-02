@@ -1,47 +1,58 @@
-import { parse } from "codemod:ast-grep";
-import type TypeScript from "codemod:ast-grep/langs/typescript";
 import { describe, expect, it } from "vitest";
 import { classifyMemberRole } from "../../src/mapping.ts";
 
-function classifyAdvanceTimersByTime(source: string): {
-  kind: string;
-  parentKind: string | null;
-  role: "call" | "reference";
-} {
-  const root = parse<TypeScript>("typescript", source).root();
-  const member = root.find({
-    rule: { pattern: "jest.advanceTimersByTime" },
-  });
+type StubNode = {
+  id(): number;
+  kind(): string;
+  field(name: string): StubNode | null;
+  parent(): StubNode | null;
+};
 
-  if (!member) {
-    throw new Error("jest.advanceTimersByTime was not found");
-  }
+function createMember(parentKind: string, directCall: boolean): StubNode {
+  const memberId = 2;
 
-  return {
-    kind: member.kind(),
-    parentKind: member.parent()?.kind() ?? null,
-    role: classifyMemberRole(member),
+  const member: StubNode = {
+    id: () => memberId,
+    kind: () => "member_expression",
+    field: () => null,
+    parent: () => parent,
   };
+
+  const callee: StubNode = directCall
+    ? member
+    : {
+        id: () => 3,
+        kind: () => "identifier",
+        field: () => null,
+        parent: () => parent,
+      };
+
+  const parent: StubNode = {
+    id: () => 1,
+    kind: () => parentKind,
+    field: (name) => (name === "function" ? callee : null),
+    parent: () => null,
+  };
+
+  return member;
 }
 
 describe("Jest timer AST classification", () => {
-  it("classifies jest.advanceTimersByTime(100) as a call", () => {
-    expect(classifyAdvanceTimersByTime("jest.advanceTimersByTime(100)")).toEqual({
-      kind: "member_expression",
-      parentKind: "call_expression",
-      role: "call",
-    });
+  it("classifies a member used as the call target as a call", () => {
+    const member = createMember("call_expression", true);
+
+    expect(classifyMemberRole(member as never)).toBe("call");
   });
 
-  it("classifies a bare jest.advanceTimersByTime value as a reference", () => {
-    expect(
-      classifyAdvanceTimersByTime(
-        "const advance = jest.advanceTimersByTime;",
-      ),
-    ).toEqual({
-      kind: "member_expression",
-      parentKind: "variable_declarator",
-      role: "reference",
-    });
+  it("classifies a bare member value as a reference", () => {
+    const member = createMember("variable_declarator", false);
+
+    expect(classifyMemberRole(member as never)).toBe("reference");
+  });
+
+  it("does not classify a nested member in a call expression as the call target", () => {
+    const member = createMember("call_expression", false);
+
+    expect(classifyMemberRole(member as never)).toBe("reference");
   });
 });
