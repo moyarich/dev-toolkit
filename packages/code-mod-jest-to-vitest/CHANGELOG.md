@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- Build the CLI into `dist/bin` and package the built `dist/` output instead of TypeScript source.
+
 ## 0.1.0
 
 ### Added

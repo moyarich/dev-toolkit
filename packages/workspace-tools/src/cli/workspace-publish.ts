@@ -1,6 +1,13 @@
 #!/usr/bin/env node
 import { Argument, Option, program } from "commander";
-import { publishWorkspacePackage } from "../publish.ts";
+import { publishWorkspacePackage, type PublishOptions } from "../publish.ts";
+
+function runCliCommand(
+  selector: string | undefined,
+  options: PublishOptions,
+): void {
+  publishWorkspacePackage(selector, options);
+}
 
 program
   .name("workspace-publish")
@@ -25,6 +32,10 @@ program
   .option("-l, --list", "Print the publish plan without publishing")
   .option("-j, --json", "Print the operation result as JSON")
   .option(
+    "--artifact-directory <directory>",
+    "Keep generated package tarballs in this directory",
+  )
+  .option(
     "-w, --with-dependencies",
     "Include publishable workspace dependencies",
   )
@@ -32,8 +43,6 @@ program
     "--no-verify-git-tag",
     "Allow publishing without verifying the matching package release Git tag",
   )
-  .action((selector, options) => {
-    publishWorkspacePackage(selector, options);
-  });
+  .action(runCliCommand);
 
 await program.parseAsync();

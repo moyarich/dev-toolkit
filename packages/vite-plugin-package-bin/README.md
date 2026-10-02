@@ -5,7 +5,7 @@ Vite plugin for building `package.json#bin` entries as independent executables.
 It supports:
 
 - TypeScript/JavaScript CLI sources built to standalone Node.js `.mjs` files
-- Shell CLI sources under `src/cli/**/*.sh`, copied directly to `bin/*.sh` and made executable
+- Shell CLI sources under `src/cli/**/*.sh`, copied directly to `dist/bin/*.sh` and made executable
 
 For the common case, source discovery includes:
 
@@ -40,7 +40,7 @@ and:
 ```json
 {
   "bin": {
-    "release": "./bin/release.mjs"
+    "release": "./dist/bin/release.mjs"
   }
 }
 ```
@@ -48,7 +48,7 @@ and:
 the plugin builds:
 
 ```text
-bin/release.mjs
+dist/bin/release.mjs
 ```
 
 Generated Node.js executables always have a shebang. If the source already starts with a shebang, the plugin preserves it without adding another. Otherwise it adds `#!/usr/bin/env node`.
@@ -66,7 +66,7 @@ and:
 ```json
 {
   "bin": {
-    "install": "./bin/install.sh"
+    "install": "./dist/bin/install.sh"
   }
 }
 ```
@@ -74,7 +74,7 @@ and:
 the plugin copies the source to:
 
 ```text
-bin/install.sh
+dist/bin/install.sh
 ```
 
 and applies executable permissions:
@@ -106,14 +106,14 @@ packageBinBuild({
     },
     {
       pattern: "src/cli/**/*.sh",
-      bin: "./bin/{name}.sh",
+      bin: "./dist/bin/{name}.sh",
     },
   ],
   emptyOutDir: true,
 });
 ```
 
-The plugin searches source files, not the generated `bin/` directory. It matches source basenames to object-form `package.json#bin` command names.
+The plugin searches source files, not the generated package bin directory. It matches source basenames to object-form `package.json#bin` command names.
 
 ## Troubleshooting source collisions
 
@@ -138,11 +138,31 @@ packageBinBuild({
     },
     {
       pattern: "src/cli/**/*.sh",
-      bin: "./bin/{name}.sh",
+      bin: "./dist/bin/{name}.sh",
     },
   ],
   emptyOutDir: true,
 });
 ```
 
-Do not remove collision detection or point discovery at `bin/`. The `bin/` directory is build output, while `entries.pattern` identifies source entry points.
+Do not remove collision detection or point discovery at `dist/bin/`. The `dist/bin/` directory is build output, while `entries.pattern` identifies source entry points.
+
+## Packaging CLIs under dist/
+
+The plugin keeps its historical `bin/` default for backward compatibility.
+
+Packages that publish a `dist/` boundary should opt in explicitly:
+
+```ts
+packageBinBuild({
+  outDir: "dist/bin",
+  entries: {
+    pattern: "src/cli/**/*.ts",
+  },
+  emptyOutDir: true,
+});
+```
+
+Then point `package.json#bin` at `./dist/bin/<command>.mjs`.
+
+This keeps existing consumers compatible while allowing publishable packages to standardize on `dist/`.

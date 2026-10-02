@@ -128,8 +128,21 @@ jobs:
             npm install --prefix "$TOOL_ROOT" --package-lock=false --ignore-scripts @moyarich/workspace-tools@latest
             TOOL_PACKAGE_ROOT="$TOOL_ROOT/node_modules/@moyarich/workspace-tools"
           fi
-          test -f "$TOOL_PACKAGE_ROOT/bin/workspace-release.mjs"
+          TOOL_BIN_ROOT=""
+          for CANDIDATE in "$TOOL_PACKAGE_ROOT/dist/bin" "$TOOL_PACKAGE_ROOT/bin"; do
+            if [ -f "$CANDIDATE/workspace-release.mjs" ]; then
+              TOOL_BIN_ROOT="$CANDIDATE"
+              break
+            fi
+          done
+
+          if [ -z "$TOOL_BIN_ROOT" ]; then
+            echo "Unable to resolve packaged CLI directory under $TOOL_PACKAGE_ROOT." >&2
+            exit 1
+          fi
+
           echo "WORKSPACE_TOOLS_ROOT=$TOOL_PACKAGE_ROOT" >> "$GITHUB_ENV"
+          echo "WORKSPACE_TOOLS_BIN=$TOOL_BIN_ROOT" >> "$GITHUB_ENV"
 
       - name: Validate release inputs
         env:
@@ -184,7 +197,7 @@ jobs:
             "--json"
           )
 
-          RELEASE_JSON="$(node "$WORKSPACE_TOOLS_ROOT/bin/workspace-release.mjs" "${RELEASE_ARGS[@]}")"
+          RELEASE_JSON="$(node "$WORKSPACE_TOOLS_BIN/workspace-release.mjs" "${RELEASE_ARGS[@]}")"
           PACKAGE_VERSION="$(jq -r .nextVersion <<< "$RELEASE_JSON")"
           TAG="$(jq -r '.tag.name // .tag' <<< "$RELEASE_JSON")"
 

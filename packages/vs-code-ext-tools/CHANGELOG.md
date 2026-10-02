@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- Build VS Code extension helper CLIs into `dist/bin` and package the built `dist/` output.
+
 ## 0.1.0
 
 ### Added

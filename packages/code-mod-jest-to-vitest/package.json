@@ -4,11 +4,10 @@
   "description": "Self-contained Jest to Vitest codemod.",
   "type": "module",
   "bin": {
-    "jest-to-vitest": "./bin/jest-to-vitest.mjs"
+    "jest-to-vitest": "./dist/bin/jest-to-vitest.mjs"
   },
   "files": [
-    "bin",
-    "src",
+    "dist",
     "scripts",
     "docs",
     ".codemodrc.json",

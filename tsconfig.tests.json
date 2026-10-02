@@ -7,10 +7,14 @@
     "types": ["node", "vitest/globals"],
     "skipLibCheck": true,
     "strict": true,
-    "allowImportingTsExtensions": true
+    "allowImportingTsExtensions": true,
+    "paths": {
+      "@moyarich/demo-tools": ["./packages/demo-tools/src/index.ts"]
+    }
   },
   "include": [
     "tests/workflows/*.test.ts",
+    "tests/packages/**/*.ts",
     "tests/playground/*.test.ts",
     "demo/strategies/**/*.ts"
   ]

@@ -18,7 +18,7 @@ function invoke(script: string, ...args: string[]) {
   };
 }
 
-for (const command of ["bin/demo.mjs", "bin/demo-strategy.mjs"]) {
+for (const command of ["dist/bin/demo.mjs", "dist/bin/demo-strategy.mjs"]) {
   describe(command, () => {
     test("shows help without running its action", () => {
       const result = invoke(command, "--help");

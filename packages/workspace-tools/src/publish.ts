@@ -2,6 +2,7 @@
 
 import {
   existsSync,
+  mkdirSync,
   mkdtempSync,
   readdirSync,
   rmSync,
@@ -27,7 +28,7 @@ interface RegistryConfig {
   host: string;
   token?: string;
 }
-interface PublishOptions {
+export interface PublishOptions {
   registry?: RegistrySelection;
   tag?: string;
   access?: PackageAccess;
@@ -36,6 +37,17 @@ interface PublishOptions {
   json?: boolean;
   withDependencies?: boolean;
   verifyGitTag?: boolean;
+  artifactDirectory?: string;
+}
+
+interface PackageArtifact {
+  path: string;
+  filename: string;
+  name: string;
+  version: string;
+  size: number | null;
+  integrity: string | null;
+  shasum: string | null;
 }
 type PackageIdentity = Pick<WorkspacePackage, "directory" | "manifest">;
 interface PublishPlanItem {
@@ -87,6 +99,7 @@ import {
  * @property {boolean} [json]
  * @property {boolean} [withDependencies]
  * @property {boolean} [verifyGitTag]
+ * @property {string} [artifactDirectory]
  */
 
 /**
@@ -402,17 +415,101 @@ export function serializePublishPlan(
 }
 
 /**
- * Run release validation for a package.
+ * Parse npm pack JSON output and validate its package identity.
  *
- * @param {string} root
- * @param {ReturnType<typeof packageInfo>} pkg
- * @returns {void}
+ * @param {string} raw Raw `npm pack --json` output.
+ * @param {Pick<WorkspacePackage, "directory" | "manifest">} pkg Expected workspace package.
+ * @param {string} artifactDirectory Directory containing the tarball.
+ * @returns {PackageArtifact} Packed package artifact.
  */
-function validate(
+export function parsePackResult(
+  raw: string,
+  pkg: Pick<WorkspacePackage, "directory" | "manifest">,
+  artifactDirectory: string,
+): PackageArtifact {
+  let parsed: unknown;
+
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    throw new Error(
+      `Unable to parse npm pack output for ${pkg.manifest.name}.`,
+    );
+  }
+
+  if (!Array.isArray(parsed) || parsed.length !== 1) {
+    throw new Error(
+      `Expected one packed artifact for ${pkg.manifest.name}, received ${Array.isArray(parsed) ? parsed.length : "invalid output"}.`,
+    );
+  }
+
+  const item = parsed[0] as Record<string, unknown>;
+  const filename = typeof item.filename === "string" ? item.filename : "";
+  const name = typeof item.name === "string" ? item.name : "";
+  const version = typeof item.version === "string" ? item.version : "";
+
+  if (
+    !filename ||
+    name !== pkg.manifest.name ||
+    version !== pkg.manifest.version
+  ) {
+    throw new Error(
+      `Packed artifact identity mismatch for ${pkg.manifest.name}@${pkg.manifest.version}.`,
+    );
+  }
+
+  if (pkg.manifest.files?.includes("dist")) {
+    const packedFiles = Array.isArray(item.files)
+      ? item.files
+          .map((file) =>
+            typeof file === "object" &&
+            file !== null &&
+            "path" in file &&
+            typeof file.path === "string"
+              ? file.path
+              : null,
+          )
+          .filter((path): path is string => Boolean(path))
+      : [];
+
+    if (
+      !packedFiles.some((path) => path === "dist" || path.startsWith("dist/"))
+    ) {
+      throw new Error(
+        `Packed artifact for ${pkg.manifest.name}@${pkg.manifest.version} does not contain dist output.`,
+      );
+    }
+  }
+
+  return {
+    path: resolve(artifactDirectory, filename),
+    filename,
+    name,
+    version,
+    size: typeof item.size === "number" ? item.size : null,
+    integrity: typeof item.integrity === "string" ? item.integrity : null,
+    shasum: typeof item.shasum === "string" ? item.shasum : null,
+  };
+}
+
+/**
+ * Validate, build, and pack one workspace package.
+ *
+ * The returned tarball is the exact artifact later sent to each selected
+ * registry. This avoids rebuilding from the workspace during publication.
+ *
+ * @param {string} root Repository root.
+ * @param {WorkspacePackage} pkg Workspace package.
+ * @param {string} artifactDirectory Destination for the generated tarball.
+ * @param {{quiet?: boolean}} options Output options.
+ * @returns {PackageArtifact} Packed package artifact.
+ */
+export function validateAndPack(
   root: string,
   pkg: WorkspacePackage,
+  artifactDirectory: string,
   { quiet = false }: { quiet?: boolean } = {},
-): void {
+): PackageArtifact {
   if (!quiet) {
     console.log(
       `\nValidating ${pkg.manifest.name}@${pkg.manifest.version} (${pkg.directory})`,
@@ -436,10 +533,58 @@ function validate(
     );
   }
 
-  execFileSync("npm", ["pack", "--workspace", pkg.manifest.name, "--dry-run"], {
-    cwd: root,
-    stdio: quiet ? ["ignore", "ignore", "inherit"] : "inherit",
-  });
+  mkdirSync(artifactDirectory, { recursive: true });
+
+  const raw = execFileSync(
+    "npm",
+    [
+      "pack",
+      "--workspace",
+      pkg.manifest.name,
+      "--json",
+      "--pack-destination",
+      artifactDirectory,
+    ],
+    {
+      cwd: root,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "inherit"],
+    },
+  );
+
+  const artifact = parsePackResult(raw, pkg, artifactDirectory);
+
+  if (!existsSync(artifact.path)) {
+    throw new Error(
+      `npm pack did not create expected artifact: ${artifact.path}`,
+    );
+  }
+
+  if (!quiet) {
+    console.log(`Packed ${artifact.filename}`);
+  }
+
+  return artifact;
+}
+
+/**
+ * Build npm arguments that publish the exact packed tarball.
+ *
+ * @param {Registry} registry Target registry.
+ * @param {string} artifactPath Packed tarball path.
+ * @param {string} tag npm distribution tag.
+ * @param {PackageAccess} access Package access.
+ * @returns {string[]} npm CLI arguments.
+ */
+export function registryPublishArgs(
+  registry: Registry,
+  artifactPath: string,
+  tag: string,
+  access: PackageAccess,
+): string[] {
+  return registry === "npm"
+    ? ["stage", "publish", artifactPath, "--access", access, "--tag", tag]
+    : ["publish", artifactPath, "--access", access, "--tag", tag];
 }
 
 /**
@@ -455,6 +600,7 @@ function validate(
 function publishOne(
   root: string,
   pkg: WorkspacePackage,
+  artifact: PackageArtifact,
   registry: Registry,
   tag: string,
   access: PackageAccess,
@@ -493,15 +639,7 @@ function publishOne(
     if (registry === "github") {
       execFileSync(
         "npm",
-        [
-          "publish",
-          "--workspace",
-          pkg.manifest.name,
-          "--access",
-          access,
-          "--tag",
-          tag,
-        ],
+        registryPublishArgs(registry, artifact.path, tag, access),
         {
           cwd: root,
           env,
@@ -514,9 +652,9 @@ function publishOne(
 
     execFileSync(
       "npm",
-      ["stage", "publish", "--access", access, "--tag", tag],
+      registryPublishArgs(registry, artifact.path, tag, access),
       {
-        cwd: resolve(root, pkg.directory),
+        cwd: root,
         env,
         stdio: quiet ? ["ignore", "ignore", "inherit"] : "inherit",
       },
@@ -559,6 +697,7 @@ export function publish({
   json = false,
   withDependencies = false,
   verifyGitTag = true,
+  artifactDirectory,
 }: {
   selector?: string;
   registry?: RegistrySelection;
@@ -569,6 +708,7 @@ export function publish({
   json?: boolean;
   withDependencies?: boolean;
   verifyGitTag?: boolean;
+  artifactDirectory?: string;
 }) {
   if (!/^[A-Za-z][A-Za-z0-9._-]*$/.test(tag)) {
     throw new Error("Invalid npm distribution tag.");
@@ -620,8 +760,23 @@ export function publish({
       .filter(({ registries }) => Object.values(registries).includes("missing"))
       .map(({ pkg: item }) => item);
 
-    for (const item of pendingPackages) {
-      validate(root, item, { quiet: json });
+    const ownedArtifactDirectory = !artifactDirectory;
+    const artifactRoot = artifactDirectory
+      ? resolve(root, artifactDirectory)
+      : mkdtempSync(join(tmpdir(), "workspace-publish-artifacts-"));
+    const artifacts = [];
+
+    try {
+      for (const item of pendingPackages) {
+        const artifact = validateAndPack(root, item, artifactRoot, {
+          quiet: json,
+        });
+        artifacts.push(artifact);
+      }
+    } finally {
+      if (ownedArtifactDirectory) {
+        rmSync(artifactRoot, { recursive: true, force: true });
+      }
     }
 
     if (!json) {
@@ -638,6 +793,7 @@ export function publish({
       gitTags,
       canPublish: tagProblems.length === 0,
       reason: tagProblems.length ? tagProblems.join(" ") : null,
+      artifacts: artifacts.map(({ path: _path, ...artifact }) => artifact),
       ...serializePublishPlan(plan, { registry, tag, access }),
     };
   }
@@ -714,75 +870,106 @@ export function publish({
     );
   }
 
-  for (const item of pendingPackages) {
-    validate(root, item, { quiet: json });
-  }
+  const ownedArtifactDirectory = !artifactDirectory;
+  const artifactRoot = artifactDirectory
+    ? resolve(root, artifactDirectory)
+    : mkdtempSync(join(tmpdir(), "workspace-publish-artifacts-"));
+  const artifacts = new Map<string, PackageArtifact>();
 
-  if (dryRun) {
-    const names = pendingPackages.map((item) => item.manifest.name);
-
-    if (!json) {
-      console.log(
-        names.length
-          ? `\nRelease checks passed for ${names.join(", ")}. Nothing was published.`
-          : "\nAll selected package versions are already published. Nothing to validate or publish.",
+  try {
+    for (const item of pendingPackages) {
+      artifacts.set(
+        item.manifest.name,
+        validateAndPack(root, item, artifactRoot, { quiet: json }),
       );
     }
 
-    return {
-      operation: "publish",
-      status: tagProblems.length ? "warning" : "preview",
-      dryRun: true,
-      verifyGitTag,
-      gitTags,
-      canPublish: tagProblems.length === 0,
-      reason: tagProblems.length ? tagProblems.join(" ") : null,
-      ...serializePublishPlan(plan, { registry, tag, access }),
-    };
-  }
+    if (dryRun) {
+      const names = pendingPackages.map((item) => item.manifest.name);
 
-  const results = [];
+      if (!json) {
+        console.log(
+          names.length
+            ? `\nRelease checks passed for ${names.join(", ")}. Nothing was published.`
+            : "\nAll selected package versions are already published. Nothing to validate or publish.",
+        );
+      }
 
-  for (const { pkg: item, registries } of plan) {
-    for (const destination of destinations(registry)) {
-      if (registries[destination] === "published") {
-        if (!json) {
-          console.log(
-            `Skipping ${item.manifest.name}@${item.manifest.version} on ${destination}: already published.`,
+      return {
+        operation: "publish",
+        status: tagProblems.length ? "warning" : "preview",
+        dryRun: true,
+        verifyGitTag,
+        gitTags,
+        canPublish: tagProblems.length === 0,
+        reason: tagProblems.length ? tagProblems.join(" ") : null,
+        artifacts: [...artifacts.values()].map(
+          ({ path: _path, ...artifact }) => artifact,
+        ),
+        ...serializePublishPlan(plan, { registry, tag, access }),
+      };
+    }
+
+    const results = [];
+
+    for (const { pkg: item, registries } of plan) {
+      for (const destination of destinations(registry)) {
+        if (registries[destination] === "published") {
+          if (!json) {
+            console.log(
+              `Skipping ${item.manifest.name}@${item.manifest.version} on ${destination}: already published.`,
+            );
+          }
+          results.push({
+            package: item.manifest.name,
+            version: item.manifest.version,
+            registry: destination,
+            status: "skipped",
+            reason: "already-published",
+          });
+          continue;
+        }
+
+        const artifact = artifacts.get(item.manifest.name);
+
+        if (!artifact) {
+          throw new Error(
+            `Missing packed artifact for ${item.manifest.name}@${item.manifest.version}.`,
           );
         }
+
+        publishOne(root, item, artifact, destination, tag, access, {
+          quiet: json,
+        });
         results.push({
           package: item.manifest.name,
           version: item.manifest.version,
           registry: destination,
-          status: "skipped",
-          reason: "already-published",
+          status: destination === "npm" ? "staged" : "published",
         });
-        continue;
       }
+    }
 
-      publishOne(root, item, destination, tag, access, { quiet: json });
-      results.push({
-        package: item.manifest.name,
-        version: item.manifest.version,
-        registry: destination,
-        status: destination === "npm" ? "staged" : "published",
-      });
+    return {
+      operation: "publish",
+      status: "success",
+      dryRun: false,
+      verifyGitTag,
+      gitTags,
+      registry,
+      tag,
+      access,
+      results,
+      artifacts: [...artifacts.values()].map(
+        ({ path: _path, ...artifact }) => artifact,
+      ),
+      packages: serializePublishPlan(plan, { registry, tag, access }).packages,
+    };
+  } finally {
+    if (ownedArtifactDirectory) {
+      rmSync(artifactRoot, { recursive: true, force: true });
     }
   }
-
-  return {
-    operation: "publish",
-    status: "success",
-    dryRun: false,
-    verifyGitTag,
-    gitTags,
-    registry,
-    tag,
-    access,
-    results,
-    packages: serializePublishPlan(plan, { registry, tag, access }).packages,
-  };
 }
 
 /**
@@ -863,6 +1050,7 @@ export function publishWorkspacePackage(
     json: options.json,
     withDependencies: options.withDependencies,
     verifyGitTag: options.verifyGitTag,
+    artifactDirectory: options.artifactDirectory,
   });
 
   if (options.json && result) {

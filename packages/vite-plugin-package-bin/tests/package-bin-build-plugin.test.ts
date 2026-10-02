@@ -42,8 +42,8 @@ beforeEach(() => {
     if (value.endsWith("package.json")) {
       return JSON.stringify({
         bin: {
-          release: "./bin/release.mjs",
-          install: "./bin/install.sh",
+          release: "./dist/bin/release.mjs",
+          install: "./dist/bin/install.sh",
         },
       });
     }
@@ -59,7 +59,7 @@ beforeEach(() => {
 });
 
 test("builds Node package bins and copies shell package bins", async () => {
-  const plugin = packageBinBuild({ emptyOutDir: true });
+  const plugin = packageBinBuild({ emptyOutDir: true, outDir: "dist/bin" });
 
   const configResolved =
     typeof plugin.configResolved === "function"
@@ -83,7 +83,7 @@ test("builds Node package bins and copies shell package bins", async () => {
 
   expect(glob).toHaveBeenCalledWith("src/**/*.ts", { cwd: "/repo" });
   expect(glob).toHaveBeenCalledWith("src/cli/**/*.sh", { cwd: "/repo" });
-  expect(rm).toHaveBeenCalledWith("/repo/bin", {
+  expect(rm).toHaveBeenCalledWith("/repo/dist/bin", {
     recursive: true,
     force: true,
   });
@@ -93,15 +93,15 @@ test("builds Node package bins and copies shell package bins", async () => {
     expect.objectContaining({
       logLevel: "silent",
       build: expect.objectContaining({
-        outDir: "/repo/bin",
+        outDir: "/repo/dist/bin",
       }),
     }),
   );
 
-  expect(chmod).toHaveBeenCalledWith("/repo/bin/release.mjs", 0o755);
+  expect(chmod).toHaveBeenCalledWith("/repo/dist/bin/release.mjs", 0o755);
   expect(copyFile).toHaveBeenCalledWith(
     "/repo/src/cli/install.sh",
-    "/repo/bin/install.sh",
+    "/repo/dist/bin/install.sh",
   );
-  expect(chmod).toHaveBeenCalledWith("/repo/bin/install.sh", 0o755);
+  expect(chmod).toHaveBeenCalledWith("/repo/dist/bin/install.sh", 0o755);
 });
