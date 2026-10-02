@@ -1,0 +1,63 @@
+# Testing
+
+The package keeps its test workflow sequential.
+
+## Main test command
+
+```sh
+npm test --workspace @moyarich/auto-glow-md
+```
+
+The command runs source syntax checks followed by behavioral shell tests.
+
+It validates:
+
+- the Oh My Zsh plugin entry point
+- the shared Zsh runtime library
+- the source CLI
+- the installer and uninstaller
+- Markdown detection
+- ordinary output passthrough
+- shell-state bypass rules
+- command execution
+- exit-code preservation
+
+## Behavioral tests only
+
+```sh
+npm run test:shell --workspace @moyarich/auto-glow-md
+```
+
+## Test the distributable package
+
+```sh
+npm run test:dist --workspace @moyarich/auto-glow-md
+```
+
+This builds the package, validates the files assembled under `dist/`, and executes the built CLI with rendering disabled for deterministic output.
+
+## Test real Glow rendering
+
+```sh
+npm run test:glow --workspace @moyarich/auto-glow-md
+```
+
+This verifies that `glow` is available, builds the package, and exercises the real Markdown rendering path.
+
+## Test command summary
+
+```text
+npm test
+  = source syntax + source behavioral tests
+
+npm run test:shell
+  = behavioral tests only
+
+npm run test:dist
+  = build + verify the distributable package
+
+npm run test:glow
+  = integration test using Glow rendering
+```
+
+Sequential execution keeps failures readable and avoids starting later behavioral checks when an earlier syntax check has already failed.
