@@ -1,4 +1,4 @@
-import { chmod, copyFile, glob, readFile, rm } from "node:fs/promises";
+import { chmod, glob, readFile, rm } from "node:fs/promises";
 import { basename, extname, resolve } from "node:path";
 
 import type { InlineConfig, Plugin, ResolvedConfig } from "vite";
@@ -26,12 +26,7 @@ export interface StandaloneCliBuild {
 
 type PackageBins = Record<string, string>;
 
-const managedBinExtensions = new Set([".js", ".mjs", ".cjs", ".sh"]);
-
-const defaultEntries: PackageBinEntry[] = [
-  { pattern: "src/**/*.ts" },
-  { pattern: "src/cli/**/*.sh", bin: "./bin/{name}.sh" },
-];
+const managedBinExtensions = new Set([".js", ".mjs", ".cjs"]);
 
 async function readManagedPackageBins(root: string): Promise<PackageBins> {
   const pkg = JSON.parse(
@@ -50,7 +45,7 @@ async function readManagedPackageBins(root: string): Promise<PackageBins> {
 }
 
 export async function discoverCliEntries(
-  entryOptions: PackageBinBuildOptions["entries"] = defaultEntries,
+  entryOptions: PackageBinBuildOptions["entries"] = { pattern: "src/**/*.ts" },
   root = process.cwd(),
   bins?: PackageBins,
 ): Promise<Record<string, string>> {
@@ -141,28 +136,24 @@ export function standaloneCliBuilds(
   }));
 }
 
-/**
- * Copies shell CLI sources to their package bin destinations and makes them
- * executable without passing them through Vite.
- */
-export async function copyShellCliEntries(
+function validateManagedPackageBins(
   entries: Record<string, string>,
   bins: PackageBins,
-  root = process.cwd(),
-): Promise<void> {
-  for (const [name, entry] of Object.entries(entries)) {
-    const destination = bins[name];
-    if (!destination) continue;
-
-    const outputPath = resolve(root, destination);
-    await copyFile(entry, outputPath);
-    await chmod(outputPath, 0o755);
+  outDir: string,
+): void {
+  for (const name of Object.keys(entries)) {
+    const expected = `./${outDir}/${name}.mjs`;
+    if (bins[name] !== expected) {
+      throw new Error(
+        `package.json#bin["${name}"] must be "${expected}", received "${bins[name]}"`,
+      );
+    }
   }
 }
 
 /**
- * Vite plugin that builds Node.js package bins as independent executables and
- * copies shell package bins as executable scripts.
+ * Vite plugin that builds managed package bins as independent Node.js
+ * executables with no shared runtime chunks.
  */
 export function packageBinBuild(options: PackageBinBuildOptions): Plugin {
   const virtualEntry = "\0moyarich:package-bin-build";
@@ -209,7 +200,7 @@ export function packageBinBuild(options: PackageBinBuildOptions): Plugin {
       const entries = await discoverCliEntries(options.entries, root, bins);
 
       if (Object.keys(entries).length === 0) {
-        throw new Error("No managed package bins were found");
+        throw new Error("No managed Node.js package bins were found");
       }
 
       const outDir = options.outDir ?? "bin";
@@ -217,29 +208,19 @@ export function packageBinBuild(options: PackageBinBuildOptions): Plugin {
         await rm(resolve(root, outDir), { recursive: true, force: true });
       }
 
-      const shellEntries = Object.fromEntries(
-        Object.entries(entries).filter(([, entry]) => extname(entry) === ".sh"),
-      );
-      const nodeEntries = Object.fromEntries(
-        Object.entries(entries).filter(([, entry]) => extname(entry) !== ".sh"),
-      );
-
       const {
         entries: _entries,
         emptyOutDir: _emptyOutDir,
         ...buildOptions
       } = options;
-
       for (const { name, config } of standaloneCliBuilds(
-        nodeEntries,
+        entries,
         buildOptions,
         root,
       )) {
         await build({ ...config, logLevel: resolvedConfig.logLevel });
         await chmod(resolve(root, outDir, `${name}.mjs`), 0o755);
       }
-
-      await copyShellCliEntries(shellEntries, bins, root);
     },
 
     generateBundle(_outputOptions, bundle) {
