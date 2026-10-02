@@ -37,7 +37,8 @@
     "access": "public"
   },
   "devDependencies": {
-    "@moyarich/vite-plugin-package-bin": "0.1.0"
+    "@moyarich/vite-plugin-package-bin": "0.1.0",
+    "@codemod.com/jssg-types": "^1.6.3"
   },
   "license": "MIT"
 }
