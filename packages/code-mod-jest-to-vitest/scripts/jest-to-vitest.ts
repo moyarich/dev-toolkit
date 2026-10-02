@@ -83,13 +83,31 @@ function migrateJestRuntimeApis(rootNode: SgNode<TypeScript>): string {
   const timerReferences = rootNode.findAll({
     rule: { pattern: "jest.advanceTimersByTime" },
   });
+  const typeReferences = rootNode.findAll({
+    rule: { pattern: "jest.$TYPE" },
+  });
 
-  if (calls.length === 0 && timerReferences.length === 0) {
+  if (
+    calls.length === 0 &&
+    timerReferences.length === 0 &&
+    typeReferences.length === 0
+  ) {
     return rootNode.text();
   }
 
   const edits: Edit[] = [];
   const asyncFunctions = new Set<number>();
+
+  for (const typeReference of typeReferences) {
+    const typeName = typeReference.getMatch("TYPE")?.text();
+    if (!typeName || !JEST_TYPE_NAMES.has(typeName)) continue;
+
+    edits.push(
+      typeReference.replace(
+        typeName === "SpyInstance" ? "MockInstance" : typeName,
+      ),
+    );
+  }
 
   for (const timerReference of timerReferences) {
     const parent = timerReference.parent();
@@ -186,14 +204,6 @@ function migrateSource(source: string): string {
 
   // disableAutomock has no meaningful Vitest equivalent.
   output = output.replace(/^\s*jest\.disableAutomock\(\);?\s*$/gm, "");
-
-  // TypeScript Jest namespace types become Vitest type imports.
-  for (const typeName of JEST_TYPE_NAMES) {
-    output = output.replace(
-      new RegExp(`\\bjest\\.${typeName}\\b`, "g"),
-      typeName === "SpyInstance" ? "MockInstance" : typeName,
-    );
-  }
 
   // Snapshot formatting used by older Jest serializers.
   output = output.replace(/\bArray \[/g, "[");
