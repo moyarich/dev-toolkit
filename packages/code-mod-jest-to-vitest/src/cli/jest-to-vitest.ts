@@ -27,7 +27,20 @@ if (!existsSync(resolve(target, "package.json"))) {
   process.exit(1);
 }
 
-function run(command, commandArgs, cwd, { allowFailure = false } = {}) {
+type RunOptions = { allowFailure?: boolean };
+
+type PackageJson = {
+  dependencies?: Record<string, string>;
+  devDependencies?: Record<string, string>;
+  scripts?: Record<string, string>;
+};
+
+function run(
+  command: string,
+  commandArgs: string[],
+  cwd: string,
+  { allowFailure = false }: RunOptions = {},
+): number {
   const result = spawnSync(command, commandArgs, {
     cwd,
     stdio: "inherit",
@@ -41,7 +54,7 @@ function run(command, commandArgs, cwd, { allowFailure = false } = {}) {
   return result.status ?? 1;
 }
 
-function walk(dir, results = []) {
+function walk(dir: string, results: string[] = []): string[] {
   const ignored = new Set([
     ".git",
     "node_modules",
@@ -72,13 +85,13 @@ function walk(dir, results = []) {
   return results;
 }
 
-function audit(targetDir) {
-  const problems = [];
+function audit(targetDir: string): boolean {
+  const problems: string[] = [];
   const packageJson = JSON.parse(
     readFileSync(resolve(targetDir, "package.json"), "utf8"),
-  );
+  ) as PackageJson;
 
-  const deps = {
+  const deps: Record<string, string> = {
     ...packageJson.dependencies,
     ...packageJson.devDependencies,
   };
@@ -150,7 +163,7 @@ function audit(targetDir) {
   return true;
 }
 
-function copyForDryRun(source, destination) {
+function copyForDryRun(source: string, destination: string): void {
   const ignored = new Set([
     ".git",
     "node_modules",
@@ -166,7 +179,7 @@ function copyForDryRun(source, destination) {
   });
 }
 
-function migrate(targetDir) {
+function migrate(targetDir: string): void {
   run(
     "npx",
     ["--yes", "codemod", "workflow", "run", "-w", workflowPath],
