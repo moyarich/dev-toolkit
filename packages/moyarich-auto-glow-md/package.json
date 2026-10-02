@@ -9,12 +9,9 @@
   "files": [
     "bin",
     "lib",
-    "src",
     "moyarich-auto-glow-md.plugin.zsh",
     "install.sh",
-    "README.md",
-    "docs",
-    "test"
+    "README.md"
   ],
   "scripts": {
     "build": "vite build --config vite.config.ts",
