@@ -1,41 +1,34 @@
 {
   "name": "@moyarich/auto-glow-md",
   "version": "0.1.0",
-  "description": "Oh My Zsh plugin and PTY CLI that automatically renders Markdown terminal output with Glow.",
-  "type": "module",
+  "description": "Shell-native Oh My Zsh plugin that automatically renders Markdown terminal output with Glow.",
+  "private": true,
   "bin": {
-    "moyarich-auto-glow-md": "./bin/moyarich-auto-glow-md.mjs"
+    "moyarich-auto-glow-md": "./dist/bin/moyarich-auto-glow-md.sh"
   },
   "files": [
-    "bin",
-    "plugin",
-    "src",
-    "docs",
-    "README.md"
+    "dist"
   ],
-  "engines": {
-    "node": ">=24"
-  },
   "scripts": {
     "build": "vite build --config vite.config.ts",
-    "test": "vitest run test/markdown-terminal-coverage",
-    "typecheck": "tsc -p tsconfig.json",
-    "checks": "npm run typecheck && npm run build && npm test"
-  },
-  "dependencies": {
-    "node-pty": "^1.1.0"
-  },
-  "devDependencies": {
-    "@moyarich/vite-plugin-package-bin": "0.1.0"
+    "test": "npm run test:syntax && npm run test:shell",
+    "test:shell": "zsh test/run-tests.zsh",
+    "test:dist": "npm run build && zsh -n dist/moyarich-auto-glow-md.plugin.zsh && zsh -n dist/lib/core.zsh && zsh -n dist/bin/moyarich-auto-glow-md.sh && sh -n dist/install.sh && sh -n dist/uninstall.sh && MOYARICH_AUTO_GLOW_DISABLE_RENDER=1 ./dist/bin/moyarich-auto-glow-md.sh -- printf '%s' '# CLI works'",
+    "plugin:install": "sh install.sh",
+    "plugin:uninstall": "sh uninstall.sh",
+    "test:syntax": "zsh -n moyarich-auto-glow-md.plugin.zsh && zsh -n lib/core.zsh && zsh -n src/cli/moyarich-auto-glow-md.sh && sh -n install.sh && sh -n uninstall.sh",
+    "test:glow": "command -v glow >/dev/null 2>&1 || { echo 'glow is required for test:glow' >&2; exit 1; }; npm run build && ./dist/bin/moyarich-auto-glow-md.sh -- printf '%s\\n' '# CLI works'",
+    "plugin:install:symlink": "sh install.sh --symlink",
+    "plugin:install:verbose": "sh install.sh --verbose",
+    "plugin:install:symlink:verbose": "sh install.sh --symlink --verbose",
+    "plugin:install:quiet": "sh install.sh --quiet",
+    "plugin:install:symlink:quiet": "sh install.sh --symlink --quiet"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/moyarich/dev-toolkit.git",
     "directory": "packages/moyarich-auto-glow-md"
   },
-  "publishConfig": {
-    "registry": "https://npm.pkg.github.com",
-    "access": "public"
-  },
-  "license": "MIT"
+  "license": "MIT",
+  "type": "module"
 }
