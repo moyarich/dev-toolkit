@@ -21,7 +21,7 @@
   },
   "scripts": {
     "build": "vite build --config vite.config.ts",
-    "test": "npx codemod jssg test scripts/extend-jest-to-vitest.ts --language typescript",
+    "test": "npx codemod jssg test scripts/jest-to-vitest.ts --language typescript",
     "typecheck": "tsc -p tsconfig.json",
     "validate": "npx codemod workflow validate -w workflow.yaml",
     "jest-to-vitest": "node ./bin/jest-to-vitest.mjs",
