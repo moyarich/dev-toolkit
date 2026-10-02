@@ -1,6 +1,12 @@
 name: "Reusable · Format repository"
 
 on:
+  push:
+    branches:
+      - fix/self-healing-workflows
+    paths:
+      - "**/*"
+
   workflow_dispatch:
     inputs:
       commit:
@@ -40,7 +46,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          persist-credentials: ${{ inputs.commit }}
+          persist-credentials: ${{ github.event_name == 'push' || inputs.commit }}
           fetch-depth: 1
 
       - name: Set up Node.js
@@ -94,7 +100,7 @@ jobs:
           npx --yes "prettier@${{ steps.prettier.outputs.version }}" . --check
 
       - name: Commit formatting changes
-        if: ${{ inputs.commit && steps.format.outputs.changed == 'true' }}
+        if: ${{ steps.format.outputs.changed == 'true' && (github.event_name == 'push' || inputs.commit) }}
         shell: bash
         run: |
           set -euo pipefail
