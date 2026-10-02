@@ -32,7 +32,9 @@ export function migrateTestScript(script: string): string {
 
 export function migratePackageJson(targetDir: string): MigrationResult {
   const packagePath = resolve(targetDir, "package.json");
-  const packageJson = JSON.parse(readFileSync(packagePath, "utf8")) as PackageJson;
+  const packageJson = JSON.parse(
+    readFileSync(packagePath, "utf8"),
+  ) as PackageJson;
   const warnings: string[] = [];
   let changed = false;
 
@@ -48,8 +50,8 @@ export function migratePackageJson(targetDir: string): MigrationResult {
     }
   }
 
-  const hadJestScript = Object.values(packageJson.scripts ?? {}).some((script) =>
-    /\bjest\b|--runInBand\b/.test(script),
+  const hadJestScript = Object.values(packageJson.scripts ?? {}).some(
+    (script) => /\bjest\b|--runInBand\b/.test(script),
   );
 
   if (packageJson.scripts) {
@@ -65,7 +67,10 @@ export function migratePackageJson(targetDir: string): MigrationResult {
   if (changed || hadJestScript) {
     packageJson.devDependencies ??= {};
 
-    if (!packageJson.devDependencies.vitest && !packageJson.dependencies?.vitest) {
+    if (
+      !packageJson.devDependencies.vitest &&
+      !packageJson.dependencies?.vitest
+    ) {
       packageJson.devDependencies.vitest = DEFAULT_VITEST_VERSION;
       changed = true;
     }
@@ -74,7 +79,8 @@ export function migratePackageJson(targetDir: string): MigrationResult {
       !packageJson.devDependencies["@vitest/coverage-v8"] &&
       !packageJson.dependencies?.["@vitest/coverage-v8"]
     ) {
-      packageJson.devDependencies["@vitest/coverage-v8"] = DEFAULT_VITEST_VERSION;
+      packageJson.devDependencies["@vitest/coverage-v8"] =
+        DEFAULT_VITEST_VERSION;
       changed = true;
     }
   }
@@ -195,9 +201,7 @@ export function migrateJestConfig(targetDir: string): MigrationResult {
     .map(([name, value]) => `        ${name}: ${value},`)
     .join("\n");
 
-  const setupLine = setupFile
-    ? `    setupFiles: ["./${setupFile}"],\n`
-    : "";
+  const setupLine = setupFile ? `    setupFiles: ["./${setupFile}"],\n` : "";
 
   const vitestConfig = `import { defineConfig } from "vitest/config";
 

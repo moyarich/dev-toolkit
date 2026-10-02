@@ -98,9 +98,7 @@ function migrateJestRuntimeApis(rootNode: SgNode<TypeScript>): string {
       parent.field("function")?.id() === timerReference.id();
 
     if (!isDirectCall) {
-      edits.push(
-        timerReference.replace("vi.advanceTimersByTime.bind(vi)"),
-      );
+      edits.push(timerReference.replace("vi.advanceTimersByTime.bind(vi)"));
     }
   }
 
@@ -238,7 +236,8 @@ const codemod: Codemod<TypeScript> = (root) => {
   }
 
   for (const typeName of JEST_TYPE_NAMES) {
-    const migratedTypeName = typeName === "SpyInstance" ? "MockInstance" : typeName;
+    const migratedTypeName =
+      typeName === "SpyInstance" ? "MockInstance" : typeName;
     const typePattern = new RegExp(`\\b${migratedTypeName}(?:\\s*<|\\b)`);
     if (typePattern.test(output)) typeImports.add(migratedTypeName);
   }

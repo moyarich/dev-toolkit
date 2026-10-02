@@ -55,7 +55,10 @@ describe("project migration", () => {
       resolve(dir, "package.json"),
       JSON.stringify({ devDependencies: { jest: "^29.0.0" } }, null, 2),
     );
-    writeFileSync(resolve(dir, "jest.setup.ts"), 'import "@testing-library/jest-dom";\n');
+    writeFileSync(
+      resolve(dir, "jest.setup.ts"),
+      'import "@testing-library/jest-dom";\n',
+    );
     writeFileSync(
       resolve(dir, "jest.config.ts"),
       `export default {
@@ -93,7 +96,10 @@ describe("project migration", () => {
   it("keeps unsupported Jest config explicit", () => {
     const dir = makeProject();
     writeFileSync(resolve(dir, "package.json"), JSON.stringify({}));
-    writeFileSync(resolve(dir, "jest.config.js"), "module.exports = { testEnvironment: 'node' };\n");
+    writeFileSync(
+      resolve(dir, "jest.config.js"),
+      "module.exports = { testEnvironment: 'node' };\n",
+    );
 
     const result = migrateProject(dir);
 
