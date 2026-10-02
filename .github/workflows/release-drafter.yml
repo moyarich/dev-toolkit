@@ -163,13 +163,14 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           INPUT_VERSION: ${{ inputs.version }}
+          PACKAGE_NAME: ${{ matrix.name }}
           PACKAGE_DIRECTORY: ${{ matrix.directory }}
         shell: bash
         run: |
           set -euo pipefail
 
           RELEASES="$(
-            gh api               --paginate               --slurp               "repos/$GH_REPO/releases?per_page=100"
+            gh api --paginate --slurp "repos/$GH_REPO/releases?per_page=100"
           )"
 
           PREVIOUS_TAG="$(
@@ -188,6 +189,9 @@ jobs:
           )"
 
           VERSION="$INPUT_VERSION"
+          EXISTING_DRAFT_ID=""
+          EXISTING_DRAFT_URL=""
+          EXISTING_DRAFT_NAME=""
 
           EXISTING_GIT_TAG="$(
             git tag --list "$PACKAGE_DIRECTORY@*" |
@@ -195,60 +199,104 @@ jobs:
               tail -n 1
           )"
 
-          if [ -n "$PREVIOUS_TAG" ]; then
-            SOURCE="previous published package release"
-          elif [ -n "$EXISTING_GIT_TAG" ]; then
-            WOULD_VERSION="${VERSION:-0.1.0}"
-            WOULD_TAG="$PACKAGE_DIRECTORY@$WOULD_VERSION"
-            WOULD_NAME="$PACKAGE_NAME v$WOULD_VERSION"
-
-            WOULD_CHANGES="$(
-              git log \
-                --reverse \
-                --format='- %s (%h)' \
-                HEAD \
-                -- "$PACKAGE_DIRECTORY" |
-                sed '/^- $/d'
+          # A newer package tag with a matching draft is an intentional
+          # release-in-progress state. Only a tag with neither a published
+          # release nor a matching draft is considered orphaned.
+          if [ -n "$EXISTING_GIT_TAG" ] && [ "$EXISTING_GIT_TAG" != "$PREVIOUS_TAG" ]; then
+            EXISTING_DRAFT="$(
+              jq -c --arg tag "$EXISTING_GIT_TAG" '
+                [
+                  .[][] |
+                  select(.draft == true and .tag_name == $tag)
+                ]
+                | first // empty
+              ' <<< "$RELEASES"
             )"
 
-            if [ -z "$WOULD_CHANGES" ]; then
-              WOULD_CHANGES="- No package-specific commits found."
-            fi
+            if [ -n "$EXISTING_DRAFT" ]; then
+              EXISTING_DRAFT_ID="$(jq -r '.id' <<< "$EXISTING_DRAFT")"
+              EXISTING_DRAFT_URL="$(jq -r '.html_url' <<< "$EXISTING_DRAFT")"
+              EXISTING_DRAFT_NAME="$(jq -r '.name' <<< "$EXISTING_DRAFT")"
+              VERSION="${EXISTING_GIT_TAG#"$PACKAGE_DIRECTORY@"}"
+              SOURCE="existing tagged draft release"
+            else
+              WOULD_VERSION="${VERSION:-${EXISTING_GIT_TAG#"$PACKAGE_DIRECTORY@"}}"
+              IDENTITY="$(
+                PACKAGE_NAME="$PACKAGE_NAME" \
+                PACKAGE_DIRECTORY="$PACKAGE_DIRECTORY" \
+                VERSION="$WOULD_VERSION" \
+                node --experimental-strip-types --input-type=module <<'NODE'
+          import { releaseIdentity } from "./packages/workspace-tools/src/release-identity.ts";
 
-            WOULD_BODY="$(
+          process.stdout.write(
+            JSON.stringify(
+              releaseIdentity(
+                {
+                  directory: process.env.PACKAGE_DIRECTORY,
+                  manifest: {
+                    name: process.env.PACKAGE_NAME,
+                    version: process.env.VERSION,
+                  },
+                },
+                process.env.VERSION,
+              ),
+            ),
+          );
+          NODE
+              )"
+              WOULD_TAG="$(jq -r '.tagName' <<< "$IDENTITY")"
+              WOULD_NAME="$(jq -r '.releaseName' <<< "$IDENTITY")"
+
+              WOULD_CHANGES="$(
+                git log \
+                  --reverse \
+                  --format='- %s (%h)' \
+                  HEAD \
+                  -- "$PACKAGE_DIRECTORY" |
+                  sed '/^- $/d'
+              )"
+
+              if [ -z "$WOULD_CHANGES" ]; then
+                WOULD_CHANGES="- No package-specific commits found."
+              fi
+
+              WOULD_BODY="$(
+                {
+                  echo "## What's Changed"
+                  echo
+                  echo "$WOULD_CHANGES"
+                }
+              )"
+
               {
-                echo "## What's Changed"
+                echo "# Package release draft"
                 echo
-                echo "$WOULD_CHANGES"
-              }
-            )"
+                echo "## Release blocked"
+                echo
+                echo "A package Git tag exists without a matching draft or published GitHub Release."
+                echo
+                echo "| Would-have-created | Value |"
+                echo "| --- | --- |"
+                echo "| Package | `$PACKAGE_NAME` |"
+                echo "| Directory | `$PACKAGE_DIRECTORY` |"
+                echo "| Version | `$WOULD_VERSION` |"
+                echo "| Tag | `$WOULD_TAG` |"
+                echo "| Release name | `$WOULD_NAME` |"
+                echo "| Existing Git tag | `$EXISTING_GIT_TAG` |"
+                echo "| Result | **Blocked — release history requires reconciliation** |"
+                echo
+                echo "## Would-have-created release content"
+                echo
+                echo "$WOULD_BODY"
+                echo
+              } >> "$GITHUB_STEP_SUMMARY"
 
-            {
-              echo "# Package release draft"
-              echo
-              echo "## Release blocked"
-              echo
-              echo "A package Git tag exists without a matching published GitHub Release, so the workflow did not create or update a draft."
-              echo
-              echo "| Would-have-created | Value |"
-              echo "| --- | --- |"
-              echo "| Package | \`$PACKAGE_NAME\` |"
-              echo "| Directory | \`$PACKAGE_DIRECTORY\` |"
-              echo "| Version | \`$WOULD_VERSION\` |"
-              echo "| Tag | \`$WOULD_TAG\` |"
-              echo "| Release name | \`$WOULD_NAME\` |"
-              echo "| Existing Git tag | \`$EXISTING_GIT_TAG\` |"
-              echo "| Result | **Blocked — release history requires reconciliation** |"
-              echo
-              echo "## Would-have-created release content"
-              echo
-              echo "$WOULD_BODY"
-              echo
-            } >> "$GITHUB_STEP_SUMMARY"
-
-            echo "::error::Found Git tag '$EXISTING_GIT_TAG' for $PACKAGE_DIRECTORY but no matching published GitHub Release."
-            echo "::error::Refusing to treat this package as a first release. Publish/restore the release or supply an explicit version after reconciling release history."
-            exit 1
+              echo "::error::Found orphan package Git tag '$EXISTING_GIT_TAG'."
+              echo "::error::Expected a matching draft or published GitHub Release before continuing."
+              exit 1
+            fi
+          elif [ -n "$PREVIOUS_TAG" ]; then
+            SOURCE="previous published package release"
           else
             SOURCE="full package Git history"
 
@@ -262,6 +310,9 @@ jobs:
             echo "version=$VERSION"
             echo "previous-tag=$PREVIOUS_TAG"
             echo "existing-git-tag=$EXISTING_GIT_TAG"
+            echo "existing-draft-id=$EXISTING_DRAFT_ID"
+            echo "existing-draft-url=$EXISTING_DRAFT_URL"
+            echo "existing-draft-name=$EXISTING_DRAFT_NAME"
           } >> "$GITHUB_OUTPUT"
 
       - name: Initialize workflow summary
