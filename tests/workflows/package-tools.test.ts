@@ -155,3 +155,45 @@ for (const file of [
     });
   }
 }
+
+test("package-lock workflow repairs before validating with npm ci", () => {
+  const text = readFileSync(
+    join(workflows, "reusable_npm-package-lock.yml"),
+    "utf8",
+  );
+
+  const recreate = text.indexOf(
+    "npm install \\\n            --package-lock-only",
+  );
+  const validate = text.indexOf(
+    "run: npm ci --ignore-scripts --no-audit --no-fund",
+  );
+
+  assert.ok(
+    recreate >= 0,
+    "lockfile workflow must recreate with npm install --package-lock-only",
+  );
+  assert.ok(
+    validate > recreate,
+    "npm ci must validate only after lockfile recreation",
+  );
+  assert.doesNotMatch(
+    text.slice(0, recreate),
+    /npm ci/,
+    "repair workflow must not require a valid lockfile before recreation",
+  );
+});
+
+test("package-lock workflow can commit the repaired lockfile", () => {
+  const text = readFileSync(
+    join(workflows, "reusable_npm-package-lock.yml"),
+    "utf8",
+  );
+
+  assert.match(text, /persist-credentials: \$\{\{ inputs\.commit \}\}/);
+  assert.match(
+    text,
+    /if: \$\{\{ inputs\.commit && steps\.recreate\.outputs\.changed == 'true' \}\}/,
+  );
+  assert.match(text, /git push origin "HEAD:\$\{\{ github\.ref_name \}\}"/);
+});
