@@ -1,5 +1,4 @@
 import { vi, type Mock, type Mocked, type MockedFunction } from "vitest";
-
 const fn = vi.fn();
 
 const mock = fn as Mock;
