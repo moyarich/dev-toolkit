@@ -1,4 +1,5 @@
 name: "Reusable · Format repository"
+# Temporary formatter trigger active.
 
 on:
   push:
