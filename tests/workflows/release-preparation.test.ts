@@ -175,9 +175,11 @@ test("release preview and real release must resolve the same canonical identity"
   assert.match(release, /\.identity\.releaseName == \$expectedName/);
 });
 
-
 test("release removes only superseded automation-owned untagged candidate drafts", () => {
-  assert.match(release, /dev-toolkit-release-draft:candidate package=\$PACKAGE_NAME/);
+  assert.match(
+    release,
+    /dev-toolkit-release-draft:candidate package=\$PACKAGE_NAME/,
+  );
   assert.match(release, /SUPERSEDED_DRAFTS/);
   assert.match(release, /\.tag_name != \$target/);
   assert.match(release, /contains\(\$marker\)/);
