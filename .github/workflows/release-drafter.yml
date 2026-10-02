@@ -286,21 +286,31 @@ jobs:
 
           if [ -f "$CHANGELOG_PATH" ]; then
             NOTES="$(
-              awk -v version="$VERSION" '
-                $0 == "## " version {
-                  found = 1
-                  next
-                }
+              CHANGELOG_PATH="$CHANGELOG_PATH" VERSION="$VERSION" node --input-type=module <<'NODE'
+          import { readFileSync } from "node:fs";
 
-                found && /^## / {
-                  exit
-                }
+          const lines = readFileSync(process.env.CHANGELOG_PATH, "utf8").split("\n");
+          const heading = `## ${process.env.VERSION}`;
+          const notes = [];
+          let collecting = false;
 
-                found {
-                  print
-                }
-              ' "$CHANGELOG_PATH" |
-                sed -e '/./,$!d' -e :a -e '/^\\n*$/{$d;N;ba' -e '}'
+          for (const line of lines) {
+            if (line.trim() === heading) {
+              collecting = true;
+              continue;
+            }
+
+            if (collecting && /^##\s+/.test(line)) {
+              break;
+            }
+
+            if (collecting) {
+              notes.push(line);
+            }
+          }
+
+          process.stdout.write(notes.join("\n").trim());
+          NODE
             )"
           else
             NOTES=""
