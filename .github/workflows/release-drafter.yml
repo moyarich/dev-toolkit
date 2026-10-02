@@ -282,24 +282,118 @@ jobs:
           TAG="$PACKAGE_DIRECTORY@$VERSION"
           NAME="$PACKAGE_NAME v$VERSION"
 
-          CHANGES="$(
-            git log \
-              --reverse \
-              --format='- %s (%h)' \
-              HEAD \
-              -- "$PACKAGE_DIRECTORY" |
-              sed '/^- $/d'
-          )"
+          CHANGELOG_PATH="$PACKAGE_DIRECTORY/CHANGELOG.md"
 
-          if [ -z "$CHANGES" ]; then
-            CHANGES="- No package-specific commits found."
+          if [ -f "$CHANGELOG_PATH" ]; then
+            NOTES="$(
+              awk -v version="$VERSION" '
+                $0 == "## " version {
+                  found = 1
+                  next
+                }
+
+                found && /^## / {
+                  exit
+                }
+
+                found {
+                  print
+                }
+              ' "$CHANGELOG_PATH" |
+                sed -e '/./,$!d' -e :a -e '/^\\n*$/{$d;N;ba' -e '}'
+            )"
+          else
+            NOTES=""
+          fi
+
+          if [ -z "$NOTES" ]; then
+            COMMITS="$(
+              git log \
+                --reverse \
+                --format='%s%x09%h' \
+                HEAD \
+                -- "$PACKAGE_DIRECTORY"
+            )"
+
+            NOTES="$(
+              COMMITS="$COMMITS" node --input-type=module <<'NODE'
+          const rows = (process.env.COMMITS || "")
+            .split("\n")
+            .map((line) => line.trim())
+            .filter(Boolean);
+
+          const groups = new Map([
+            ["Features", []],
+            ["Fixes", []],
+            ["Documentation", []],
+            ["Maintenance", []],
+          ]);
+
+          const seen = new Set();
+
+          for (const row of rows) {
+            const [subject, hash = ""] = row.split("\t", 2);
+
+            if (!subject || /^release(?:\\([^)]*\\))?:/i.test(subject)) {
+              continue;
+            }
+
+            const match = subject.match(
+              /^(feat|fix|docs|refactor|perf|build|ci|chore|test|style)(?:\\([^)]*\\))?!?:\\s*(.+)$/i,
+            );
+
+            const type = match?.[1]?.toLowerCase() || "chore";
+            const summary = (match?.[2] || subject)
+              .replace(/\\s*\\(#\\d+\\)$/, "")
+              .trim();
+
+            const key = summary.toLowerCase();
+
+            if (!summary || seen.has(key)) {
+              continue;
+            }
+
+            seen.add(key);
+
+            const item = hash ? `- ${summary} (${hash})` : `- ${summary}`;
+
+            if (type === "feat") {
+              groups.get("Features").push(item);
+            } else if (type === "fix") {
+              groups.get("Fixes").push(item);
+            } else if (type === "docs") {
+              groups.get("Documentation").push(item);
+            } else {
+              groups.get("Maintenance").push(item);
+            }
+          }
+
+          const sections = [];
+
+          for (const [title, items] of groups) {
+            if (items.length) {
+              sections.push(`### ${title}\n\n${items.join("\n")}`);
+            }
+          }
+
+          process.stdout.write(
+            sections.join("\n\n") || "- No package-specific changes found.",
+          );
+          NODE
+            )"
           fi
 
           BODY="$(
             {
-              echo "## What's Changed"
+              echo "## Release notes"
               echo
-              echo "$CHANGES"
+              echo "$NOTES"
+              echo
+              echo "## Install"
+              echo
+              echo '~~~sh'
+              echo "npm install $PACKAGE_NAME@$VERSION --registry=https://npm.pkg.github.com"
+              echo '~~~'
             }
           )"
 
