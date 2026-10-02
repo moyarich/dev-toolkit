@@ -10,13 +10,19 @@ program
   )
   .addArgument(new Argument("<package>", "Workspace package selector"))
   .addOption(
-    new Option("--version <version>", "Version or release-template token to use"),
+    new Option(
+      "--version <version>",
+      "Version or release-template token to use",
+    ),
   )
   .option("--json", "Print compact JSON")
   .option("--pretty-json", "Print formatted JSON")
   .action((selector, options) => {
     const pkg = packageInfo(repositoryRoot(), selector);
-    const identity = releaseIdentity(pkg, options.version ?? pkg.manifest.version);
+    const identity = releaseIdentity(
+      pkg,
+      options.version ?? pkg.manifest.version,
+    );
 
     if (options.json) process.stdout.write(JSON.stringify(identity));
     else if (options.prettyJson)
