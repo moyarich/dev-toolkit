@@ -112,21 +112,31 @@ There are two ways a draft can be created.
 
 #### Automatic draft workflow
 
-The draft workflow proactively prepares release notes from merged work:
+The draft workflow proactively prepares **candidate drafts** from merged work.
+
+On a push to `main`, it compares the pushed commits, maps changed files to publishable package directories, and drafts only the affected packages:
 
 ```text
-main changes
+push to main
     ↓
-Draft package releases
+changed files
     ↓
-prepares/updates likely next release draft
+map files → publishable package directories
+    ↓
+candidate draft jobs only for affected packages
 ```
 
-This gives maintainers an early place to review and edit release notes.
+A package is selected only when a changed path is inside that package directory. Root files and shared repository tooling do not implicitly draft every package.
+
+Each package draft writer also uses package-scoped concurrency. A newer draft run for the same package cancels the older in-progress draft run so two pushes cannot race to update the same candidate.
+
+The candidate draft gives maintainers an early place to review and edit release notes, but its proposed version is not authoritative.
 
 #### Release workflow
 
-The release workflow does not require that the automatic draft already exists.
+The release workflow creates the **target draft** for the authoritative version selected by the maintainer.
+
+The release workflow does not require that the automatic candidate draft already exists.
 
 It first resolves the requested target version, then:
 
@@ -135,7 +145,9 @@ It first resolves the requested target version, then:
 - preserves existing draft notes when reusing a draft
 - creates the exact matching draft when none exists
 
-This allows bump releases to work even when the automatic draft was prepared for a different version or no draft was created at all.
+This allows bump releases to work even when the candidate draft was prepared for a different version or no draft was created at all.
+
+When the target version differs from an automation-owned candidate, the release workflow removes superseded candidate drafts for the same package only when they are still drafts, have no Git tag, and carry the toolkit's candidate marker. Manually created releases and tagged drafts are never removed by this cleanup.
 
 ### What owns the draft?
 
@@ -343,6 +355,8 @@ The tag must exist and point to the expected commit unless tag verification is e
 
 A standalone publish also verifies the matching GitHub draft. This allows a release-only run to be completed later without recreating release state.
 
+Publishing is retry-safe across registries. Before publishing, `workspace-publish` checks each selected registry independently. A version that is already present is verified and skipped, while missing destinations continue. For example, if GitHub Packages succeeded but npm did not, a later retry skips GitHub Packages and continues with npm.
+
 ## 5. Finalize the GitHub Release
 
 After registry publication succeeds, the existing GitHub Release draft is promoted:
@@ -376,6 +390,20 @@ GitHub Release:  draft
 ```
 
 The GitHub Release remains a draft until registry publication is complete.
+
+### Release failure after draft preparation
+
+If target draft preparation succeeds but the release operation fails before the commit/tag is completed, the target draft is retained for retry.
+
+The workflow summary reports:
+
+```text
+Draft prepared: yes
+Release commit/tag: not completed
+GitHub Release: draft retained for retry
+```
+
+This makes failure recovery explicit instead of silently leaving a draft behind.
 
 ## Patch bump example
 
@@ -460,7 +488,7 @@ A Git tag with neither a matching draft nor a published GitHub Release is an orp
 
 | Stage                        | Responsibility                                     |
 | ---------------------------- | -------------------------------------------------- |
-| Draft workflow               | Proactively prepare release notes                  |
+| Draft workflow               | Select changed packages and prepare candidate notes |
 | Release workflow             | Resolve target version and ensure its draft exists |
 | `workspace-release-identity` | Produce canonical release name and Git tag         |
 | Release operation            | Version, commit, and create immutable Git tag      |
@@ -482,6 +510,10 @@ Release tooling should preserve these invariants:
 9. Staged npm publication does not publish the GitHub Release.
 10. A tag without a matching draft or published release is treated as an orphan.
 11. Dry runs do not mutate repository, registry, Git tag, or GitHub Release state.
+12. Automatic draft pushes select only packages changed under their package directories.
+13. Package draft writers are serialized per package.
+14. Superseded cleanup applies only to automation-owned, untagged candidate drafts.
+15. Multi-registry publication retries skip destinations where the package version is already published.
 
 ## Typical patch release
 
