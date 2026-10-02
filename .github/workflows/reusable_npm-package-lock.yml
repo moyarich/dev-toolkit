@@ -38,7 +38,7 @@ jobs:
   recreate-lockfile:
     name: "Recreate workspace package-lock.json"
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
 
     steps:
       - name: Checkout repository
@@ -55,45 +55,51 @@ jobs:
           registry-url: https://npm.pkg.github.com
           scope: "@moyarich"
 
-      - name: Install workspace tools
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.package-token || github.token }}
-        run: npm ci --ignore-scripts
-
-      - name: Resolve workspace tools CLI
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.package-token || github.token }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [ -f packages/workspace-tools/package.json ]; then
-            npm run build
-            TOOL_PACKAGE_ROOT="$(cd packages/workspace-tools && pwd -P)"
-          else
-            TOOL_ROOT="$(mktemp -d "$RUNNER_TEMP/workspace-tools.XXXXXX")"
-            npm install --prefix "$TOOL_ROOT" --package-lock=false --ignore-scripts @moyarich/workspace-tools@latest
-            TOOL_PACKAGE_ROOT="$TOOL_ROOT/node_modules/@moyarich/workspace-tools"
-          fi
-          test -f "$TOOL_PACKAGE_ROOT/bin/workspace-package-lock.mjs"
-          echo "WORKSPACE_TOOLS_ROOT=$TOOL_PACKAGE_ROOT" >> "$GITHUB_ENV"
-
       - name: Recreate package-lock.json
-        id: lockfile
+        id: recreate
         env:
           NODE_AUTH_TOKEN: ${{ secrets.package-token || github.token }}
         shell: bash
         run: |
           set -euo pipefail
 
-          args=(--json)
+          cp package-lock.json /tmp/package-lock.before.json
 
-          if [ "${{ inputs.commit }}" = "true" ]; then
-            args+=(--commit --branch "${{ github.ref_name }}")
+          npm install \
+            --package-lock-only \
+            --ignore-scripts \
+            --no-audit \
+            --no-fund
+
+          if git diff --quiet -- package-lock.json; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            printf '%s\n' '{"operation":"package-lock","status":"unchanged"}' \
+              | tee /tmp/package-lock-result.json
           else
-            args+=(--dry-run)
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            git diff --stat -- package-lock.json | tee /tmp/package-lock-stat.txt
+            git diff -- package-lock.json > /tmp/package-lock.diff
+            printf '%s\n' '{"operation":"package-lock","status":"updated"}' \
+              | tee /tmp/package-lock-result.json
           fi
 
-          node "$WORKSPACE_TOOLS_ROOT/bin/workspace-package-lock.mjs" "${args[@]}" | tee /tmp/package-lock-result.json
+      - name: Validate recreated lockfile
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.package-token || github.token }}
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Commit recreated package-lock.json
+        if: ${{ inputs.commit && steps.recreate.outputs.changed == 'true' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add package-lock.json
+          git commit -m "chore: recreate workspace package-lock.json"
+          git push origin "HEAD:${{ github.ref_name }}"
 
       - name: Package-lock summary
         if: ${{ always() }}
@@ -105,9 +111,19 @@ jobs:
             echo "| Setting | Value |"
             echo "| --- | --- |"
             echo "| Node.js | \`${{ inputs.node-version }}\` |"
+            echo "| Changed | **${{ steps.recreate.outputs.changed || 'unknown' }}** |"
             echo "| Commit requested | **${{ inputs.commit }}** |"
             echo "| Branch | \`${{ github.ref_name }}\` |"
             echo "| Result | **${{ job.status }}** |"
+
+            if [ -s /tmp/package-lock-stat.txt ]; then
+              echo
+              echo "## Lockfile changes"
+              echo
+              echo '\`\`\`text'
+              cat /tmp/package-lock-stat.txt
+              echo '\`\`\`'
+            fi
 
             if [ -s /tmp/package-lock-result.json ]; then
               echo

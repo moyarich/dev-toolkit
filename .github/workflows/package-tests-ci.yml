@@ -45,6 +45,11 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ github.token }}
 
+      - name: Install shell test dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes zsh
+
       - name: Install Chromium for Storybook tests
         run: npx playwright install --with-deps chromium
 

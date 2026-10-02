@@ -19,7 +19,6 @@ export function looksLikeMarkdown(value: string): boolean {
   if (/^\x60\x60\x60[\w-]*\s*$/m.test(text)) return true;
 
   return (
-    /^\s*\|?.+\|.+\|?\s*$/m.test(text) &&
-    /^\s*\|?\s*:?-{3,}:?\s*\|/m.test(text)
+    /^\s*\|?.+\|.+\|?\s*$/m.test(text) && /^\s*\|?\s*:?-{3,}:?\s*\|/m.test(text)
   );
 }

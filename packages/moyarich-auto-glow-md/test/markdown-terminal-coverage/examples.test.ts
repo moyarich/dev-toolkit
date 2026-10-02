@@ -17,7 +17,10 @@ describe("real terminal Markdown examples", () => {
   });
 
   it.each([
-    ["TypeScript diagnostic", "src/index.ts:4:8 - error TS2322: Type 'string' is not assignable"],
+    [
+      "TypeScript diagnostic",
+      "src/index.ts:4:8 - error TS2322: Type 'string' is not assignable",
+    ],
     ["Go output", "go: downloading example.com/pkg v1.0.0"],
     ["npm log", "npm notice run test"],
     ["git output", "On branch main\nnothing to commit, working tree clean"],
