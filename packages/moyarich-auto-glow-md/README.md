@@ -52,6 +52,12 @@ Reload Zsh:
 Oh My Zsh discovers the plugin directly from:
 
     moyarich-auto-glow-md/
+    ├── bin/
+    │   └── moyarich-auto-glow-md
+    ├── lib/
+    │   └── core.zsh
+    ├── test/
+    │   └── run-tests.zsh
     ├── moyarich-auto-glow-md.plugin.zsh
     ├── install.sh
     ├── README.md
@@ -111,18 +117,41 @@ Commands that modify the current shell bypass the capture path, including:
 
 There is no Node runtime dependency.
 
+## Direct shell CLI
+
+The same shell runtime can be exercised without loading Oh My Zsh:
+
+    ./bin/moyarich-auto-glow-md -- printf '# Hello\n'
+
+You can also run normal commands through it:
+
+    ./bin/moyarich-auto-glow-md -- git status
+    ./bin/moyarich-auto-glow-md -- python script.py
+    ./bin/moyarich-auto-glow-md -- go test ./...
+
+The CLI is a Zsh script and shares its implementation with the Oh My Zsh plugin through `lib/core.zsh`.
+
 ## Development
 
-Syntax-check the shell files:
+Syntax-check the shell files and run the behavioral tests:
 
     zsh -n moyarich-auto-glow-md.plugin.zsh
+    zsh -n lib/core.zsh
+    zsh -n bin/moyarich-auto-glow-md
     sh -n install.sh
+    zsh test/run-tests.zsh
 
-Or, from the dev-toolkit workspace:
+From the dev-toolkit workspace, the same checks are available through:
 
     npm test --workspace @moyarich/auto-glow-md
 
-npm is only used by the monorepo development workflow. It is not required to install or run the Oh My Zsh plugin.
+Or run only the behavioral shell tests:
+
+    npm run test:shell --workspace @moyarich/auto-glow-md
+
+The tests exercise Markdown detection, bypass behavior, command output, exit-status preservation, and the directly runnable shell CLI.
+
+npm is only a monorepo development convenience. It is not required to install or run the plugin or CLI.
 
 ## Current limitation
 
