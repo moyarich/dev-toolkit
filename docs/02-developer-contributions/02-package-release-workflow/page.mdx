@@ -2,36 +2,121 @@
 
 The repository release system treats drafting, releasing, and publishing as separate stages of one package release lifecycle.
 
-The goal is to keep the package version, Git tag, GitHub Release, and package registry state aligned while still allowing a release to stop safely before publication.
+The draft workflow prepares release notes proactively, while the release workflow remains authoritative for the target version actually being released.
 
 ## Release lifecycle
 
-A normal package release progresses through these states:
+The better workflow is:
 
 ```text
-package changes on main
-        ↓
-Draft package release
-        ↓
-GitHub Release: draft
-        ↓
-Release
-  - resolve version
-  - validate canonical release identity
-  - create release commit when required
-  - create canonical Git tag
-  - push commit and tag
-        ↓
-GitHub Release: still draft
-        ↓
-Package publish
-        ↓
-GitHub Release: published
+package changes
+    ↓
+Draft workflow - Proactively prepare release notes
+    ↓
+manually choose release action
+    ↓
+resolve target version first
+    ├─ patch
+    ├─ minor
+    ├─ major
+    ├─ prerelease
+    ├─ exact version
+    └─ package.json version
+    ↓
+canonical release identity
+    ↓
+ensure matching GitHub draft exists
+    ├─ create it if missing
+    └─ update/reuse it if present
+    ↓
+create release commit + immutable Git tag
+    ↓
+GitHub Release remains draft
+    ↓
+publish package
+    ↓
+publish that same GitHub Release
 ```
 
-A release-only run intentionally stops after the Git tag is pushed. The GitHub Release remains a draft until package publication succeeds.
+```mermaid
+flowchart TD
+  A[Package changes] --> B[Draft workflow<br/>Proactively prepare release notes]
+  B --> C[Manually choose release action]
+  C --> D[Resolve target version first]
 
-A later standalone publish can continue that same release and publish the existing draft.
+  D --> D1[patch]
+  D --> D2[minor]
+  D --> D3[major]
+  D --> D4[prerelease]
+  D --> D5[exact version]
+  D --> D6[package.json version]
+
+  D1 --> E[Canonical release identity]
+  D2 --> E
+  D3 --> E
+  D4 --> E
+  D5 --> E
+  D6 --> E
+
+  E --> F{Matching GitHub draft exists?}
+  F -->|No| G[Create matching draft]
+  F -->|Yes| H[Update/reuse matching draft]
+  G --> I[Create release commit + immutable Git tag]
+  H --> I
+  I --> J[GitHub Release remains draft]
+  J --> K{Publish package now?}
+  K -->|No| L[Stop safely<br/>Publish later]
+  K -->|Yes| M[Publish package]
+  L --> N[Standalone publish workflow]
+  N --> M
+  M --> O{Registry publication complete?}
+  O -->|No / staged| J
+  O -->|Yes| P[Publish the same GitHub Release]
+```
+
+The automatic draft is useful preparation, but it is not a hard prerequisite. The release workflow resolves the requested target version and ensures the exact matching draft exists before creating the release tag.
+
+## Patch bump example
+
+For a patch bump:
+
+```text
+current package:
+0.1.0
+
+release request:
+patch
+
+resolved target:
+0.1.1
+
+draft created/updated:
+@moyarich/foo v0.1.1
+
+canonical tag:
+packages/foo@0.1.1
+
+then:
+release → publish package → publish GitHub Release
+```
+
+The important change is:
+
+```text
+OLD
+draft must already exist
+    ↓
+release
+
+NEW
+resolve target version
+    ↓
+ensure draft exists
+    ↓
+release
+```
+
+That preserves bumping while still preventing orphaned tags.
 
 ## Canonical release identity
 
@@ -65,60 +150,126 @@ workspace-release-identity packages/moyarich-auto-glow-md \
 
 Do not reproduce the tag or release-name formula independently in workflow YAML or shell scripts.
 
-## 1. Draft package release
+## Release-only
 
-`.github/workflows/release-drafter.yml` maintains package-specific GitHub Release drafts.
+If you choose:
 
-For a first release, the workflow prefers the matching package `CHANGELOG.md` section. If no matching section exists, it falls back to package-specific Git history and groups conventional commits into release-note categories.
+```text
+publish=false
+```
 
-For later releases, the generated Release Drafter configuration uses the same canonical release identity.
+then:
 
-The draft includes:
+```text
+resolve target version
+    ↓
+ensure draft
+    ↓
+create commit/tag
+    ↓
+GitHub Release stays draft
+```
+
+You can publish later with the standalone publish workflow.
+
+The Git tag exists at this point, but the GitHub Release intentionally remains a draft because package publication has not completed.
+
+## Release + publish
+
+If:
+
+```text
+publish=true
+```
+
+then:
+
+```text
+resolve target
+    ↓
+ensure draft
+    ↓
+release/tag
+    ↓
+publish package
+    ↓
+publish existing GitHub Release
+```
+
+The same GitHub Release record is used throughout the process. Publishing does not create a second release.
+
+## Draft workflow
+
+The automatic draft workflow still has value. It continuously prepares release notes from merged work:
+
+```text
+main changes
+    ↓
+Draft package releases
+    ↓
+prepares/updates likely next release draft
+```
+
+It is no longer a hard prerequisite.
+
+When a manual release is started, the release workflow independently resolves the requested target version. It then:
+
+- reuses the exact matching draft when one exists
+- updates its canonical name, tag, and target metadata when needed
+- preserves existing draft notes when reusing a draft
+- creates the matching draft from the resolved release preview when none exists
+
+This means an automatically prepared draft can help with release-note editing, but choosing `patch`, `minor`, `major`, a prerelease, an exact version, or the current package version still works even when no matching draft existed beforehand.
+
+## Target version resolution
+
+`.github/workflows/reusable_npm-release.yml` resolves the target before any release mutation.
+
+It invokes `workspace-release` in dry-run mode first. That preview provides:
+
+- current package version
+- resolved target version
+- canonical release identity
+- Git-tag readiness
+- registry readiness
+- proposed changelog content
+
+Only after the target is known does the workflow ensure the matching GitHub draft exists.
+
+If the target is already published or its immutable Git tag already exists, the real release is blocked rather than creating or moving release state.
+
+## Ensuring the matching draft
+
+For a real release, the workflow searches for the exact canonical tag.
+
+If a matching draft exists, it is reused. Its existing notes are preserved so manually edited release notes are not overwritten.
+
+If no matching draft exists, the workflow creates one using:
 
 - the canonical release name
-- the canonical package Git tag
-- package-specific release notes
-- an exact installation command
+- the canonical release tag
+- the resolved target branch
+- the proposed changelog from the release preview
+- the exact package installation command
 
-The draft does not itself publish a package or complete the GitHub Release.
+A published GitHub Release with the same target tag blocks a new release attempt.
 
-## 2. Release package
+## Package release
 
-`.github/workflows/reusable_npm-release.yml` performs the release operation.
+After the draft is ensured, the real release operation runs with the same version request that produced the preview.
 
-Before a real release, it verifies that the exact matching GitHub Release draft already exists and that its name matches the canonical release identity.
+The real release must return the same canonical tag and release name resolved by the preview.
 
-Depending on the selected version mode, the release command may update the package version and changelog before creating the release commit.
+The operation then:
 
-The release then creates the canonical Git tag and pushes the release commit and tag.
+- updates the package version when required
+- updates release files/changelog when required
+- creates the release commit
+- creates the immutable package Git tag
 
-At this point:
+The commit and tag are pushed only after those checks succeed.
 
-```text
-Git tag:        exists
-GitHub Release: draft
-Package:        not necessarily published
-```
-
-That is an intentional and valid state.
-
-### Release-only run
-
-When `publish=false`:
-
-```text
-release commit/tag    created
-GitHub Release        draft
-package publication   not requested
-```
-
-The GitHub Release is not promoted merely because the Git tag exists.
-
-### Release and publish run
-
-When `publish=true`, the same workflow continues into package publication. The GitHub Release is promoted only after package publication succeeds.
-
-## 3. Publish package
+## Package publishing
 
 Package publication uses `workspace-publish` through either the combined release workflow or `.github/workflows/reusable_npm-publish.yml`.
 
@@ -130,45 +281,44 @@ Publishing verifies the canonical package tag by default:
 
 The tag must exist and point to the expected commit unless tag verification is explicitly disabled.
 
-A real standalone publish also verifies that the matching GitHub draft exists and has the expected canonical release name.
-
-After registry publication succeeds, the workflow publishes that existing GitHub Release draft instead of creating a second release.
-
-## Draft finalization
-
-The GitHub Release is promoted with the same:
-
-- release ID
-- tag
-- release name
-- release notes
-
-Only its draft state changes.
-
-```text
-draft=true
-    ↓ package publication succeeds
-draft=false
-```
-
-This keeps the draft created during development as the authoritative GitHub Release record.
+A standalone publish also verifies the matching GitHub draft. This allows a release-only run to be completed later without recreating the release.
 
 ## npm staged publication
 
 npm publication can enter a staged state before the registry release is fully complete.
 
-When the publish result is staged, the GitHub Release remains a draft.
+When publication is staged:
 
 ```text
-npm publication:      staged
-GitHub Release:       draft
+npm publication: staged
+GitHub Release:  draft
 ```
 
-The release should not be presented as complete until registry publication has actually completed.
+The GitHub Release is promoted only after registry publication is complete.
+
+## After publication
+
+The GitHub Release remains editable:
+
+```text
+published release
+    ├─ edit title ✓
+    ├─ edit notes ✓
+    ├─ add assets ✓
+    └─ move release tag ✗
+```
+
+The immutable part should be:
+
+```text
+package version + Git tag
+```
+
+not the release notes.
+
+Editing a published GitHub Release does not require moving or recreating its release tag.
 
 ## Valid release states
-
-The draft workflow distinguishes valid release progress from inconsistent release history.
 
 | Git tag | Draft release | Published release | Meaning |
 | --- | --- | --- | --- |
@@ -183,61 +333,48 @@ A Git tag with a matching draft is deliberately accepted because release-only ru
 
 A Git tag with neither a matching draft nor a published GitHub Release is treated as an orphan and requires reconciliation.
 
-## Why the release stays draft after tagging
-
-Creating a Git tag proves that a version was identified in Git. It does not prove that package publication completed successfully.
-
-Keeping the GitHub Release as a draft prevents this misleading state:
-
-```text
-GitHub Release: published
-Package registry: failed or incomplete
-```
-
-The public GitHub Release therefore represents completed package publication rather than merely completed Git tagging.
-
 ## Workflow responsibilities
 
-| Component | Responsibility |
+| Stage | Responsibility |
 | --- | --- |
-| `release-drafter.yml` | Maintain package-specific release notes and GitHub drafts |
-| `workspace-release-identity` | Generate the canonical tag and release name |
-| `workspace-release` | Resolve version, update release files, create commit and Git tag |
-| `workspace-publish` | Validate and publish package artifacts |
-| `reusable_npm-release.yml` | Orchestrate release and optional immediate publish |
-| `reusable_npm-publish.yml` | Publish an already released/tagged package and finalize its draft |
+| Draft workflow | Proactively prepare release notes |
+| Release workflow | Resolve target version and ensure its draft exists |
+| `workspace-release-identity` | Produce canonical name/tag |
+| Release operation | Version, commit, tag |
+| Publish operation | Publish package |
+| Finalization | Change existing GitHub Release from draft → published |
 
 ## Safety rules
 
 Release tooling should preserve these invariants:
 
 1. Draft, release, and publish use the same canonical release identity.
-2. A real release requires the matching GitHub draft.
-3. Release tags are immutable and are never force-moved.
-4. Package publishing verifies the canonical release tag by default.
-5. Release-only runs leave the GitHub Release as a draft.
-6. The GitHub Release is published only after package publication succeeds.
-7. Staged npm publication does not publish the GitHub Release.
-8. A tag without a matching draft or published release is treated as an orphan.
-9. Existing tagged drafts are preserved instead of regenerated.
-10. Dry runs do not mutate repository, registry, tag, or GitHub Release state.
+2. The release workflow resolves the target version before creating or reusing a draft.
+3. A matching draft is created automatically when none exists.
+4. Existing matching draft notes are preserved when the draft is reused.
+5. Release tags are immutable and are never force-moved.
+6. Package publishing verifies the canonical release tag by default.
+7. Release-only runs leave the GitHub Release as a draft.
+8. The GitHub Release is published only after package publication succeeds.
+9. Staged npm publication does not publish the GitHub Release.
+10. A tag without a matching draft or published release is treated as an orphan.
+11. Dry runs do not mutate repository, registry, tag, or GitHub Release state.
 
-## Typical first release
+## Typical patch release
 
-For a package already at `0.1.0`:
+For a package currently at `0.1.0`:
 
 ```text
-1. Merge package changes to main
-2. Draft package releases workflow creates:
-   @moyarich/example v0.1.0
-3. Review/edit the draft release notes
-4. Run the release workflow
-5. Release workflow creates:
-   packages/example@0.1.0
-6. GitHub Release remains a draft
-7. Publish the package
-8. Publish workflow promotes the existing draft
-9. GitHub Release is now public
+1. Merge package changes to main.
+2. Draft workflow proactively prepares release notes.
+3. Manually run Release with patch selected.
+4. Release preview resolves 0.1.1.
+5. Canonical identity resolves:
+   @moyarich/example v0.1.1
+   packages/example@0.1.1
+6. Release workflow creates or reuses the 0.1.1 GitHub draft.
+7. Release operation creates the release commit and immutable tag.
+8. GitHub Release remains a draft.
+9. Publish now or later.
+10. After package publication succeeds, the existing GitHub Release is published.
 ```
-
-If release and publish are requested in the same run, steps 4 through 8 are orchestrated by the release workflow.
