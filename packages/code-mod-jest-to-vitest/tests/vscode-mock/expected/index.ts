@@ -1,5 +1,4 @@
 import { vi, type Mock } from "vitest";
-
 const vscode = {
   window: {
     showInformationMessage: vi.fn(),
