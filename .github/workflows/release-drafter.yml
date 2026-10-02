@@ -124,7 +124,7 @@ jobs:
             echo
             echo "| Setting | Value |"
             echo "| --- | --- |"
-            echo "| Trigger | `$EVENT_NAME` |"
+            printf '| Trigger | `%s` |\n' "$EVENT_NAME"
             echo "| Selected packages | **$COUNT** |"
             echo
             if [ "$EVENT_NAME" = "push" ]; then
