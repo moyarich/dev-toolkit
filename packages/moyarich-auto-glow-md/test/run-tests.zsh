@@ -60,8 +60,8 @@ status=$?
 set -e
 assert_equal "preserves exit status" "7" "$status"
 
-cli_output="$(MOYARICH_AUTO_GLOW_DISABLE_RENDER=1 "${PACKAGE_DIR}/bin/moyarich-auto-glow-md" -- printf '%s' '# CLI works')"
-assert_equal "shell CLI runs commands" "# CLI works" "$cli_output"
+cli_output="$(MOYARICH_AUTO_GLOW_DISABLE_RENDER=1 zsh "${PACKAGE_DIR}/src/cli/moyarich-auto-glow-md.sh" -- printf '%s' '# CLI works')"
+assert_equal "source shell CLI runs commands" "# CLI works" "$cli_output"
 
 if (( failures > 0 )); then
   print -u2 -- "$failures test(s) failed"
