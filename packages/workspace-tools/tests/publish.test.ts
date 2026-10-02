@@ -52,6 +52,14 @@ test("serializePublishPlan returns stable machine-readable package metadata", ()
           name: "@moyarich/workspace-tools",
           version: "0.1.2",
           directory: "packages/workspace-tools",
+          releaseIdentity: {
+            packageName: "@moyarich/workspace-tools",
+            packageDirectory: "packages/workspace-tools",
+            version: "0.1.2",
+            tagName: "packages/workspace-tools@0.1.2",
+            tagPrefix: "packages/workspace-tools@",
+            releaseName: "@moyarich/workspace-tools v0.1.2",
+          },
           registries: {
             github: "missing",
           },
