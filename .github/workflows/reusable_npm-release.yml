@@ -535,17 +535,23 @@ jobs:
             .operation == "release" and
             (.package.name | type == "string" and length > 0) and
             (.currentVersion | type == "string" and length > 0) and
-            (.nextVersion | type == "string" and length > 0)
+            (.nextVersion | type == "string" and length > 0) and
+            (.identity.tagName | type == "string" and length > 0) and
+            (.identity.releaseName | type == "string" and length > 0)
           ' >/dev/null
 
           PACKAGE_NAME="$(jq -r '.package.name' <<< "$RELEASE_JSON")"
           PACKAGE_SELECTOR="$(jq -r '.package.selector' <<< "$RELEASE_JSON")"
           PACKAGE_VERSION="$(jq -r '.nextVersion' <<< "$RELEASE_JSON")"
+          RELEASE_TAG="$(jq -r '.identity.tagName' <<< "$RELEASE_JSON")"
+          RELEASE_NAME="$(jq -r '.identity.releaseName' <<< "$RELEASE_JSON")"
 
           {
             echo "PACKAGE_NAME=$PACKAGE_NAME"
             echo "PACKAGE_SELECTOR=$PACKAGE_SELECTOR"
             echo "PACKAGE_VERSION=$PACKAGE_VERSION"
+            echo "RELEASE_TAG=$RELEASE_TAG"
+            echo "RELEASE_NAME=$RELEASE_NAME"
           } >> "$GITHUB_ENV"
 
           {
@@ -606,6 +612,8 @@ jobs:
             echo "| --- | --- |"
             echo "| Package | \`$PACKAGE_NAME\` |"
             echo "| Version | \`$PACKAGE_VERSION\` |"
+            echo "| Git tag | \`$RELEASE_TAG\` |"
+            echo "| GitHub Release | \`$RELEASE_NAME\` |"
             echo "| Status | \`$(jq -r '.status' <<< "$RELEASE_JSON")\` |"
             echo "| Can release | **$(jq -r 'if has("canRelease") then .canRelease else true end' <<< "$RELEASE_JSON")** |"
             echo
@@ -613,6 +621,58 @@ jobs:
             echo "$RELEASE_JSON" | jq .
             echo '~~~'
           } | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Verify matching GitHub draft
+        if: ${{ steps.execution.outputs.dry-run == 'false' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          RELEASE="$(
+            gh api --paginate --slurp "repos/$GH_REPO/releases?per_page=100" |
+              jq -c --arg tag "$RELEASE_TAG" '
+                [
+                  .[][] |
+                  select(.draft == true and .tag_name == $tag)
+                ]
+                | first // empty
+              '
+          )"
+
+          if [ -z "$RELEASE" ]; then
+            echo "::error::No matching GitHub draft release exists for $RELEASE_TAG."
+            echo "::error::Run the package draft workflow before performing a real release."
+            exit 1
+          fi
+
+          DRAFT_NAME="$(jq -r '.name' <<< "$RELEASE")"
+
+          if [ "$DRAFT_NAME" != "$RELEASE_NAME" ]; then
+            echo "::error::Draft release name does not match the canonical release identity."
+            echo "::error::Expected: $RELEASE_NAME"
+            echo "::error::Actual:   $DRAFT_NAME"
+            exit 1
+          fi
+
+          RELEASE_DRAFT_ID="$(jq -r '.id' <<< "$RELEASE")"
+          RELEASE_DRAFT_URL="$(jq -r '.html_url' <<< "$RELEASE")"
+
+          {
+            echo "RELEASE_DRAFT_ID=$RELEASE_DRAFT_ID"
+            echo "RELEASE_DRAFT_URL=$RELEASE_DRAFT_URL"
+          } >> "$GITHUB_ENV"
+
+          {
+            echo
+            echo "## GitHub Release draft"
+            echo
+            echo "| Setting | Value |"
+            echo "| --- | --- |"
+            echo "| Name | `$RELEASE_NAME` |"
+            echo "| Tag | `$RELEASE_TAG` |"
+            echo "| State | **draft** |"
+            echo "| Draft | [Open release draft]($RELEASE_DRAFT_URL) |"
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Verify dry run made no repository changes
         if: ${{ steps.execution.outputs.dry-run == 'true' }}
@@ -711,6 +771,50 @@ jobs:
             echo '```'
           } | tee -a "$GITHUB_STEP_SUMMARY"
 
+      - name: Publish GitHub Release draft
+        id: github-release
+        if: ${{ steps.execution.outputs.dry-run == 'false' && inputs.publish && steps.publish.outcome == 'success' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          PUBLISH_JSON='${{ steps.publish.outputs.publish-json }}'
+
+          if jq -e '
+            [.results[]? | select(.status == "staged")] | length > 0
+          ' <<< "$PUBLISH_JSON" >/dev/null; then
+            echo "status=draft" >> "$GITHUB_OUTPUT"
+            echo
+            echo "Package publication includes a staged registry release."
+            echo "The GitHub Release remains a draft until registry publication is complete."
+            exit 0
+          fi
+
+          RELEASE="$(
+            gh api \
+              --method PATCH \
+              "repos/$GH_REPO/releases/$RELEASE_DRAFT_ID" \
+              -f tag_name="$RELEASE_TAG" \
+              -f name="$RELEASE_NAME" \
+              -F draft=false
+          )"
+
+          if [ "$(jq -r '.draft' <<< "$RELEASE")" != "false" ]; then
+            echo "::error::GitHub Release remained in draft state."
+            exit 1
+          fi
+
+          echo "status=published" >> "$GITHUB_OUTPUT"
+
+          {
+            echo
+            echo "## GitHub Release"
+            echo
+            echo "Published `$RELEASE_NAME` after package publication completed."
+            echo
+            echo "[Open published release]($(jq -r '.html_url' <<< "$RELEASE"))"
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Release result
         if: ${{ always() }}
         shell: bash
@@ -731,13 +835,25 @@ jobs:
               echo "No files, commits, tags, pushes, or package publishing were performed."
 
             elif [ "${{ inputs.publish }}" = "true" ]; then
-              echo "### ✅ Release and publish completed"
-              echo
-              echo "Published to: \`${{ inputs.registry }}\`"
+              if [ "${{ steps.github-release.outputs.status }}" = "published" ]; then
+                echo "### ✅ Release and publish completed"
+                echo
+                echo "Published to: \`${{ inputs.registry }}\`"
+                echo "GitHub Release: **published**"
+              else
+                echo "### ✅ Package publication staged"
+                echo
+                echo "Registry: \`${{ inputs.registry }}\`"
+                echo "GitHub Release: **draft**"
+                echo
+                echo "The GitHub Release remains a draft while staged registry publication awaits completion."
+              fi
 
             else
               echo "### ✅ Release completed"
               echo
-              echo "Package release completed. Publishing was not requested."
+              echo "Git tag: \`$RELEASE_TAG\`"
+              echo "GitHub Release: **draft**"
+              echo "Package publication: **not requested**"
             fi
           } >> "$GITHUB_STEP_SUMMARY"
