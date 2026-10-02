@@ -100,25 +100,34 @@ test("release drafter uses only supported action inputs", () => {
   );
 });
 
-test("tagged drafts are valid release-in-progress state while orphan tags are blocked", () => {
-  assert.match(workflow, /git tag --list "\$PACKAGE_DIRECTORY@\*"/);
-  assert.match(workflow, /EXISTING_GIT_TAG/);
-  assert.match(workflow, /EXISTING_DRAFT_ID/);
-  assert.match(workflow, /select\(\.draft == true and \.tag_name == \$tag\)/);
-  assert.match(workflow, /existing tagged draft release/);
-  assert.match(workflow, /Found orphan package Git tag/);
-  assert.match(workflow, /existing-draft-id=/);
-});
+test(
+  "tagged drafts are valid release-in-progress state while orphan tags are blocked",
+  () => {
+    assert.match(workflow, /git tag --list "\$PACKAGE_DIRECTORY@\*"/);
+    assert.match(workflow, /EXISTING_GIT_TAG/);
+    assert.match(workflow, /EXISTING_DRAFT_ID/);
+    assert.match(
+      workflow,
+      /select\(\.draft == true and \.tag_name == \$tag\)/,
+    );
+    assert.match(workflow, /existing tagged draft release/);
+    assert.match(workflow, /Found orphan package Git tag/);
+    assert.match(workflow, /existing-draft-id=/);
+  },
+);
 
-test("blocked first release writes would-have-created details to the summary", () => {
+test(
+  "blocked first release writes would-have-created details to the summary",
+  () => {
   assert.match(workflow, /## Release blocked/);
   assert.match(workflow, /Would-have-created/);
   assert.match(workflow, /WOULD_VERSION/);
   assert.match(workflow, /WOULD_TAG/);
   assert.match(workflow, /WOULD_NAME/);
   assert.match(workflow, /releaseIdentity/);
-  assert.match(workflow, /release history requires reconciliation/);
-});
+    assert.match(workflow, /release history requires reconciliation/);
+  },
+);
 
 test("blocked release summary includes generated release content", () => {
   assert.match(workflow, /WOULD_CHANGES/);
