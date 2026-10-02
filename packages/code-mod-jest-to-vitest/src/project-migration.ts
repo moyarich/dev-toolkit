@@ -24,7 +24,7 @@ export type MigrationResult = {
 export function migrateTestScript(script: string): string {
   let output = script
     .replace(/\s*--runInBand\b/g, "")
-    .replace(/\b--watchAll\b/g, "--watch");
+    .replace(/--watchAll\b/g, "--watch");
 
   const usesWatch = /\bjest\b[^&|;]*--watch\b/.test(output);
   output = output.replace(/\bjest\b/g, usesWatch ? "vitest" : "vitest run");
