@@ -12,6 +12,7 @@ const JEST_TYPE_NAMES = new Set([
   "SpiedFunction",
   "SpiedGetter",
   "SpiedSetter",
+  "SpyInstance",
 ]);
 
 const JEST_GLOBALS = [
@@ -167,6 +168,9 @@ function migrateJestRuntimeApis(rootNode: SgNode<TypeScript>): string {
 }
 
 function migrateSource(source: string): string {
+  if (/from\s*["\']@playwright\/test["\']|require\(\s*["\']@playwright\/test["\']\s*\)/.test(source)) {
+    return source;
+  }
   let output = source;
 
   // Remove explicit Jest globals imports. Required Vitest imports are rebuilt below.
@@ -192,7 +196,7 @@ function migrateSource(source: string): string {
   for (const typeName of JEST_TYPE_NAMES) {
     output = output.replace(
       new RegExp(`\\bjest\\.${typeName}\\b`, "g"),
-      typeName,
+      typeName === "SpyInstance" ? "MockInstance" : typeName,
     );
   }
 
@@ -228,8 +232,9 @@ const codemod: Codemod<TypeScript> = (root) => {
   }
 
   for (const typeName of JEST_TYPE_NAMES) {
-    const typePattern = new RegExp(`\\b${typeName}(?:\\s*<|\\b)`);
-    if (typePattern.test(output)) typeImports.add(typeName);
+    const migratedTypeName = typeName === "SpyInstance" ? "MockInstance" : typeName;
+    const typePattern = new RegExp(`\\b${migratedTypeName}(?:\\s*<|\\b)`);
+    if (typePattern.test(output)) typeImports.add(migratedTypeName);
   }
 
   output = mergeVitestImport(output, [...runtimeImports], [...typeImports]);
