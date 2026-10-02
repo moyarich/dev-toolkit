@@ -1,0 +1,82 @@
+# Getting started
+
+## Requirements
+
+- Zsh
+- Oh My Zsh
+- Glow
+
+Verify Glow is available:
+
+```sh
+command -v glow
+```
+
+## Install from the monorepo
+
+From the package directory:
+
+```sh
+./install.sh
+```
+
+From the workspace root:
+
+```sh
+npm run plugin:install --workspace @moyarich/auto-glow-md
+```
+
+Copy installation is the default. For development, install using symlinks:
+
+```sh
+npm run plugin:install:symlink --workspace @moyarich/auto-glow-md
+```
+
+The installer prints the next steps for enabling the plugin, reloading Zsh, verifying the command, and running a smoke test.
+
+## Enable the plugin
+
+Add `moyarich-auto-glow-md` to the Oh My Zsh plugin list in `~/.zshrc`:
+
+```zsh
+plugins=(
+  git
+  moyarich-auto-glow-md
+)
+```
+
+Reload the shell:
+
+```sh
+source ~/.zshrc
+```
+
+Verify the CLI:
+
+```sh
+command -v moyarich-auto-glow-md
+```
+
+## Usage
+
+Run commands normally:
+
+```sh
+git status
+python script.py
+go test ./...
+curl https://example.com
+```
+
+When output looks like Markdown, the plugin renders it through Glow. Ordinary output is printed unchanged.
+
+Example:
+
+```sh
+printf '# Build Results\n\n| Package | Status |\n| --- | --- |\n| api | passing |\n'
+```
+
+## Next steps
+
+- Learn how command interception and recursion protection work in [Architecture](../02-guides/01-architecture/page.mdx).
+- See the package validation commands in [Testing](../03-reference/01-testing/page.mdx).
