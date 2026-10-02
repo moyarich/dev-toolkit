@@ -1,0 +1,44 @@
+# Getting started
+
+## Install
+
+```sh
+npm install @moyarich/vscode-test-cleaner
+```
+
+## Interactive cleanup
+
+Interactive terminals automatically use `fzf` when it is installed:
+
+```sh
+vscode-test-clean
+```
+
+Select one or more discovered caches, then confirm deletion.
+
+## Preview changes
+
+Use dry-run mode to inspect what would be removed without deleting anything:
+
+```sh
+vscode-test-clean --all --dry-run
+```
+
+## Non-interactive cleanup
+
+For automation, select all discovered caches and skip the prompt explicitly:
+
+```sh
+vscode-test-clean --all --yes
+```
+
+## Scan another root
+
+```sh
+vscode-test-clean --root /path/to/workspaces
+```
+
+## Next steps
+
+- Review the package's deletion guardrails in [Safe cleanup](../02-guides/01-safe-cleanup/page.mdx).
+- See all documented command modes in the [CLI reference](../03-reference/01-cli/page.mdx).

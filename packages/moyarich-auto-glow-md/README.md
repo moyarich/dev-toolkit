@@ -4,6 +4,15 @@ Shell-native Oh My Zsh plugin that automatically renders Markdown-looking comman
 
 The plugin does not require Node.js, npm, node-pty, a compiled CLI, or a generated bin directory at runtime.
 
+## Documentation
+
+Detailed package documentation:
+
+- [Documentation index](./docs/page.mdx)
+- [Getting started](./docs/01-getting-started/page.mdx)
+- [Architecture](./docs/02-guides/01-architecture/page.mdx)
+- [Testing](./docs/03-reference/01-testing/page.mdx)
+
 ## Requirements
 
 - Zsh

@@ -1,8 +1,22 @@
 # Package documentation
 
-Package documentation in `dev-toolkit` follows the same MoyaForge-friendly structure used by `packages/web-components/docs`.
+Package documentation in `dev-toolkit` uses a predictable, filesystem-based routing convention so documentation can be discovered, ordered, and rendered without package-specific configuration.
 
-Do not place unrelated loose Markdown files directly under a package's `docs/` directory. Use an ordered navigation structure with a root `page.mdx` and a `page.mdx` for each documentation page.
+Do not place unrelated loose Markdown files directly under a package's `docs/` directory. Use an ordered navigation structure with a root `page.mdx` and a `page.mdx` for each navigable documentation page.
+
+## Documentation contract
+
+A package documentation tree follows these rules:
+
+1. `docs/page.mdx` is the package documentation landing page.
+2. Every navigable page lives in its own directory and is named `page.mdx`.
+3. Numeric prefixes such as `01-`, `02-`, and `03-` define stable navigation order.
+4. Directory names after the numeric prefix are descriptive, lowercase, and hyphenated.
+5. Nested sections use the same convention recursively.
+6. Relative links point to the target `page.mdx`.
+7. The package `README.md` remains the concise package entry point; detailed material lives in `docs/`.
+
+This convention keeps the documentation tree both human-readable in GitHub and directly consumable by filesystem-driven documentation tooling.
 
 ## Recommended folder tree
 
@@ -28,7 +42,33 @@ packages/
                 └── page.mdx
 ```
 
-The numeric prefixes define a stable, human-readable navigation order.
+The numeric prefixes define a stable, human-readable navigation order. They are part of the documentation source layout, not the visible page title.
+
+## Route mapping
+
+Treat each `page.mdx` as the content for its containing directory.
+
+For example:
+
+```text
+docs/page.mdx
+docs/01-getting-started/page.mdx
+docs/02-guides/01-release/page.mdx
+docs/03-reference/01-cli/page.mdx
+```
+
+forms this logical hierarchy:
+
+```text
+/
+├── getting-started
+├── guides/
+│   └── release
+└── reference/
+    └── cli
+```
+
+The source directory controls ordering while the page heading controls the human-facing title.
 
 ## Root documentation page
 
@@ -62,7 +102,7 @@ Use these sections when they fit the package:
 03-reference/
 ```
 
-Packages can add domain-specific sections when useful. For example, `web-components` uses `02-components/`.
+Packages can add domain-specific sections when useful. For example, a component library can use `02-components/`, and a package centered on runtime internals can use `02-architecture/`.
 
 Prefer semantic folder names over forcing every package into an identical taxonomy.
 
@@ -87,7 +127,7 @@ docs/release.md
 docs/guides-release.md
 ```
 
-This keeps routing, navigation, and future documentation rendering predictable.
+This keeps routing, navigation, and documentation discovery predictable.
 
 ## README versus docs
 
@@ -95,9 +135,10 @@ The package `README.md` should stay concise:
 
 - package purpose
 - minimal installation or usage
+- a short example when useful
 - links into `docs/`
 
-Detailed guides, tutorials, architecture notes, and reference material belong under `docs/`.
+Detailed guides, tutorials, architecture notes, testing notes, and reference material belong under `docs/`.
 
 ## package.json
 
@@ -110,6 +151,8 @@ Publishable packages should normally include documentation in `package.json#file
 ```
 
 Adjust the runtime directories for the package, but keep `docs` when the package documentation should ship with the published artifact.
+
+Private or source-only packages can omit `docs` from the published-file list when no package artifact is produced.
 
 ## Adding a new guide
 
@@ -134,11 +177,12 @@ Before merging package documentation:
 - `docs/page.mdx` exists
 - navigable pages use `page.mdx`
 - ordered folders use two-digit numeric prefixes
-- page names are descriptive and hyphenated
+- page and folder names are descriptive and hyphenated
+- nested sections repeat the same routing pattern
 - links are relative and point to `page.mdx`
 - detailed content is kept out of the package README
 - `package.json#files` includes `docs` when docs should be published
 - obsolete loose `.md` files are removed after migration
 - examples use current package names and commands
 
-Use `packages/web-components/docs` as the reference implementation when creating or restructuring package documentation.
+Use an existing package with a complete `docs/page.mdx` tree as the reference shape when creating or restructuring package documentation.

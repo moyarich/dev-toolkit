@@ -1,0 +1,65 @@
+# CLI reference
+
+## Command
+
+```sh
+vscode-test-clean
+```
+
+The command discovers VS Code test environments rooted at the selected scan path.
+
+## Common modes
+
+Interactive selection:
+
+```sh
+vscode-test-clean
+```
+
+Select all discovered caches:
+
+```sh
+vscode-test-clean --all
+```
+
+Skip the deletion confirmation:
+
+```sh
+vscode-test-clean --all --yes
+```
+
+Preview without deleting:
+
+```sh
+vscode-test-clean --all --dry-run
+```
+
+Return machine-readable discovery output:
+
+```sh
+vscode-test-clean --json
+```
+
+Scan a different root:
+
+```sh
+vscode-test-clean --root /path/to/workspaces
+```
+
+Disable automatic `fzf` use:
+
+```sh
+vscode-test-clean --no-fzf --all --dry-run
+```
+
+## Runtime package
+
+The published runtime is built under:
+
+```text
+dist/
+└── bin/
+    └── vscode-test-clean.mjs
+```
+
+The npm `bin` entry points to `dist/bin/vscode-test-clean.mjs`.

@@ -4,6 +4,15 @@ Discover and safely remove VS Code test environments created by `@vscode/test-el
 
 The CLI is inspired by the cleanup workflow of `npkill`: discover disposable directories, show their sizes, select what to remove, and delete only validated candidates.
 
+## Documentation
+
+Detailed package documentation:
+
+- [Documentation index](./docs/page.mdx)
+- [Getting started](./docs/01-getting-started/page.mdx)
+- [Safe cleanup](./docs/02-guides/01-safe-cleanup/page.mdx)
+- [CLI reference](./docs/03-reference/01-cli/page.mdx)
+
 ## Install
 
 ```sh
