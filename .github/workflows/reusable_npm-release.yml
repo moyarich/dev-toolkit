@@ -623,8 +623,7 @@ jobs:
           REMOVED_CANDIDATES=0
 
           for ITEM in "${SUPERSEDED_DRAFTS[@]}"; do
-            DRAFT_ID="${ITEM%%
-            DRAFT_TAG="${ITEM#*
+            IFS=$'\\t' read -r DRAFT_ID DRAFT_TAG <<< "$ITEM"
 
             if git rev-parse --verify --quiet "refs/tags/$DRAFT_TAG" >/dev/null; then
               continue
