@@ -107,7 +107,7 @@ jobs:
   publish-package:
     name: "job: Publish"
     permissions:
-      contents: read
+      contents: write
       packages: write
     runs-on: ubuntu-latest
     outputs:
@@ -210,12 +210,16 @@ jobs:
             type == "object" and
             (.packages | type == "array" and length >= 1) and
             (.packages[0].name | type == "string" and length > 0) and
-            (.packages[0].version | type == "string" and length > 0)
+            (.packages[0].version | type == "string" and length > 0) and
+            (.packages[0].releaseIdentity.tagName | type == "string" and length > 0) and
+            (.packages[0].releaseIdentity.releaseName | type == "string" and length > 0)
           ' >/dev/null
 
           {
             echo "name=$(jq -r '.packages[0].name' <<< "$PLAN")"
             echo "version=$(jq -r '.packages[0].version' <<< "$PLAN")"
+            echo "release-tag=$(jq -r '.packages[0].releaseIdentity.tagName' <<< "$PLAN")"
+            echo "release-name=$(jq -r '.packages[0].releaseIdentity.releaseName' <<< "$PLAN")"
           } >> "$GITHUB_OUTPUT"
 
       - name: Validate requested version
@@ -228,6 +232,45 @@ jobs:
             echo "Requested publish version $REQUESTED_VERSION does not match package version $CURRENT_VERSION."
             exit 1
           fi
+      - name: Verify matching GitHub draft
+        if: ${{ !inputs.dry-run }}
+        env:
+          RELEASE_TAG: ${{ steps.plan.outputs.release-tag }}
+          RELEASE_NAME: ${{ steps.plan.outputs.release-name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          RELEASE="$(
+            gh api --paginate --slurp "repos/$GH_REPO/releases?per_page=100" |
+              jq -c --arg tag "$RELEASE_TAG" '
+                [
+                  .[][] |
+                  select(.draft == true and .tag_name == $tag)
+                ]
+                | first // empty
+              '
+          )"
+
+          if [ -z "$RELEASE" ]; then
+            echo "::error::No matching GitHub draft release exists for $RELEASE_TAG."
+            exit 1
+          fi
+
+          DRAFT_NAME="$(jq -r '.name' <<< "$RELEASE")"
+
+          if [ "$DRAFT_NAME" != "$RELEASE_NAME" ]; then
+            echo "::error::Draft release name does not match the canonical release identity."
+            echo "::error::Expected: $RELEASE_NAME"
+            echo "::error::Actual:   $DRAFT_NAME"
+            exit 1
+          fi
+
+          {
+            echo "RELEASE_DRAFT_ID=$(jq -r '.id' <<< "$RELEASE")"
+            echo "RELEASE_DRAFT_URL=$(jq -r '.html_url' <<< "$RELEASE")"
+          } >> "$GITHUB_ENV"
+
       - name: Publish package
         id: publish
         env:
@@ -285,6 +328,47 @@ jobs:
 
           echo "$RESULT" | jq .
 
+      - name: Publish GitHub Release draft
+        id: github-release
+        if: ${{ !inputs.dry-run && steps.publish.outcome == 'success' }}
+        env:
+          RESULT_JSON: ${{ steps.publish.outputs.result-json }}
+          RELEASE_TAG: ${{ steps.plan.outputs.release-tag }}
+          RELEASE_NAME: ${{ steps.plan.outputs.release-name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if jq -e '
+            [.results[]? | select(.status == "staged")] | length > 0
+          ' <<< "$RESULT_JSON" >/dev/null; then
+            echo "status=draft" >> "$GITHUB_OUTPUT"
+            echo "GitHub Release remains a draft while staged registry publication awaits completion."
+            exit 0
+          fi
+
+          if ! git rev-parse --verify --quiet "refs/tags/$RELEASE_TAG" >/dev/null; then
+            echo "status=draft" >> "$GITHUB_OUTPUT"
+            echo "GitHub Release remains a draft because the canonical Git tag does not exist."
+            exit 0
+          fi
+
+          RELEASE="$(
+            gh api \
+              --method PATCH \
+              "repos/$GH_REPO/releases/$RELEASE_DRAFT_ID" \
+              -f tag_name="$RELEASE_TAG" \
+              -f name="$RELEASE_NAME" \
+              -F draft=false
+          )"
+
+          if [ "$(jq -r '.draft' <<< "$RELEASE")" != "false" ]; then
+            echo "::error::GitHub Release remained in draft state."
+            exit 1
+          fi
+
+          echo "status=published" >> "$GITHUB_OUTPUT"
+
       - name: Upload packed npm artifact
         if: ${{ always() }}
         uses: actions/upload-artifact@v7
@@ -305,6 +389,8 @@ jobs:
             echo "| Dry run | **${{ inputs.dry-run }}** |"
             echo "| Package | \`${{ steps.plan.outputs.name || inputs.package-directory }}\` |"
             echo "| Package version | \`${{ steps.plan.outputs.version || 'unresolved' }}\` |"
+            echo "| Release tag | \`${{ steps.plan.outputs.release-tag || 'unresolved' }}\` |"
+            echo "| GitHub Release | \`${{ steps.plan.outputs.release-name || 'unresolved' }}\` |"
             echo "| Requested version | \`${{ inputs.version || 'package version' }}\` |"
             echo "| Registry | \`${{ inputs.registry }}\` |"
             echo "| Distribution tag | \`${{ inputs.tag }}\` |"
@@ -312,6 +398,7 @@ jobs:
             echo "| Verify Git release tag | **${{ inputs.verify-git-tag }}** |"
             echo "| Node.js | \`${{ inputs.node-version }}\` |"
             echo "| Publish status | \`${{ steps.publish.outputs.status || 'unresolved' }}\` |"
+            echo "| GitHub Release state | \`${{ steps.github-release.outputs.status || (inputs.dry-run && 'unchanged' || 'draft') }}\` |"
             echo "| Can publish | **${{ steps.publish.outputs.can-publish || 'unresolved' }}** |"
             echo "| Result | **${{ job.status }}** |"
           } >> "$GITHUB_STEP_SUMMARY"
