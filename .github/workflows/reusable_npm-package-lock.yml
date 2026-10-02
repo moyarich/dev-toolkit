@@ -1,6 +1,12 @@
 name: "Reusable · Recreate workspace package-lock.json"
 
 on:
+  push:
+    branches:
+      - fix/self-healing-workflows
+    paths:
+      - .github/workflows/reusable_npm-package-lock.yml
+
   workflow_dispatch:
     inputs:
       commit:
@@ -44,7 +50,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          persist-credentials: ${{ inputs.commit }}
+          persist-credentials: ${{ github.event_name == 'push' || inputs.commit }}
           fetch-depth: 1
 
       - name: Set up Node.js
@@ -89,7 +95,7 @@ jobs:
         run: npm ci --ignore-scripts --no-audit --no-fund
 
       - name: Commit recreated package-lock.json
-        if: ${{ inputs.commit && steps.recreate.outputs.changed == 'true' }}
+        if: ${{ steps.recreate.outputs.changed == 'true' && (github.event_name == 'push' || inputs.commit) }}
         shell: bash
         run: |
           set -euo pipefail
