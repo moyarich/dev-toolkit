@@ -9,20 +9,20 @@ describe("markdown terminal coverage", () => {
 
   it("detects fenced code blocks", () => {
     expect(
-      looksLikeMarkdown([
-        "before",
-        String.fromCharCode(96).repeat(3) + "ts",
-        "const x = 1;",
-        String.fromCharCode(96).repeat(3),
-      ].join("\n")),
+      looksLikeMarkdown(
+        [
+          "before",
+          String.fromCharCode(96).repeat(3) + "ts",
+          "const x = 1;",
+          String.fromCharCode(96).repeat(3),
+        ].join("\n"),
+      ),
     ).toBe(true);
   });
 
   it("detects Markdown tables", () => {
     expect(
-      looksLikeMarkdown(
-        "| Name | Status |\n| --- | --- |\n| api | active |",
-      ),
+      looksLikeMarkdown("| Name | Status |\n| --- | --- |\n| api | active |"),
     ).toBe(true);
   });
 
