@@ -25,7 +25,7 @@ test("release drafter discovers publishable packages dynamically", () => {
   assert.match(workflow, /require-publish-config: true/);
   assert.ok(
     workflow.includes(
-      "matrix: ${{ fromJSON(needs.discover-packages.outputs.matrix",
+      "matrix: ${{ fromJSON(needs.select-packages.outputs.matrix",
     ),
   );
   assert.doesNotMatch(workflow, /directory: workspace-tools/);
@@ -140,5 +140,37 @@ test("tagged draft releases are preserved for the release workflow", () => {
   assert.match(
     workflow,
     /Existing tagged draft detected\. The draft was left unchanged/,
+  );
+});
+
+
+test("push drafting selects only packages changed by the pushed commits", () => {
+  assert.match(workflow, /Select packages for drafting/);
+  assert.match(workflow, /git diff --name-only "\$BEFORE_SHA" "\$AFTER_SHA"/);
+  assert.match(workflow, /file\.startsWith\(\`\$\{pkg\.directory\}\/\`\)/);
+  assert.match(workflow, /needs\.select-packages\.outputs\.matrix/);
+  assert.match(
+    workflow,
+    /Root and shared-tooling changes do not implicitly draft every package/,
+  );
+});
+
+test("package draft writers are serialized per package", () => {
+  assert.match(workflow, /concurrency:/);
+  assert.match(
+    workflow,
+    /group: draft-package-\$\{\{ github\.repository \}\}-\$\{\{ matrix\.directory \}\}/,
+  );
+  assert.match(workflow, /cancel-in-progress: true/);
+});
+
+test("automation-owned release drafts are marked as candidates", () => {
+  assert.match(
+    workflow,
+    /dev-toolkit-release-draft:candidate package=\$PACKAGE_NAME/,
+  );
+  assert.match(
+    template,
+    /dev-toolkit-release-draft:candidate package=\{\{PACKAGE_NAME\}\}/,
   );
 });
