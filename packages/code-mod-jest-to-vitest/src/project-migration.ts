@@ -109,16 +109,39 @@ export function migrateSetupFile(targetDir: string): MigrationResult {
   return { changed: false, warnings };
 }
 
-function extractGlobalCoverageThresholds(source: string): Record<string, number> | null {
-  const coverageMatch = source.match(/coverageThreshold\s*:\s*\{([\s\S]*?)\n\s*\}/);
-  if (!coverageMatch) return null;
+function extractObjectBodyAfterKey(source: string, key: string): string | null {
+  const keyIndex = source.search(new RegExp(`\\b${key}\\s*:\\s*\\{`));
+  if (keyIndex < 0) return null;
 
-  const globalMatch = coverageMatch[1]?.match(/global\s*:\s*\{([\s\S]*?)\}/);
-  if (!globalMatch) return null;
+  const openIndex = source.indexOf("{", keyIndex);
+  if (openIndex < 0) return null;
+
+  let depth = 0;
+  for (let index = openIndex; index < source.length; index += 1) {
+    if (source[index] === "{") depth += 1;
+    if (source[index] === "}") {
+      depth -= 1;
+      if (depth === 0) return source.slice(openIndex + 1, index);
+    }
+  }
+
+  return null;
+}
+
+function extractGlobalCoverageThresholds(
+  source: string,
+): Record<string, number> | null {
+  const coverageBody = extractObjectBodyAfterKey(source, "coverageThreshold");
+  if (!coverageBody) return null;
+
+  const globalBody = extractObjectBodyAfterKey(coverageBody, "global");
+  if (!globalBody) return null;
 
   const thresholds: Record<string, number> = {};
   for (const name of ["branches", "functions", "lines", "statements"]) {
-    const match = globalMatch[1]?.match(new RegExp(`\\b${name}\\s*:\\s*(\\d+(?:\\.\\d+)?)`));
+    const match = globalBody.match(
+      new RegExp(`\\b${name}\\s*:\\s*(\\d+(?:\\.\\d+)?)`),
+    );
     if (match) thresholds[name] = Number(match[1]);
   }
 
