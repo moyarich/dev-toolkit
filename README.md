@@ -19,6 +19,18 @@ Planned commands:
 - `workspace-release`
 - `workspace-publish`
 
+### `@moyarich/vscode-test-cleaner`
+
+Interactive and automation-friendly cleanup for VS Code test environments created by `@vscode/test-electron`.
+
+- Discovers `.vscode-test` caches recursively.
+- Reports cache sizes before deletion.
+- Uses `fzf` automatically in interactive TTYs when available.
+- Supports safe non-interactive cleanup with `--all`, `--dry-run`, `--yes`, and `--json`.
+- Validates every deletion target against the discovered cache set.
+
+See [packages/vscode-test-cleaner/README.md](packages/vscode-test-cleaner/README.md).
+
 ### `@moyarich/demo-tools`
 
 Strategy-first automation for creating demos, screenshots, and recordings.
