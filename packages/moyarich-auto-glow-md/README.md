@@ -51,6 +51,58 @@ command -v moyarich-auto-glow-md
 command -v glow
 ```
 
+## Install with sparse checkout
+
+If you only want this package from the `dev-toolkit` monorepo, use Git sparse checkout:
+
+```bash
+git clone --filter=blob:none --sparse \
+  git@github.com:moyarich/dev-toolkit.git \
+  "${ZSH_CUSTOM:-${HOME}/.oh-my-zsh/custom}/dev-toolkit"
+
+cd "${ZSH_CUSTOM:-${HOME}/.oh-my-zsh/custom}/dev-toolkit"
+git sparse-checkout set packages/moyarich-auto-glow-md
+```
+
+Then link the plugin directory into the Oh My Zsh custom plugins directory:
+
+```bash
+ln -s \
+  "${ZSH_CUSTOM:-${HOME}/.oh-my-zsh/custom}/dev-toolkit/packages/moyarich-auto-glow-md/plugin" \
+  "${ZSH_CUSTOM:-${HOME}/.oh-my-zsh/custom}/plugins/moyarich-auto-glow-md"
+```
+
+The resulting plugin path is:
+
+```text
+$ZSH_CUSTOM/plugins/moyarich-auto-glow-md/
+└── moyarich-auto-glow-md.plugin.zsh
+```
+
+Add the plugin to `.zshrc`:
+
+```zsh
+plugins=(
+  git
+  moyarich-auto-glow-md
+)
+```
+
+Reload Zsh:
+
+```bash
+source ~/.zshrc
+```
+
+Because this package also provides the `moyarich-auto-glow-md` CLI, install the package dependencies and build/link the executable from the sparse checkout:
+
+```bash
+cd "${ZSH_CUSTOM:-${HOME}/.oh-my-zsh/custom}/dev-toolkit"
+npm install
+npm run build --workspace @moyarich/auto-glow-md
+npm link --workspace @moyarich/auto-glow-md
+```
+
 ## Oh My Zsh usage
 
 Source the plugin using a portable path.
