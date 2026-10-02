@@ -7,6 +7,7 @@ export default defineConfig({
       outDir: "dist/bin",
       entries: {
         pattern: "src/cli/**/*.ts",
+        bin: "./dist/bin/{name}.mjs",
       },
       emptyOutDir: true,
     }),
