@@ -9,6 +9,7 @@ import {
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
+import { releaseIdentity } from "./release-identity.ts";
 import { packageInfo, repositoryRoot } from "./workspace.ts";
 
 import {
@@ -559,7 +560,7 @@ function updateChangelog(
 ): string {
   const changelog = resolve(root, pkg.directory, "CHANGELOG.md");
 
-  const previous = previousReleaseRef(root, selector);
+  const previous = previousReleaseRef(root, pkg.directory);
 
   const section = changelogSection(
     version,
@@ -669,18 +670,18 @@ export function release(argument: string, options: ReleaseOptions = {}) {
 
     const alreadyPublished = proposed.status === "published";
 
-    const tag = `${selector}@${nextVersion}`;
-    const gitTag = tagState(root, tag);
+    const identity = releaseIdentity(pkg, nextVersion);
+    const gitTag = tagState(root, identity.tagName);
     const canRelease = !alreadyPublished && !gitTag.exists;
     const reason = alreadyPublished
       ? `${pkg.manifest.name}@${nextVersion} is already published.`
       : gitTag.exists
         ? gitTag.atHead
-          ? `Git tag ${tag} already exists at HEAD.`
-          : `Git tag ${tag} already exists at ${gitTag.commit} and will not be moved.`
+          ? `Git tag ${identity.tagName} already exists at HEAD.`
+          : `Git tag ${identity.tagName} already exists at ${gitTag.commit} and will not be moved.`
         : null;
 
-    const previous = previousReleaseRef(root, selector);
+    const previous = previousReleaseRef(root, pkg.directory);
 
     const section = changelogSection(
       nextVersion,
@@ -769,6 +770,7 @@ ${section}`);
       latestPublished,
       currentVersion: pkg.manifest.version,
       nextVersion,
+      identity,
       alreadyPublished,
       tag: gitTag,
       canRelease,
@@ -784,14 +786,15 @@ ${section}`);
 
   if (mode === "package-json") {
     const version = pkg.manifest.version;
-    const tag = `${selector}@${version}`;
+    const identity = releaseIdentity(pkg, version);
+    const tag = identity.tagName;
     const gitTag = tagState(root, tag);
 
     if (gitTag.exists) {
       throw new Error(
         gitTag.atHead
-          ? `Git tag ${tag} already exists at HEAD.`
-          : `Git tag ${tag} already exists at ${gitTag.commit} and will not be moved.`,
+          ? `Git tag ${identity.tagName} already exists at HEAD.`
+          : `Git tag ${identity.tagName} already exists at ${gitTag.commit} and will not be moved.`,
       );
     }
 
@@ -820,6 +823,7 @@ ${section}`);
       registry: registryFor(pkg),
       currentVersion: version,
       nextVersion: version,
+      identity,
       tag: {
         name: tag,
         exists: true,
@@ -873,9 +877,10 @@ ${section}`);
     );
   }
 
-  const tag = `${selector}@${version}`;
+  const identity = releaseIdentity(pkg, version);
+  const tag = identity.tagName;
 
-  const changelog = updateChangelog(root, pkg, version, selector);
+  const changelog = updateChangelog(root, pkg, version, pkg.directory);
 
   execFileSync("git", ["add", pkg.file, "package-lock.json", changelog], {
     cwd: root,
