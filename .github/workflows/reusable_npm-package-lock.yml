@@ -1,5 +1,5 @@
 name: "Reusable · Recreate workspace package-lock.json"
-# Temporary branch repair trigger active.
+# Temporary branch repair trigger active (retry).
 
 on:
   push:
