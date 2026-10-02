@@ -76,6 +76,6 @@ its own copy and runs tests, lint, and typecheck without repeating installation
 or the full build. The archive preserves executable permissions and workspace
 symlinks. Running Node CI independently still installs and builds normally.
 
-See [docs/readme-dev.md](docs/readme-dev.md) for architecture and development guidance.
+See [Getting started](docs/01-getting-started/page.mdx) for architecture and development guidance.
 
-See [Package release workflow](docs/02-developer-contributions/02-package-release-workflow/page.mdx) for the draft → release → publish lifecycle, canonical release identity, and GitHub Release finalization rules.
+See [Package release workflow](docs/02-guides/04-package-release-workflow/page.mdx) for the draft → release → publish lifecycle, canonical release identity, and GitHub Release finalization rules.
