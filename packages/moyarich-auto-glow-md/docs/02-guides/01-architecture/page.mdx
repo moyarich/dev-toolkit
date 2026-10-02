@@ -1,26 +1,24 @@
 # Architecture
 
-The package is a shell-native Oh My Zsh plugin.
+moyarich-auto-glow-md is a shell-native Oh My Zsh plugin.
 
-It runs directly from Zsh and depends on Glow for Markdown rendering. There is no Node.js runtime, generated JavaScript CLI, or `node-pty` layer.
+It runs directly from Zsh and depends on Glow for Markdown rendering. There is no Node.js runtime, generated JavaScript CLI, or node-pty layer.
 
 ## Flow
 
-```text
-ZLE accept-line
-      |
-      +-- shell-state command -----------> normal Zsh execution
-      |
-      +-- other command
-             |
-             +-- capture command output
-             |
-             +-- Markdown detected -> glow
-             |
-             +-- otherwise -> print unchanged
-```
+    ZLE accept-line
+          |
+          +-- shell-state command -----------> normal Zsh execution
+          |
+          +-- other command
+                 |
+                 +-- capture command output
+                 |
+                 +-- Markdown detected -> glow
+                 |
+                 +-- otherwise -> print unchanged
 
-The plugin bypasses commands that must modify the current shell, such as `cd`, `export`, `source`, `alias`, `setopt`, `pushd`, `jobs`, `fg`, `bg`, `exec`, and `exit`.
+The plugin bypasses commands that must modify the current shell, such as cd, export, source, alias, setopt, pushd, jobs, fg, bg, exec, and exit.
 
 ## Recursion guard
 
@@ -42,6 +40,8 @@ This prevents a command launched by `moyarich-auto-glow-md` from loading the plu
 
 The variable is intended for internal runtime use. Users normally do not need to set it manually.
 
+Execution flow:
+
 ```text
 interactive Zsh
     |
@@ -58,17 +58,13 @@ interactive Zsh
 
 ## Oh My Zsh entry point
 
-Oh My Zsh loads the package through:
+Oh My Zsh loads the package directly through:
 
-```text
-moyarich-auto-glow-md.plugin.zsh
-```
+    moyarich-auto-glow-md.plugin.zsh
 
-The plugin directory can therefore be linked directly into:
+The plugin directory can therefore be symlinked directly into:
 
-```text
-$ZSH_CUSTOM/plugins/moyarich-auto-glow-md
-```
+    $ZSH_CUSTOM/plugins/moyarich-auto-glow-md
 
 ## Tradeoff
 
