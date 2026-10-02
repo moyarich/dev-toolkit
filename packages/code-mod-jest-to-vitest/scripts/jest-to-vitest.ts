@@ -84,7 +84,7 @@ function migrateJestRuntimeApis(rootNode: SgNode<TypeScript>): string {
     rule: { pattern: "jest.advanceTimersByTime" },
   });
   const typeReferences = rootNode.findAll({
-    rule: { pattern: "jest.$TYPE" },
+    rule: { kind: "nested_type_identifier" },
   });
 
   if (
@@ -99,7 +99,8 @@ function migrateJestRuntimeApis(rootNode: SgNode<TypeScript>): string {
   const asyncFunctions = new Set<number>();
 
   for (const typeReference of typeReferences) {
-    const typeName = typeReference.getMatch("TYPE")?.text();
+    const match = /^jest\.([A-Za-z_$][\w$]*)$/.exec(typeReference.text());
+    const typeName = match?.[1];
     if (!typeName || !JEST_TYPE_NAMES.has(typeName)) continue;
 
     edits.push(
