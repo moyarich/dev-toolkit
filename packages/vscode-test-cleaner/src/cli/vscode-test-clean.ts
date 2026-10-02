@@ -116,7 +116,10 @@ async function cleanVscodeTestEnvironments(options: CliOptions): Promise<void> {
         {
           root,
           count: caches.length,
-          totalBytes: caches.reduce((total, cache) => total + cache.sizeBytes, 0),
+          totalBytes: caches.reduce(
+            (total, cache) => total + cache.sizeBytes,
+            0,
+          ),
           caches,
         },
         null,
@@ -161,7 +164,10 @@ async function cleanVscodeTestEnvironments(options: CliOptions): Promise<void> {
   }
 
   const selected = caches.filter((cache) => selectedPaths.includes(cache.path));
-  const totalBytes = selected.reduce((total, cache) => total + cache.sizeBytes, 0);
+  const totalBytes = selected.reduce(
+    (total, cache) => total + cache.sizeBytes,
+    0,
+  );
 
   console.log(
     `\nSelected ${selected.length} cache(s), ${chalk.cyan(formatBytes(totalBytes))} total.`,
@@ -199,9 +205,7 @@ async function cleanVscodeTestEnvironments(options: CliOptions): Promise<void> {
 
   for (const result of results) {
     console.log(
-      chalk.green(
-        `Removed ${result.path} (${formatBytes(result.sizeBytes)})`,
-      ),
+      chalk.green(`Removed ${result.path} (${formatBytes(result.sizeBytes)})`),
     );
   }
 

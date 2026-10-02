@@ -1,8 +1,4 @@
-import {
-  readdirSync,
-  rmSync,
-  statSync,
-} from "node:fs";
+import { readdirSync, rmSync, statSync } from "node:fs";
 import { resolve } from "node:path";
 
 /**
@@ -30,10 +26,7 @@ export interface RemovalResult {
   dryRun: boolean;
 }
 
-const DEFAULT_IGNORED_DIRECTORIES = new Set([
-  ".git",
-  "node_modules",
-]);
+const DEFAULT_IGNORED_DIRECTORIES = new Set([".git", "node_modules"]);
 
 /**
  * Calculate the recursive size of a file-system path.
@@ -49,18 +42,15 @@ export function pathSize(path: string): number {
   if (!stat) return 0;
   if (!stat.isDirectory()) return stat.size;
 
-  return readdirSync(path, { withFileTypes: true }).reduce(
-    (total, entry) => {
-      const child = resolve(path, entry.name);
+  return readdirSync(path, { withFileTypes: true }).reduce((total, entry) => {
+    const child = resolve(path, entry.name);
 
-      if (entry.isSymbolicLink()) {
-        return total + (statSync(child, { throwIfNoEntry: false })?.size ?? 0);
-      }
+    if (entry.isSymbolicLink()) {
+      return total + (statSync(child, { throwIfNoEntry: false })?.size ?? 0);
+    }
 
-      return total + pathSize(child);
-    },
-    0,
-  );
+    return total + pathSize(child);
+  }, 0);
 }
 
 /**
@@ -157,7 +147,9 @@ export function removeVscodeTestCaches(
     candidates.map((candidate) => [resolve(candidate.path), candidate]),
   );
 
-  const uniqueSelected = [...new Set([...selectedPaths].map((path) => resolve(path)))];
+  const uniqueSelected = [
+    ...new Set([...selectedPaths].map((path) => resolve(path))),
+  ];
 
   return uniqueSelected.map((path) => {
     const candidate = candidateByPath.get(path);
@@ -197,8 +189,8 @@ export function canUseFzf(options: {
 }): boolean {
   return Boolean(
     options.enabled !== false &&
-      options.stdinIsTTY &&
-      options.stdoutIsTTY &&
-      options.fzfAvailable,
+    options.stdinIsTTY &&
+    options.stdoutIsTTY &&
+    options.fzfAvailable,
   );
 }

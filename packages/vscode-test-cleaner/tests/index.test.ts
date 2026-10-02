@@ -1,9 +1,4 @@
-import {
-  existsSync,
-  mkdirSync,
-  mkdtempSync,
-  writeFileSync,
-} from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
@@ -100,9 +95,9 @@ describe("removeVscodeTestCaches", () => {
 
     mkdirSync(arbitrary);
 
-    expect(() =>
-      removeVscodeTestCaches([], [arbitrary]),
-    ).toThrow(/Refusing to remove undiscovered/);
+    expect(() => removeVscodeTestCaches([], [arbitrary])).toThrow(
+      /Refusing to remove undiscovered/,
+    );
 
     expect(existsSync(arbitrary)).toBe(true);
   });

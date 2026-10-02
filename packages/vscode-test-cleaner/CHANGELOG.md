@@ -21,4 +21,3 @@
 - Restrict deletion to exact paths returned by cache discovery.
 - Keep `--json` and `--dry-run` non-destructive.
 - Do not follow arbitrary fzf output directly into file deletion.
-
