@@ -43,7 +43,6 @@ Use `--registry=both` for both destinations. `--tag=<tag>` controls the npm dist
 
 Before publishing a missing registry version, the tool runs each package's `typecheck`, `test`, and `build` scripts when present, followed by `npm pack --dry-run`.
 
-
 ## GitHub Release finalization
 
 The reusable publish workflow resolves the same canonical release identity used by the release drafter and release workflow. Before a real publish it verifies that the matching GitHub draft exists and has the expected release name.
