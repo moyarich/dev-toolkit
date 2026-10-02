@@ -1,276 +1,129 @@
-# @moyarich/auto-glow-md
+# moyarich-auto-glow-md
 
-Automatically render Markdown-looking terminal output with Glow from commands run in an interactive Oh My Zsh shell.
+Shell-native Oh My Zsh plugin that automatically renders Markdown-looking command output with Glow.
 
-## What it does
-
-The package combines an Oh My Zsh plugin with a PTY-backed CLI.
-
-When you run a command normally, the plugin routes it through the PTY runner. Ordinary terminal output is printed unchanged. Output that looks like Markdown is rendered through Glow.
-
-```text
-command
-  |
-  +-- ordinary output -----------------> terminal
-  |
-  +-- Markdown detected -> Glow -------> terminal
-```
-
-The PTY keeps TTY-aware tools working as expected, including ANSI colors, interactive prompts, progress output, watch mode, and terminal resize handling.
+The plugin does not require Node.js, npm, node-pty, a compiled CLI, or a generated bin directory at runtime.
 
 ## Requirements
 
-- Node.js 24 or newer
 - Zsh
 - Oh My Zsh
 - Glow
-- npm
 
-Install Glow separately if it is not already available on `PATH`.
+Verify Glow is available:
 
-## Install from the dev-toolkit workspace
-
-From the repository root:
-
-```bash
-npm install
-npm run build --workspace @moyarich/auto-glow-md
-npm link --workspace @moyarich/auto-glow-md
-```
-
-The link makes the generated CLI available as:
-
-```bash
-moyarich-auto-glow-md
-```
-
-Verify it is available:
-
-```bash
-command -v moyarich-auto-glow-md
-command -v glow
-```
+    command -v glow
 
 ## Install with sparse checkout
 
-If you only want this package from the `dev-toolkit` monorepo, use Git sparse checkout:
+Clone only this plugin from the dev-toolkit monorepo:
 
-```bash
-git clone --filter=blob:none --sparse \
-  git@github.com:moyarich/dev-toolkit.git \
-  "${ZSH_CUSTOM:-${HOME}/.oh-my-zsh/custom}/dev-toolkit"
+    git clone --filter=blob:none --sparse \
+      git@github.com:moyarich/dev-toolkit.git \
+      "${ZSH_CUSTOM:-${HOME}/.oh-my-zsh/custom}/dev-toolkit"
 
-cd "${ZSH_CUSTOM:-${HOME}/.oh-my-zsh/custom}/dev-toolkit"
-git sparse-checkout set packages/moyarich-auto-glow-md
-```
+    cd "${ZSH_CUSTOM:-${HOME}/.oh-my-zsh/custom}/dev-toolkit"
+    git sparse-checkout set packages/moyarich-auto-glow-md
 
-Then link the plugin directory into the Oh My Zsh custom plugins directory:
+Link the package directly into the Oh My Zsh custom plugin directory:
 
-```bash
-ln -s \
-  "${ZSH_CUSTOM:-${HOME}/.oh-my-zsh/custom}/dev-toolkit/packages/moyarich-auto-glow-md/plugin" \
-  "${ZSH_CUSTOM:-${HOME}/.oh-my-zsh/custom}/plugins/moyarich-auto-glow-md"
-```
+    ln -s \
+      "${ZSH_CUSTOM:-${HOME}/.oh-my-zsh/custom}/dev-toolkit/packages/moyarich-auto-glow-md" \
+      "${ZSH_CUSTOM:-${HOME}/.oh-my-zsh/custom}/plugins/moyarich-auto-glow-md"
 
-The resulting plugin path is:
+Or run the included shell installer:
 
-```text
-$ZSH_CUSTOM/plugins/moyarich-auto-glow-md/
-└── moyarich-auto-glow-md.plugin.zsh
-```
+    cd "${ZSH_CUSTOM:-${HOME}/.oh-my-zsh/custom}/dev-toolkit/packages/moyarich-auto-glow-md"
+    ./install.sh
 
-Add the plugin to `.zshrc`:
+## Enable the plugin
 
-```zsh
-plugins=(
-  git
-  moyarich-auto-glow-md
-)
-```
+Add it to ~/.zshrc:
+
+    plugins=(
+      git
+      moyarich-auto-glow-md
+    )
 
 Reload Zsh:
 
-```bash
-source ~/.zshrc
-```
+    source ~/.zshrc
 
-Because this package also provides the `moyarich-auto-glow-md` CLI, install the package dependencies and build/link the executable from the sparse checkout:
+Oh My Zsh discovers the plugin directly from:
 
-```bash
-cd "${ZSH_CUSTOM:-${HOME}/.oh-my-zsh/custom}/dev-toolkit"
-npm install
-npm run build --workspace @moyarich/auto-glow-md
-npm link --workspace @moyarich/auto-glow-md
-```
+    moyarich-auto-glow-md/
+    ├── moyarich-auto-glow-md.plugin.zsh
+    ├── install.sh
+    ├── README.md
+    └── docs/
 
-## Oh My Zsh usage
+## Usage
 
-Source the plugin using a portable path.
+Run commands normally:
 
-If your shell is started from the `dev-toolkit` repository:
+    git status
+    python script.py
+    go test ./...
+    curl https://example.com
 
-```zsh
-source "${PWD}/packages/moyarich-auto-glow-md/plugin/moyarich-auto-glow-md.plugin.zsh"
-```
+When output looks like Markdown, it is rendered through Glow. Ordinary output is printed as normal text.
 
-For a normal `.zshrc`, define the location of your clone and source the plugin from it:
+Example:
 
-```zsh
-export DEV_TOOLKIT_HOME="${HOME}/path/to/dev-toolkit"
-source "${DEV_TOOLKIT_HOME}/packages/moyarich-auto-glow-md/plugin/moyarich-auto-glow-md.plugin.zsh"
-```
-
-Do not hard-code another user's home directory or machine-specific absolute path into the plugin configuration.
-
-Reload Zsh after changing `.zshrc`:
-
-```bash
-source ~/.zshrc
-```
-
-Verify the ZLE widget is loaded:
-
-```bash
-zle -l | grep moyarich-auto-glow
-```
-
-## CLI usage
-
-The CLI can also be used directly without the ZLE plugin:
-
-```bash
-moyarich-auto-glow-md -- <command>
-```
-
-Examples:
-
-```bash
-moyarich-auto-glow-md -- node script.js
-moyarich-auto-glow-md -- python script.py
-moyarich-auto-glow-md -- npm test
-```
-
-Normally, when the Oh My Zsh plugin is enabled, you do not type the CLI yourself. You continue running commands normally:
-
-```bash
-node script.js
-python script.py
-npm test
-git status
-```
-
-The ZLE integration transparently invokes the CLI for commands that can safely run inside the PTY.
-
-## Markdown example
-
-A program can print Markdown normally:
-
-```js
-console.log(`# Tables
-
-| Project Name | Framework | Language | Status |
-| --- | --- | --- | --- |
-| web-editor | React | TypeScript | Active |`);
-```
-
-Run it normally:
-
-```bash
-node example.js
-```
-
-The heading and table are detected and rendered by Glow.
-
-Ordinary output such as compiler diagnostics, logs, Git output, or plain text is written directly to the terminal.
+    printf '# Build Results\n\n| Package | Status |\n| --- | --- |\n| api | passing |\n'
 
 ## Shell-state commands
 
-Some commands must execute in the current Zsh process instead of the PTY because they change shell state.
+Commands that modify the current shell bypass the capture path, including:
 
-Examples include:
+    cd
+    source
+    .
+    export
+    unset
+    alias
+    unalias
+    setopt
+    unsetopt
+    pushd
+    popd
+    jobs
+    fg
+    bg
+    wait
+    disown
+    exec
+    exit
 
-```text
-cd
-source
-.
-export
-unset
-alias
-unalias
-setopt
-unsetopt
-pushd
-popd
-jobs
-fg
-bg
-wait
-disown
-exec
-exit
-```
+## Runtime model
 
-The plugin bypasses the PTY for these commands.
+    ZLE accept-line
+         |
+         +-- shell-state command -----------> normal Zsh execution
+         |
+         +-- other command
+                |
+                +-- capture output
+                |
+                +-- Markdown? -> glow
+                |
+                +-- otherwise -> print unchanged
 
-## Package layout
-
-```text
-packages/moyarich-auto-glow-md/
-├── bin/                         # generated by npm run build
-├── docs/
-│   └── architecture.md
-├── plugin/
-│   └── moyarich-auto-glow-md.plugin.zsh
-├── src/
-│   ├── cli/
-│   │   └── moyarich-auto-glow-md.ts
-│   ├── markdown.ts
-│   └── pty-runner.ts
-├── test/
-│   └── markdown-terminal-coverage/
-├── package.json
-├── tsconfig.json
-└── vite.config.ts
-```
+There is no Node runtime dependency.
 
 ## Development
 
-Build:
+Syntax-check the shell files:
 
-```bash
-npm run build --workspace @moyarich/auto-glow-md
-```
+    zsh -n moyarich-auto-glow-md.plugin.zsh
+    sh -n install.sh
 
-Type-check:
+Or, from the dev-toolkit workspace:
 
-```bash
-npm run typecheck --workspace @moyarich/auto-glow-md
-```
+    npm test --workspace @moyarich/auto-glow-md
 
-Run tests:
+npm is only used by the monorepo development workflow. It is not required to install or run the Oh My Zsh plugin.
 
-```bash
-npm test --workspace @moyarich/auto-glow-md
-```
+## Current limitation
 
-Run all package checks:
-
-```bash
-npm run checks --workspace @moyarich/auto-glow-md
-```
-
-The TypeScript CLI source is built to:
-
-```text
-bin/moyarich-auto-glow-md.mjs
-```
-
-Terminal and Markdown coverage lives under:
-
-```text
-test/markdown-terminal-coverage
-```
-
-## Architecture
-
-See [docs/architecture.md](docs/architecture.md) for the ZLE and PTY execution flow.
+The shell-native implementation captures command output before deciding whether to render it. Commands that rely heavily on interactive TTY behavior, live progress redraws, or full-screen terminal interfaces should be bypassed or run with the plugin disabled for that command.
