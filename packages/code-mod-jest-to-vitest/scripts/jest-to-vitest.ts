@@ -78,7 +78,7 @@ function mergeVitestImport(
 
 function migrateJestRuntimeApis(rootNode: SgNode<TypeScript>): string {
   const calls = rootNode.findAll({
-    rule: { pattern: "jest.$METHOD($$ARGS)" },
+    rule: { pattern: "jest.$METHOD($$$ARGS)" },
   });
   const timerReferences = rootNode.findAll({
     rule: { pattern: "jest.advanceTimersByTime" },
