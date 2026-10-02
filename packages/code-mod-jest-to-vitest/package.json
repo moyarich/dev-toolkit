@@ -26,8 +26,8 @@
     "validate": "npx codemod workflow validate -w workflow.yaml",
     "jest-to-vitest": "node ./bin/jest-to-vitest.mjs",
     "audit": "node ./bin/jest-to-vitest.mjs --audit-only",
-    "test:jssg": "npx codemod jssg test scripts/jest-to-vitest.ts --language typescript",
-    "test:unit": "vitest run tests/project-migration.test.ts"
+    "test:jssg": "npx codemod jssg test scripts/jest-to-vitest.ts tests/jssg --language typescript",
+    "test:unit": "vitest run tests/unit"
   },
   "repository": {
     "type": "git",
