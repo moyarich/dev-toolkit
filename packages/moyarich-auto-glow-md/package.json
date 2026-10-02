@@ -1,0 +1,19 @@
+{
+  "name": "moyarich-auto-glow-md",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "postinstall": "node bin/fix-helper.mjs",
+    "test": "node --test",
+    "doctor": "node bin/auto-glow.mjs --doctor",
+    "plugin:install": "node bin/manage-plugin.mjs install",
+    "plugin:uninstall": "node bin/manage-plugin.mjs uninstall"
+  },
+  "dependencies": {
+    "node-pty": "1.1.0"
+  }
+}
