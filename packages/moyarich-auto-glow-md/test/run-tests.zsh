@@ -88,6 +88,19 @@ assert_equal "preserves exit status" "7" "$exit_code"
 cli_output="$(MOYARICH_AUTO_GLOW_DISABLE_RENDER=1 zsh "${PACKAGE_DIR}/src/cli/moyarich-auto-glow-md.sh" -- printf '%s' '# CLI works')"
 assert_equal "source shell CLI runs commands" "# CLI works" "$cli_output"
 
+installer_home="$(mktemp -d)"
+trap 'rm -rf "$installer_home"' EXIT
+installer_output="$(HOME="$installer_home" ZSH_CUSTOM="$installer_home/.oh-my-zsh/custom" sh "${PACKAGE_DIR}/install.sh" --quiet)"
+assert_true "installer completes with nounset enabled" test -f "$installer_home/.oh-my-zsh/custom/plugins/moyarich-auto-glow-md/.moyarich-auto-glow-md-install"
+assert_true "installer prints completion guidance" grep -q "Next steps" <<< "$installer_output"
+
+set +e
+invalid_option_output="$(HOME="$installer_home" ZSH_CUSTOM="$installer_home/.oh-my-zsh/custom" sh "${PACKAGE_DIR}/install.sh" --not-a-real-option 2>&1)"
+invalid_option_exit=$?
+set -e
+assert_equal "invalid installer option exits 2" "2" "$invalid_option_exit"
+assert_true "invalid installer option uses error helper" grep -q "Unknown option: --not-a-real-option" <<< "$invalid_option_output"
+
 if (( failures > 0 )); then
   print -u2 -- "$failures test(s) failed"
   exit 1
