@@ -37,16 +37,12 @@ _moyarich_auto_glow_accept_line() {
     return
   fi
 
-  print
-  BUFFER=""
-  zle reset-prompt
-  moyarich_auto_glow_run "$command_line"
-  local exit_code=$?
-
-  # Keep the prompt redraw from overwriting the command's final output line.
-  print
-  zle reset-prompt
-  return "$exit_code"
+  # Replace the accepted buffer with an invocation of the runtime wrapper and
+  # let Zsh's normal accept-line flow execute it. This keeps terminal redraw,
+  # prompt placement, and command completion under ZLE's control instead of
+  # manually executing a command from inside the widget.
+  BUFFER="moyarich_auto_glow_run ${(q)command_line}"
+  zle .accept-line
 }
 
 # Register Enter and Line Feed with the auto-glow ZLE widget.
