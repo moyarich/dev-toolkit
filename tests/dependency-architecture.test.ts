@@ -10,7 +10,7 @@ const config = readFileSync(resolve(repo, ".dependency-cruiser.cjs"), "utf8");
 test("root checks include the pinned dependency architecture scan", () => {
   assert.equal(
     pkg.scripts["deps:architecture"],
-    "npx --yes dependency-cruiser@18.4.0 --config .dependency-cruiser.cjs --output-type err packages apps",
+    "npx --yes -p typescript@6.0.3 -p dependency-cruiser@18.4.0 dependency-cruiser --config .dependency-cruiser.cjs --output-type err packages apps",
   );
   assert.match(pkg.scripts.checks, /npm run deps:architecture$/);
 });
@@ -18,6 +18,10 @@ test("root checks include the pinned dependency architecture scan", () => {
 test("dependency architecture rules block high-signal failures", () => {
   assert.match(config, /name: "no-circular"/);
   assert.match(config, /name: "no-unresolved"/);
+  assert.match(
+    config,
+    /packages\/demo-tools\/src\/vscode\/extension-host\[\.\]cjs/,
+  );
   assert.match(config, /name: "no-undeclared-package-dependencies"/);
 
   for (const rule of [
