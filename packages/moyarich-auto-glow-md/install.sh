@@ -79,6 +79,7 @@ if [ -t 1 ]; then
   COLOR_GREEN='\033[32m'
   COLOR_YELLOW='\033[33m'
   COLOR_RED='\033[31m'
+  COLOR_CYAN='\033[36m'
   COLOR_DIM='\033[2m'
 else
   COLOR_RESET=''
