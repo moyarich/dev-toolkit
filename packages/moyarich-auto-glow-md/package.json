@@ -15,7 +15,7 @@
     "build": "vite build --config vite.config.ts",
     "test": "npm run test:syntax && npm run test:shell",
     "test:shell": "zsh test/run-tests.zsh",
-    "test:dist": "npm run build && zsh -n dist/moyarich-auto-glow-md.plugin.zsh && zsh -n dist/lib/core.zsh && zsh -n dist/bin/moyarich-auto-glow-md.sh && sh -n dist/install.sh && sh -n dist/uninstall.sh && MOYARICH_AUTO_GLOW_DISABLE_RENDER=1 ./dist/bin/moyarich-auto-glow-md.sh -- printf '%s' '# CLI works'",
+    "test:dist": "npm run build && zsh -n dist/moyarich-auto-glow-md.plugin.zsh && zsh -n dist/lib/core.zsh && sh -n dist/lib/logger.sh && test -f dist/lib/logger.sh && zsh -n dist/bin/moyarich-auto-glow-md.sh && sh -n dist/install.sh && sh -n dist/uninstall.sh && MOYARICH_AUTO_GLOW_DISABLE_RENDER=1 ./dist/bin/moyarich-auto-glow-md.sh -- printf '%s' '# CLI works'",
     "plugin:install": "npm run build && sh install.sh",
     "plugin:uninstall": "sh uninstall.sh",
     "test:syntax": "zsh -n moyarich-auto-glow-md.plugin.zsh && zsh -n lib/core.zsh && sh -n lib/logger.sh && zsh -n src/cli/moyarich-auto-glow-md.sh && sh -n install.sh && sh -n uninstall.sh",
