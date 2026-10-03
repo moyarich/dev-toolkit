@@ -21,7 +21,7 @@
     "prebuild": "npm run build --workspace @moyarich/vite-plugin-package-bin && npm run build --workspace @moyarich/web-components",
     "test:workflows": "vitest run --dir tests/workflows",
     "checks": "npm run format:check && npm run lint && npm run typecheck && npm run build && npm test && npm run deps:architecture",
-    "deps:architecture": "npx --yes -p typescript@6.0.3 -p dependency-cruiser@18.4.0 dependency-cruiser --config .dependency-cruiser.cjs --output-type err packages apps"
+    "deps:architecture": "dependency-cruiser --config .dependency-cruiser.cjs --output-type err packages apps"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
