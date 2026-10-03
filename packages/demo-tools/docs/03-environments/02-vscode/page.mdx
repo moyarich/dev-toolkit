@@ -7,7 +7,10 @@ A strategy can prepare a VS Code executable, launch an isolated extension develo
 ```js
 import { chromium } from "playwright-core";
 import * as testElectron from "@vscode/test-electron";
-import { createVSCodeDemoRuntime, prepareVSCodeExecutable } from "@moyarich/demo-tools/vscode";
+import {
+  createVSCodeDemoRuntime,
+  prepareVSCodeExecutable,
+} from "@moyarich/demo-tools/vscode";
 
 const vscodeExecutablePath = await prepareVSCodeExecutable({
   testElectron,
