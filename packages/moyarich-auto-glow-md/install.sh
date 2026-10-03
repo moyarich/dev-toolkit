@@ -180,21 +180,6 @@ verbose_replace() {
     "$DIM" "$2" "$NC"
 }
 
-# Print a success message.
-#
-# Arguments:
-#   $@  Message text.
-success() {
-  printf '%b%s%b\n' "$GREEN" "$*" "$NC"
-}
-
-# Print an informational follow-up message.
-#
-# Arguments:
-#   $@  Message text.
-notice() {
-  printf '%b%s%b\n' "$YELLOW" "$*" "$NC"
-}
 
 ZSH_CUSTOM_DIR="${ZSH_CUSTOM:-${HOME}/.oh-my-zsh/custom}"
 PLUGIN_DIR="${ZSH_CUSTOM_DIR}/plugins/${PLUGIN_NAME}"
