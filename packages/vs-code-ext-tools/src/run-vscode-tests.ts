@@ -6,12 +6,18 @@ import { downloadAndUnzipVSCode } from "@vscode/test-electron";
 
 const CACHE_DIR_NAME = "vscode.test-electron-cache";
 
+/**
+ * Inputs used to resolve the shared VS Code test download cache.
+ */
 export interface VSCodeCachePathOptions {
   env?: NodeJS.ProcessEnv;
   platform?: NodeJS.Platform;
   home?: string;
 }
 
+/**
+ * Options for running VS Code extension tests through `vscode-test`.
+ */
 export interface RunVSCodeTestsOptions extends VSCodeCachePathOptions {
   args?: string[];
   version?: string;
@@ -37,6 +43,12 @@ function defaultCacheRoot(
   return env.XDG_CACHE_HOME ?? pathApi.join(home, ".cache");
 }
 
+/**
+ * Resolves the shared directory used by `@vscode/test-electron` for downloaded
+ * VS Code builds.
+ *
+ * Set `VSCODE_TEST_CACHE` to override the platform default.
+ */
 export function getVSCodeCachePath({
   env = process.env,
   platform = process.platform,
@@ -56,6 +68,12 @@ export function getVSCodeCachePath({
   return pathApi.join(root, CACHE_DIR_NAME);
 }
 
+/**
+ * Spawns `vscode-test` with an already-resolved VS Code executable path.
+ *
+ * The executable path is exposed as `VSCODE_TEST_EXECUTABLE_PATH` so the
+ * consumer's `.vscode-test.ts` can select `useInstallation.fromPath`.
+ */
 export function runVSCodeTest(
   args: string[],
   vscodeExecutablePath: string,
@@ -76,6 +94,10 @@ export function runVSCodeTest(
   });
 }
 
+/**
+ * Downloads or reuses a VS Code build from the shared cache and runs the
+ * consumer's `vscode-test` configuration against that executable.
+ */
 export async function runVSCodeTests({
   args = [],
   env = process.env,
