@@ -17,7 +17,14 @@ typeset -gU path PATH
 path=("${MOYARICH_AUTO_GLOW_PLUGIN_DIR}/bin" $path)
 source "${MOYARICH_AUTO_GLOW_PLUGIN_DIR}/lib/core.zsh"
 
-# Handle the ZLE accept-line event for the current command buffer.
+# Preserve the current accept-line widget before Auto Glow wraps it.
+#
+# Using a widget alias instead of rebinding ^M/^J keeps each keymap intact:
+# keys already mapped to accept-line automatically use the wrapper, while keys
+# intentionally mapped to another widget remain untouched.
+zle -A accept-line _moyarich_auto_glow_previous_accept_line
+
+# Handle the ZLE accept-line widget for the current command buffer.
 #
 # Reads:
 #   BUFFER  Current ZLE command line.
@@ -26,14 +33,15 @@ source "${MOYARICH_AUTO_GLOW_PLUGIN_DIR}/lib/core.zsh"
 #   The wrapped command's exit code for auto-glow commands.
 #
 # Side effects:
-#   Delegates shell-state commands to the normal ZLE accept-line widget.
+#   Delegates empty and shell-state commands to the previously installed
+#   accept-line widget.
 #   Clears and redraws the prompt for wrapped commands.
 #   Executes eligible commands through moyarich_auto_glow_run.
 _moyarich_auto_glow_accept_line() {
   local command_line="$BUFFER"
 
   if [[ -z "$command_line" ]] || moyarich_auto_glow_should_bypass "$command_line"; then
-    zle .accept-line
+    zle _moyarich_auto_glow_previous_accept_line
     return
   fi
 
@@ -46,7 +54,6 @@ _moyarich_auto_glow_accept_line() {
   return "$exit_code"
 }
 
-# Register Enter and Line Feed with the auto-glow ZLE widget.
-zle -N _moyarich_auto_glow_accept_line
-bindkey '^M' _moyarich_auto_glow_accept_line
-bindkey '^J' _moyarich_auto_glow_accept_line
+# Wrap the logical accept-line widget instead of directly rebinding Enter/Line
+# Feed. This preserves custom keymaps and unrelated widgets.
+zle -N accept-line _moyarich_auto_glow_accept_line
