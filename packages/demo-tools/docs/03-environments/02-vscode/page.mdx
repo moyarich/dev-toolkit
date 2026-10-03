@@ -31,3 +31,34 @@ try {
 ```
 
 For presentation components inside VS Code, use the adapters from `@moyarich/demo-tools/components`. They consume the namespaced elements from `@moyarich/web-components` and use CDP evaluation where Trusted Types prevents normal module installation.
+
+
+## Shared VS Code download cache
+
+`prepareVSCodeExecutable()` stores downloaded VS Code test builds in a shared OS cache instead of creating a full VS Code download inside every extension repository.
+
+Default locations:
+
+| Platform | Cache |
+| --- | --- |
+| macOS | `~/Library/Caches/moya-vscode-test` |
+| Linux | `$XDG_CACHE_HOME/moya-vscode-test` or `~/.cache/moya-vscode-test` |
+| Windows | `%LOCALAPPDATA%\\moya-vscode-test` |
+
+Only the downloaded VS Code builds are shared. Each demo run still creates isolated temporary directories for user data, workspace state, and installed extensions.
+
+To print the resolved cache location:
+
+```js
+import { getVSCodeCachePath } from "@moyarich/demo-tools/vscode";
+
+console.log(getVSCodeCachePath());
+```
+
+Override the location when needed:
+
+```sh
+DEMO_TOOLS_VSCODE_CACHE=/path/to/shared/cache demo run
+```
+
+You can also pass `cachePath` directly to `prepareVSCodeExecutable()` for one-off control.
