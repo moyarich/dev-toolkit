@@ -42,6 +42,9 @@ _moyarich_auto_glow_accept_line() {
   zle reset-prompt
   moyarich_auto_glow_run "$command_line"
   local exit_code=$?
+
+  # Keep the prompt redraw from overwriting the command's final output line.
+  print
   zle reset-prompt
   return "$exit_code"
 }
