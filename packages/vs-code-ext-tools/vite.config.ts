@@ -9,12 +9,7 @@ export default defineConfig({
         pattern: "src/cli/**/*.ts",
       },
       emptyOutDir: true,
-      external: [
-        /^@inquirer\//,
-        "@vscode/test-electron",
-        "chalk",
-        "commander",
-      ],
+      external: [/^@inquirer\//, "@vscode/test-electron", "chalk", "commander"],
     }),
   ],
 });
