@@ -89,7 +89,20 @@ test("draft release workflow does not require the release environment", () => {
   assert.doesNotMatch(workflow, /approve-release:/);
 });
 
-test("release drafter uses only supported action inputs", () => {
+test("release drafter keeps push-range selection separate from cumulative release history", () => {
+  // IMPORTANT:
+  // `github.event.before -> github.sha` is used only to decide which package
+  // draft jobs need to run for a push. It must NOT become Release Drafter's
+  // `from:` comparison range.
+  //
+  // Release Drafter must keep rebuilding each package draft cumulatively from
+  // the previous published package release through current `main`. Otherwise,
+  // cancelling an older per-package draft job could drop commits that were
+  // present in the cancelled push but not in the newer push range.
+  //
+  // Invariant:
+  //   package selection = push range
+  //   release notes     = previous package release -> main
   assert.doesNotMatch(
     workflow,
     /uses: release-drafter\/release-drafter@v7\.7\.0[\s\S]*?\n\s+from:/,
