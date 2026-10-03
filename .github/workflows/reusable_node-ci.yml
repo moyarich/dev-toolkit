@@ -171,7 +171,7 @@ jobs:
           if [ "$WORKSPACE" = "." ]; then
             npm test
           else
-            npm test --workspace "$WORKSPACE"
+            npm run test:ci --workspace "$WORKSPACE" --if-present || npm test --workspace "$WORKSPACE"
           fi
       - name: Lint
         env:
