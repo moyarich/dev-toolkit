@@ -6,11 +6,27 @@ It runs directly from Zsh and depends on Glow for Markdown rendering. There is n
 
 ## Flow
 
+The default runtime path is explicit:
+
+    command
+       |
+       +-- moyarich-auto-glow-md CLI
+              |
+              +-- capture command output
+              |
+              +-- Markdown detected -> glow
+              |
+              +-- otherwise -> print unchanged
+
+Optional automatic interception is enabled with `MOYARICH_AUTO_GLOW_INTERCEPT=1`:
+
     ZLE accept-line
           |
-          +-- shell-state command -----------> normal Zsh execution
+          +-- shell-state command -----------> preserved accept-line widget
           |
           +-- other command
+                 |
+                 +-- moyarich_auto_glow_run
                  |
                  +-- capture command output
                  |
@@ -18,7 +34,7 @@ It runs directly from Zsh and depends on Glow for Markdown rendering. There is n
                  |
                  +-- otherwise -> print unchanged
 
-The plugin bypasses commands that must modify the current shell, such as cd, export, source, alias, setopt, pushd, jobs, fg, bg, exec, and exit.
+The plugin bypasses commands that must modify the current shell, such as cd, export, source, alias, setopt, pushd, jobs, fg, bg, exec, and exit. Detection also handles leading environment assignments and supported Zsh precommand modifiers.
 
 ## Recursion guard
 
@@ -68,4 +84,8 @@ The plugin directory can therefore be symlinked directly into:
 
 ## Tradeoff
 
-The shell-native implementation captures output before classifying it. This keeps installation and runtime dependencies minimal, but it is less suitable for commands that require continuous TTY streaming or full-screen terminal behavior.
+The shell-native implementation captures stdout and stderr together before classifying it. It preserves text output and trailing newlines, but intentionally loses stdout/stderr stream separation and cannot represent NUL bytes in shell variables. This keeps installation and runtime dependencies minimal, but it is not suitable for binary output, continuous TTY streaming, or full-screen terminal behavior.
+
+## ZLE compatibility
+
+When interception is enabled, the plugin aliases the existing `accept-line` widget before binding Enter to auto-glow. Shell-state commands and wrapped commands both delegate back through that preserved widget, so user-defined ZLE behavior remains in the execution path.

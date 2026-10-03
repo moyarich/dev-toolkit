@@ -1,6 +1,6 @@
 # moyarich-auto-glow-md
 
-Shell-native Oh My Zsh plugin that automatically renders Markdown-looking command output with Glow.
+Shell-native Oh My Zsh Markdown renderer powered by Glow. The CLI is always available after the plugin loads; automatic Enter-key interception is opt-in.
 
 The plugin does not require Node.js, npm, node-pty, a compiled CLI, or a generated bin directory at runtime.
 
@@ -49,7 +49,8 @@ The installed layout is:
     ├── bin/
     │   └── moyarich-auto-glow-md
     ├── lib/
-    │   └── core.zsh
+    │   ├── core.zsh
+    │   └── logger.sh
     ├── moyarich-auto-glow-md.plugin.zsh
     ├── install.sh
     ├── uninstall.sh
@@ -61,7 +62,7 @@ From the monorepo workspace:
 
     npm run plugin:install --workspace @moyarich/auto-glow-md
 
-The installer always prints the next steps: enable the plugin in `~/.zshrc`, reload the current shell with `source ~/.zshrc`, verify the command with `command -v moyarich-auto-glow-md`, and run a quick smoke test.
+The installer prints context-aware next steps: it tells you to enable the plugin with `omz plugin enable moyarich-auto-glow-md` when needed, or reload Oh My Zsh with `omz reload` when it is already enabled, followed by a CLI smoke test.
 
 Installation is verbose by default and prints the resolved install mode, source package path, Oh My Zsh destination, and each copy/link operation.
 
@@ -114,36 +115,42 @@ Reload Zsh:
 
     source ~/.zshrc
 
-Oh My Zsh discovers the plugin directly from:
+Oh My Zsh discovers the installed runtime from:
 
     moyarich-auto-glow-md/
-    ├── src/
-    │   └── cli/
-    │       └── moyarich-auto-glow-md.sh
+    ├── bin/
+    │   └── moyarich-auto-glow-md
     ├── lib/
-    │   └── core.zsh
-    ├── test/
-    │   └── run-tests.zsh
+    │   ├── core.zsh
+    │   └── logger.sh
     ├── moyarich-auto-glow-md.plugin.zsh
     ├── install.sh
     ├── uninstall.sh
-    ├── README.md
-    └── docs/
+    └── README.md
 
 ## Usage
 
-Run commands normally:
+The default mode is explicit and non-invasive. Run a command through the CLI:
 
-    git status
-    python script.py
-    go test ./...
-    curl https://example.com
+    moyarich-auto-glow-md -- git status
+    moyarich-auto-glow-md -- python script.py
+    moyarich-auto-glow-md -- go test ./...
 
-When output looks like Markdown, it is rendered through Glow. Ordinary output is printed as normal text.
+When captured output looks like Markdown, it is rendered through Glow. Ordinary output is printed as normal text.
 
 Example:
 
-    printf '# Build Results\n\n| Package | Status |\n| --- | --- |\n| api | passing |\n'
+    moyarich-auto-glow-md -- printf '# Build Results\n\n| Package | Status |\n| --- | --- |\n| api | passing |\n'
+
+### Opt-in automatic interception
+
+To have eligible commands typed at the prompt automatically pass through auto-glow, set this before Oh My Zsh loads plugins:
+
+    export MOYARICH_AUTO_GLOW_INTERCEPT=1
+
+With interception enabled, commands that need to modify the current shell are bypassed and execute normally. The plugin preserves the existing ZLE `accept-line` widget and delegates to it after deciding whether to wrap a command.
+
+Interception is experimental and disabled by default because capturing command output changes TTY and streaming behavior.
 
 ## Shell-state commands
 
@@ -170,11 +177,19 @@ Commands that modify the current shell bypass the capture path, including:
 
 ## Runtime model
 
+Default:
+
+    command -> moyarich-auto-glow-md CLI -> capture -> classify -> render/print
+
+With `MOYARICH_AUTO_GLOW_INTERCEPT=1`:
+
     ZLE accept-line
          |
-         +-- shell-state command -----------> normal Zsh execution
+         +-- shell-state command -----------> preserved accept-line widget
          |
          +-- other command
+                |
+                +-- moyarich_auto_glow_run
                 |
                 +-- capture output
                 |
@@ -212,15 +227,16 @@ The build assembles:
     ├── bin/
     │   └── moyarich-auto-glow-md.sh
     ├── lib/
-    │   └── core.zsh
+    │   ├── core.zsh
+    │   └── logger.sh
     ├── moyarich-auto-glow-md.plugin.zsh
     ├── install.sh
     ├── uninstall.sh
     └── README.md
 
-The shell CLI is copied from `src/cli/` into `dist/bin/` and made executable. The runtime library, plugin entry file, installer, and README are copied into `dist/`.
+The shell CLI is copied from `src/cli/` into `dist/bin/` and made executable. Runtime libraries, the plugin entry file, installer, uninstaller, and README are copied into `dist/`.
 
-Only `dist/` is included in the package tarball.
+The published package includes `dist/` plus the package documentation, top-level README, and changelog declared in `package.json`.
 
 You can validate the assembled runtime package with:
 
@@ -232,6 +248,7 @@ Syntax-check the shell files and run the behavioral tests:
 
     zsh -n moyarich-auto-glow-md.plugin.zsh
     zsh -n lib/core.zsh
+    sh -n lib/logger.sh
     zsh -n src/cli/moyarich-auto-glow-md.sh
     sh -n install.sh
     sh -n uninstall.sh
@@ -251,7 +268,7 @@ npm is only a monorepo development convenience. It is not required to install or
 
 ## Current limitation
 
-The shell-native implementation captures command output before deciding whether to render it. Commands that rely heavily on interactive TTY behavior, live progress redraws, or full-screen terminal interfaces should be bypassed or run with the plugin disabled for that command.
+The shell-native implementation captures stdout and stderr together before deciding whether to render it. Text output, including trailing newlines, is preserved through the capture path, but stream separation is intentionally lost and shell variables cannot represent NUL bytes. Commands that rely heavily on interactive TTY behavior, live progress redraws, binary output, or full-screen terminal interfaces should be run outside the capture path.
 
 ## Troubleshooting plugin discovery
 

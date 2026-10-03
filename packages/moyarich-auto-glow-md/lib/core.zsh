@@ -22,9 +22,40 @@ typeset -ga MOYARICH_AUTO_GLOW_BYPASS_COMMANDS=(
 #   1 when the command may run through the auto-glow runtime.
 moyarich_auto_glow_should_bypass() {
   local command_line="$1"
-  local first_word="${${(z)command_line}[1]}"
+  local -a words
+  words=(${(z)command_line})
 
-  [[ -z "$first_word" ]] && return 0
+  (( ${#words[@]} == 0 )) && return 0
+
+  local index=1
+  local token
+
+  # Skip leading environment assignments so shell-state commands such as
+  # `FOO=bar cd /tmp` still execute in the current interactive shell.
+  while (( index <= ${#words[@]} )); do
+    token="${words[index]}"
+    [[ "$token" =~ '^[A-Za-z_][A-Za-z0-9_]*=' ]] || break
+    (( index += 1 ))
+  done
+
+  (( index > ${#words[@]} )) && return 1
+
+  # Zsh precommand modifiers do not identify the command that ultimately
+  # executes. Walk past the modifiers that are safe to inspect.
+  while (( index <= ${#words[@]} )); do
+    token="${words[index]}"
+    case "$token" in
+      noglob|nocorrect|time)
+        (( index += 1 ))
+        ;;
+      *)
+        break
+        ;;
+    esac
+  done
+
+  (( index > ${#words[@]} )) && return 1
+  local first_word="${words[index]}"
 
   local bypass
   for bypass in "${MOYARICH_AUTO_GLOW_BYPASS_COMMANDS[@]}"; do
@@ -72,14 +103,14 @@ moyarich_auto_glow_render() {
   local output="$1"
 
   if [[ -n "${MOYARICH_AUTO_GLOW_DISABLE_RENDER:-}" ]]; then
-    print -r -- "$output"
+    print -rn -- "$output"
     return
   fi
 
-  if moyarich_auto_glow_looks_like_markdown "$output" && (( $+commands[glow] )); then
-    print -r -- "$output" | glow -
+  if moyarich_auto_glow_looks_like_markdown "$output" && command -v glow >/dev/null 2>&1; then
+    print -rn -- "$output" | command glow -
   else
-    print -r -- "$output"
+    print -rn -- "$output"
   fi
 }
 
@@ -97,13 +128,29 @@ moyarich_auto_glow_render() {
 #
 # Side effects:
 #   Captures stdout and stderr together, then writes the rendered result.
+#   Preserves trailing newlines in captured text. As with shell variables in
+#   general, NUL bytes cannot be represented by this capture model.
 moyarich_auto_glow_run() {
   local command_line="$1"
   local output
   local exit_code
+  local sentinel="__MOYARICH_AUTO_GLOW_CAPTURE_END__"
 
-  MOYARICH_AUTO_GLOW_CHILD=1 output="$(eval "$command_line" 2>&1)"
+  # Command substitution normally removes trailing newlines. Append a
+  # non-newline sentinel inside the substitution, then remove only that
+  # sentinel afterwards so the command's trailing newlines are retained.
+  output="$(
+    MOYARICH_AUTO_GLOW_CHILD=1
+    export MOYARICH_AUTO_GLOW_CHILD
+
+    eval "$command_line" 2>&1
+    exit_code=$?
+
+    print -rn -- "$sentinel"
+    exit "$exit_code"
+  )"
   exit_code=$?
+  output="${output%$sentinel}"
 
   moyarich_auto_glow_render "$output"
   return "$exit_code"

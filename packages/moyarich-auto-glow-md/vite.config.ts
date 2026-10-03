@@ -56,6 +56,7 @@ function assembleRuntimePackage(): Plugin {
       await Promise.all([
         copyFile(resolve(root, "src/cli/moyarich-auto-glow-md.sh"), cli),
         copyFile(resolve(root, "lib/core.zsh"), resolve(lib, "core.zsh")),
+        copyFile(resolve(root, "lib/logger.sh"), resolve(lib, "logger.sh")),
         copyFile(
           resolve(root, "moyarich-auto-glow-md.plugin.zsh"),
           resolve(dist, "moyarich-auto-glow-md.plugin.zsh"),

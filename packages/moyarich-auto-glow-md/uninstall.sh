@@ -14,21 +14,25 @@
 set -eu
 
 PLUGIN_NAME="moyarich-auto-glow-md"
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+
+. "${SCRIPT_DIR}/lib/logger.sh"
+
 ZSH_CUSTOM_DIR="${ZSH_CUSTOM:-${HOME}/.oh-my-zsh/custom}"
 PLUGIN_DIR="${ZSH_CUSTOM_DIR}/plugins/${PLUGIN_NAME}"
 MARKER="${PLUGIN_DIR}/.moyarich-auto-glow-md-install"
 
 if [ -L "${PLUGIN_DIR}" ]; then
   rm "${PLUGIN_DIR}"
-  printf '%s\n' "Removed legacy plugin symlink: ${PLUGIN_DIR}"
+  logger ACTION "Removed legacy plugin symlink: ${PLUGIN_DIR}"
 elif [ -d "${PLUGIN_DIR}" ]; then
   if [ ! -f "${MARKER}" ]; then
-    printf '%s\n' "Refusing to remove unmanaged plugin directory: ${PLUGIN_DIR}" >&2
+    logger ERROR "Refusing to remove unmanaged plugin directory: ${PLUGIN_DIR}"
     exit 1
   fi
 
   rm -rf "${PLUGIN_DIR}"
-  printf '%s\n' "Removed plugin: ${PLUGIN_DIR}"
+  logger PIPELINE "Removed plugin: ${PLUGIN_DIR}"
 else
-  printf '%s\n' "Plugin is not installed: ${PLUGIN_DIR}"
+  logger INFO "Plugin is not installed: ${PLUGIN_DIR}"
 fi

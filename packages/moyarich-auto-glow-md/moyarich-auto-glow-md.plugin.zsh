@@ -9,6 +9,9 @@
 # Environment:
 #   MOYARICH_AUTO_GLOW_CHILD
 #     Internal recursion guard. When set, this plugin returns immediately.
+#   MOYARICH_AUTO_GLOW_INTERCEPT
+#     Set to 1 to opt into experimental Enter-key interception.
+#     Disabled by default so normal shell commands are never rewritten.
 
 [[ -n "${MOYARICH_AUTO_GLOW_CHILD:-}" ]] && return
 
@@ -26,27 +29,35 @@ source "${MOYARICH_AUTO_GLOW_PLUGIN_DIR}/lib/core.zsh"
 #   The wrapped command's exit code for auto-glow commands.
 #
 # Side effects:
-#   Delegates shell-state commands to the normal ZLE accept-line widget.
-#   Clears and redraws the prompt for wrapped commands.
-#   Executes eligible commands through moyarich_auto_glow_run.
+#   Delegates shell-state commands to the accept-line widget that was active
+#   before auto-glow registered its interceptor.
+#   Rewrites eligible commands to execute through moyarich_auto_glow_run.
 _moyarich_auto_glow_accept_line() {
   local command_line="$BUFFER"
 
   if [[ -z "$command_line" ]] || moyarich_auto_glow_should_bypass "$command_line"; then
-    zle .accept-line
+    zle _moyarich_auto_glow_original_accept_line
     return
   fi
 
-  print
-  BUFFER=""
-  zle reset-prompt
-  moyarich_auto_glow_run "$command_line"
-  local exit_code=$?
-  zle reset-prompt
-  return "$exit_code"
+  # Replace the accepted buffer with an invocation of the runtime wrapper and
+  # let Zsh's normal accept-line flow execute it. This keeps terminal redraw,
+  # prompt placement, and command completion under ZLE's control instead of
+  # manually executing a command from inside the widget.
+  BUFFER="moyarich_auto_glow_run ${(q)command_line}"
+  zle _moyarich_auto_glow_original_accept_line
 }
 
-# Register Enter and Line Feed with the auto-glow ZLE widget.
-zle -N _moyarich_auto_glow_accept_line
-bindkey '^M' _moyarich_auto_glow_accept_line
-bindkey '^J' _moyarich_auto_glow_accept_line
+# Register the experimental ZLE interceptor only when explicitly enabled.
+#
+# Default behavior is intentionally non-invasive: the plugin adds its bin/
+# directory to PATH and exposes the moyarich-auto-glow-md CLI, but it does not
+# rewrite normal commands typed into the terminal.
+if [[ "${MOYARICH_AUTO_GLOW_INTERCEPT:-0}" == "1" ]]; then
+  # Preserve the current accept-line widget so custom ZLE behavior remains in
+  # the execution path after auto-glow wraps an eligible command.
+  zle -A accept-line _moyarich_auto_glow_original_accept_line
+  zle -N _moyarich_auto_glow_accept_line
+  bindkey '^M' _moyarich_auto_glow_accept_line
+  bindkey '^J' _moyarich_auto_glow_accept_line
+fi
