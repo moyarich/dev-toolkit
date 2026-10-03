@@ -108,7 +108,7 @@ installer_home="$(mktemp -d)"
 trap 'rm -rf "$installer_home"' EXIT
 installer_output="$(HOME="$installer_home" ZSH_CUSTOM="$installer_home/.oh-my-zsh/custom" sh "${PACKAGE_DIR}/install.sh" --quiet)"
 assert_true "installer completes with nounset enabled" test -f "$installer_home/.oh-my-zsh/custom/plugins/moyarich-auto-glow-md/.moyarich-auto-glow-md-install"
-assert_equal "installer defines COLOR_CYAN in both TTY branches" "2" "$(grep -c "COLOR_CYAN=" "${PACKAGE_DIR}/install.sh")"
+assert_equal "installer initializes CYAN in both TTY branches" "2" "$(grep -c "^  CYAN=" "${PACKAGE_DIR}/install.sh")"
 assert_true "installer prints completion guidance" grep -q "Next steps" <<< "$installer_output"
 
 verbose_installer_home="$(mktemp -d)"
@@ -125,7 +125,7 @@ invalid_option_output="$(HOME="$installer_home" ZSH_CUSTOM="$installer_home/.oh-
 invalid_option_exit=$?
 set -e
 assert_equal "invalid installer option exits 2" "2" "$invalid_option_exit"
-assert_true "invalid installer option uses error helper" grep -q "Unknown option: --not-a-real-option" <<< "$invalid_option_output"
+assert_true "invalid installer option uses logger" grep -q "ERROR:.*Unknown option: --not-a-real-option" <<< "$invalid_option_output"
 
 if (( failures > 0 )); then
   print -u2 -- "$failures test(s) failed"
