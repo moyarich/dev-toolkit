@@ -49,7 +49,17 @@ test("allows an explicit cache override", () => {
     getVSCodeCachePath({
       platform: "linux",
       home: "/home/moya",
-      env: { DEMO_TOOLS_VSCODE_CACHE: "/shared/vscode-cache" },
+      env: { VSCODE_TEST_CACHE: "/shared/vscode-cache" },
     }),
   ).toBe("/shared/vscode-cache");
+});
+
+test("keeps the demo-tools cache override for compatibility", () => {
+  expect(
+    getVSCodeCachePath({
+      platform: "linux",
+      home: "/home/moya",
+      env: { DEMO_TOOLS_VSCODE_CACHE: "/legacy/vscode-cache" },
+    }),
+  ).toBe("/legacy/vscode-cache");
 });
