@@ -50,12 +50,15 @@ The installed layout is:
     │   └── moyarich-auto-glow-md
     ├── lib/
     │   └── core.zsh
+    ├── _glow                    # generated Glow Zsh completion
     ├── moyarich-auto-glow-md.plugin.zsh
     ├── install.sh
     ├── uninstall.sh
     └── README.md
 
 The plugin adds its own `bin/` directory to Zsh's `PATH` when Oh My Zsh loads it, so no separate `~/.local/bin` installation is required.
+
+When Glow is available during installation, the installer also runs `glow completion zsh` and writes the generated `_glow` file into the managed plugin directory. Oh My Zsh adds enabled plugin directories to `fpath` before initializing completion, so no separate `compinit` configuration or `.zshrc` completion snippet is needed. If Glow is not available, installation continues and reports that completion was skipped; rerun the installer after installing Glow.
 
 From the monorepo workspace:
 
@@ -245,7 +248,7 @@ Or run only the behavioral shell tests:
 
     npm run test:shell --workspace @moyarich/auto-glow-md
 
-The tests exercise Markdown detection, bypass behavior, command output, exit-status preservation, and the source shell CLI. `test:dist` validates the assembled `dist/` runtime package, including the generated CLI.
+The tests exercise Markdown detection, bypass behavior, command output, exit-status preservation, the source shell CLI, and installer generation of Glow's native Zsh completion. `test:dist` validates the assembled `dist/` runtime package, including the generated CLI.
 
 npm is only a monorepo development convenience. It is not required to install or run the plugin or CLI.
 

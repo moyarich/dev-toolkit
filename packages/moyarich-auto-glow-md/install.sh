@@ -34,6 +34,7 @@
 #   $ZSH_CUSTOM/plugins/moyarich-auto-glow-md/
 #   ├── bin/moyarich-auto-glow-md
 #   ├── lib/core.zsh
+#   ├── _glow                    # generated when Glow is available
 #   ├── moyarich-auto-glow-md.plugin.zsh
 #   ├── install.sh
 #   ├── uninstall.sh
@@ -77,6 +78,7 @@ if [ -t 1 ]; then
   COLOR_RESET='\033[0m'
   COLOR_BOLD='\033[1m'
   COLOR_GREEN='\033[32m'
+  COLOR_CYAN='\033[36m'
   COLOR_YELLOW='\033[33m'
   COLOR_RED='\033[31m'
   COLOR_DIM='\033[2m'
@@ -84,6 +86,7 @@ else
   COLOR_RESET=''
   COLOR_BOLD=''
   COLOR_GREEN=''
+  COLOR_CYAN=''
   COLOR_YELLOW=''
   COLOR_RED=''
   COLOR_DIM=''
@@ -240,6 +243,30 @@ case "${MODE}" in
     install_symlink
     ;;
 esac
+
+# Generate Glow's native Zsh completion in the plugin directory. Oh My Zsh
+# adds enabled plugin directories to fpath before initializing completion, so
+# no ~/.zshrc edits or separate compinit setup are required.
+install_glow_completion() {
+  if ! command -v glow >/dev/null 2>&1; then
+    notice "Glow not found; skipped Glow Zsh completion."
+    notice "After installing Glow, rerun this installer to enable completion."
+    return 0
+  fi
+
+  completion_file="${PLUGIN_DIR}/_glow"
+  verbose "Generate Glow Zsh completion: ${completion_file}"
+
+  if glow completion zsh > "${completion_file}"; then
+    success "Installed Glow Zsh completion"
+    printf '  %s\n' "${completion_file}"
+  else
+    rm -f "${completion_file}"
+    notice "Glow completion generation failed; plugin installation is still usable."
+  fi
+}
+
+install_glow_completion
 
 printf '%s\n' ""
 notice "Next steps"

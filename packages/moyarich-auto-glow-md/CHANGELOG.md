@@ -4,6 +4,9 @@
 
 ### Added
 
+- Automatic installation of Glow's native Zsh completion into the managed Oh My Zsh plugin directory when Glow is available.
+- Installer coverage verifying that `glow completion zsh` produces the `_glow` completion file.
+
 - Shell-native Oh My Zsh plugin that detects Markdown-like command output and renders it through Glow.
 - Bundled CLI for running commands through the same Markdown detection and rendering pipeline.
 - Safe bypass rules for shell-state commands such as `cd`, `source`, `export`, aliases, job control, and shell exit.
