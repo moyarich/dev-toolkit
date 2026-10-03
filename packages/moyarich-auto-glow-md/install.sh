@@ -45,6 +45,70 @@ PLUGIN_NAME="moyarich-auto-glow-md"
 MODE="copy"
 VERBOSE=1
 
+# Output colors. Keep every value initialized so logging remains safe with
+# `set -u` in both interactive and non-interactive environments.
+if [ -t 1 ]; then
+  NC='\033[0m'
+  BOLD='\033[1m'
+  RED='\033[1;31m'
+  DARK_RED='\033[0;31m'
+  GREEN='\033[1;32m'
+  YELLOW='\033[1;33m'
+  DARK_YELLOW='\033[0;33m'
+  BLUE='\033[1;34m'
+  PURPLE='\033[1;35m'
+  CYAN='\033[1;36m'
+  WHITE='\033[1;37m'
+  DIM='\033[2m'
+else
+  NC=''
+  BOLD=''
+  RED=''
+  DARK_RED=''
+  GREEN=''
+  YELLOW=''
+  DARK_YELLOW=''
+  BLUE=''
+  PURPLE=''
+  CYAN=''
+  WHITE=''
+  DIM=''
+fi
+
+# Print a formatted log message.
+#
+# Arguments:
+#   $1  Log type: SECTION, PIPELINE, INFO, ACTION, WARNING, or ERROR.
+#   $2  Message text.
+logger() {
+  log_type="$1"
+  message="${2:-}"
+
+  case "$log_type" in
+    SECTION)
+      printf '\n%b%s%b\n\n' "$PURPLE" "$message" "$NC"
+      ;;
+    PIPELINE)
+      printf '%b%s%b\n' "$GREEN" "$message" "$NC"
+      ;;
+    INFO)
+      printf '%bINFO:%b   %s\n' "$WHITE" "$NC" "$message"
+      ;;
+    ACTION)
+      printf '%bACTION:%b %b%s%b\n' "$YELLOW" "$NC" "$DARK_YELLOW" "$message" "$NC"
+      ;;
+    WARNING)
+      printf '%bWARNING:%b %b%s%b\n' "$YELLOW" "$NC" "$DARK_YELLOW" "$message" "$NC" >&2
+      ;;
+    ERROR)
+      printf '%bERROR:%b  %b%s%b\n' "$RED" "$NC" "$DARK_RED" "$message" "$NC" >&2
+      ;;
+    *)
+      printf '%b*%b %b%s%b%s%b\n' "$GREEN" "$NC" "$YELLOW" "$log_type" "$CYAN" "$message" "$NC"
+      ;;
+  esac
+}
+
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --copy)
@@ -64,40 +128,13 @@ while [ "$#" -gt 0 ]; do
       exit 0
       ;;
     *)
-      error "Unknown option: $1"
+      logger ERROR "Unknown option: $1"
       printf '%s\n' "Usage: ./install.sh [--copy|--symlink] [--verbose|--quiet]" >&2
       exit 2
       ;;
   esac
   shift
 done
-
-# Colors are enabled only for interactive terminal output.
-if [ -t 1 ]; then
-  COLOR_RESET='\033[0m'
-  COLOR_BOLD='\033[1m'
-  COLOR_GREEN='\033[32m'
-  COLOR_YELLOW='\033[33m'
-  COLOR_RED='\033[31m'
-  COLOR_CYAN='\033[36m'
-  COLOR_DIM='\033[2m'
-else
-  COLOR_RESET=''
-  COLOR_BOLD=''
-  COLOR_GREEN=''
-  COLOR_YELLOW=''
-  COLOR_RED=''
-  COLOR_CYAN=''
-  COLOR_DIM=''
-fi
-
-# Print an error message.
-#
-# Arguments:
-#   $@  Message text.
-error() {
-  printf '%b%s%b\n' "$COLOR_RED" "$*" "$COLOR_RESET" >&2
-}
 
 # Print a concise verbose label/value pair.
 #
@@ -107,8 +144,8 @@ error() {
 verbose_value() {
   [ "$VERBOSE" -eq 1 ] || return 0
   printf '%b%s%b %b%s%b\n' \
-    "$COLOR_CYAN" "$1" "$COLOR_RESET" \
-    "$COLOR_DIM" "$2" "$COLOR_RESET"
+    "$CYAN" "$1" "$NC" \
+    "$DIM" "$2" "$NC"
 }
 
 # Print a concise verbose section heading.
@@ -118,7 +155,7 @@ verbose_value() {
 verbose_heading() {
   [ "$VERBOSE" -eq 1 ] || return 0
   printf '%s\n' ""
-  printf '%b%s%b\n' "$COLOR_GREEN" "$1" "$COLOR_RESET"
+  printf '%b%s%b\n' "$GREEN" "$1" "$NC"
 }
 
 # Print one installed file relative to the plugin destination.
@@ -128,7 +165,7 @@ verbose_heading() {
 verbose_file() {
   [ "$VERBOSE" -eq 1 ] || return 0
   relative_path="${1#"$PLUGIN_DIR"/}"
-  printf '  %b%s%b\n' "$COLOR_DIM" "$relative_path" "$COLOR_RESET"
+  printf '  %b%s%b\n' "$DIM" "$relative_path" "$NC"
 }
 
 # Print a verbose destructive/replacement operation.
@@ -139,8 +176,8 @@ verbose_file() {
 verbose_replace() {
   [ "$VERBOSE" -eq 1 ] || return 0
   printf '%b%s%b %b%s%b\n' \
-    "$COLOR_YELLOW" "$1" "$COLOR_RESET" \
-    "$COLOR_DIM" "$2" "$COLOR_RESET"
+    "$YELLOW" "$1" "$NC" \
+    "$DIM" "$2" "$NC"
 }
 
 # Print a success message.
@@ -148,7 +185,7 @@ verbose_replace() {
 # Arguments:
 #   $@  Message text.
 success() {
-  printf '%b%s%b\n' "$COLOR_GREEN" "$*" "$COLOR_RESET"
+  printf '%b%s%b\n' "$GREEN" "$*" "$NC"
 }
 
 # Print an informational follow-up message.
@@ -156,7 +193,7 @@ success() {
 # Arguments:
 #   $@  Message text.
 notice() {
-  printf '%b%s%b\n' "$COLOR_YELLOW" "$*" "$COLOR_RESET"
+  printf '%b%s%b\n' "$YELLOW" "$*" "$NC"
 }
 
 ZSH_CUSTOM_DIR="${ZSH_CUSTOM:-${HOME}/.oh-my-zsh/custom}"
@@ -173,7 +210,7 @@ elif [ -f "${SCRIPT_DIR}/bin/${PLUGIN_NAME}.sh" ]; then
   RUNTIME_DIR="${SCRIPT_DIR}"
   CLI_SOURCE="${SCRIPT_DIR}/bin/${PLUGIN_NAME}.sh"
 else
-  error "Unable to locate the ${PLUGIN_NAME} runtime files."
+  logger ERROR "Unable to locate the ${PLUGIN_NAME} runtime files."
   exit 1
 fi
 
@@ -187,7 +224,7 @@ prepare_plugin_dir() {
     rm "${PLUGIN_DIR}"
   elif [ -e "${PLUGIN_DIR}" ]; then
     if [ ! -f "${MARKER}" ]; then
-      error "Refusing to replace unmanaged plugin directory: ${PLUGIN_DIR}"
+      logger ERROR "Refusing to replace unmanaged plugin directory: ${PLUGIN_DIR}"
       exit 1
     fi
 
@@ -238,7 +275,7 @@ install_copy() {
   chmod 0755 "${PLUGIN_DIR}/bin/moyarich-auto-glow-md"
 
   [ "$VERBOSE" -eq 0 ] || printf '%s\n' ""
-  success "Installed plugin successfully"
+  logger PIPELINE "Installed plugin successfully"
 }
 
 # Install development symlinks inside the normal Oh My Zsh plugin directory.
@@ -259,7 +296,7 @@ install_symlink() {
   printf '%s\n' "symlink" > "${MARKER}"
 
   printf '%s\n' ""
-  success "Installed plugin successfully"
+  logger PIPELINE "Installed plugin successfully"
 }
 
 case "${MODE}" in
@@ -274,24 +311,24 @@ esac
 ZSHRC="${ZDOTDIR:-$HOME}/.zshrc"
 
 printf '%s\n' ""
-notice "Next steps"
+logger INFO "Next steps"
 printf '%s\n' ""
 
 if [ -f "$ZSHRC" ] && grep -Eq "(^|[[:space:]()])${PLUGIN_NAME}([[:space:]()]|$)" "$ZSHRC"; then
-  printf '%b%s%b\n' "$COLOR_YELLOW" "Plugin is installed and enabled." "$COLOR_RESET"
+  printf '%b%s%b\n' "$YELLOW" "Plugin is installed and enabled." "$NC"
   printf '%s\n' ""
-  printf '%b%s%b\n' "$COLOR_BOLD" "Reload Oh My Zsh to load this installed version:" "$COLOR_RESET"
+  printf '%b%s%b\n' "$BOLD" "Reload Oh My Zsh to load this installed version:" "$NC"
   printf '%s\n' "   omz reload"
   printf '%s\n' ""
-  printf '%b%s%b\n' "$COLOR_BOLD" "Then test it:" "$COLOR_RESET"
+  printf '%b%s%b\n' "$BOLD" "Then test it:" "$NC"
   printf '%s\n' "   ${PLUGIN_NAME} -- echo '# Hello from auto-glow'"
 else
-  printf '%b%s%b\n' "$COLOR_YELLOW" "Plugin is installed, but not enabled in Oh My Zsh." "$COLOR_RESET"
+  printf '%b%s%b\n' "$YELLOW" "Plugin is installed, but not enabled in Oh My Zsh." "$NC"
   printf '%s\n' ""
-  printf '%b%s%b\n' "$COLOR_BOLD" "Enable it with Oh My Zsh:" "$COLOR_RESET"
+  printf '%b%s%b\n' "$BOLD" "Enable it with Oh My Zsh:" "$NC"
   printf '%s\n' "   omz plugin enable ${PLUGIN_NAME}"
   printf '%s\n' ""
-  printf '%b%s%b\n' "$COLOR_BOLD" "Then test it:" "$COLOR_RESET"
+  printf '%b%s%b\n' "$BOLD" "Then test it:" "$NC"
   printf '%s\n' "   ${PLUGIN_NAME} -- echo '# Hello from auto-glow'"
 fi
 printf '%s\n' ""
