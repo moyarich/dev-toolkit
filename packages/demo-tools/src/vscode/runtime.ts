@@ -1,4 +1,5 @@
 import { access, mkdir, rm, writeFile } from "node:fs/promises";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createVSCodeEnvironment } from "./environment.ts";
@@ -38,13 +39,50 @@ async function ensureExtension({
   await access(path.join(developmentPath, "package.json"));
 }
 
+export interface VSCodeCachePathOptions {
+  platform?: NodeJS.Platform;
+  homeDirectory?: string;
+  environment?: NodeJS.ProcessEnv;
+}
+
+/**
+ * Returns the shared cache directory used for downloaded VS Code test builds.
+ *
+ * Mutable test state remains isolated per run; this path is only for the
+ * reusable VS Code download cache.
+ */
+export function getVSCodeCachePath({
+  platform = process.platform,
+  homeDirectory = os.homedir(),
+  environment = process.env,
+}: VSCodeCachePathOptions = {}): string {
+  if (environment.DEMO_TOOLS_VSCODE_CACHE) {
+    return path.resolve(environment.DEMO_TOOLS_VSCODE_CACHE);
+  }
+
+  if (platform === "darwin") {
+    return path.join(homeDirectory, "Library", "Caches", "moya-vscode-test");
+  }
+
+  if (platform === "win32") {
+    const localAppData =
+      environment.LOCALAPPDATA ??
+      path.join(homeDirectory, "AppData", "Local");
+    return path.join(localAppData, "moya-vscode-test");
+  }
+
+  const xdgCacheHome =
+    environment.XDG_CACHE_HOME ?? path.join(homeDirectory, ".cache");
+  return path.join(xdgCacheHome, "moya-vscode-test");
+}
+
 export async function prepareVSCodeExecutable({
   testElectron,
   developmentPath,
   build,
   projectDirectory = process.cwd(),
   version = process.env.VSCODE_VERSION ?? "stable",
-  cachePath = path.resolve(projectDirectory, ".vscode-test"),
+  cachePath = getVSCodeCachePath(),
 }: {
   testElectron: TestElectron;
   developmentPath: string;
