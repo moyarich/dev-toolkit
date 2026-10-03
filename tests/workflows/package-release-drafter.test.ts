@@ -101,8 +101,13 @@ test("release drafter keeps push-range selection separate from cumulative releas
   // present in the cancelled push but not in the newer push range.
   //
   // Invariant:
-  //   package selection = push range
-  //   release notes     = previous package release -> main
+  //   package selection = only the current push range
+  //   release notes     = all unreleased package changes from the previous
+  //                       published package release through current main
+  //
+  // Never set Release Drafter's `from:` input to `github.event.before`.
+  // Doing so would limit release notes to one push and could omit commits when
+  // an older per-package draft run is cancelled by a newer one.
   assert.doesNotMatch(
     workflow,
     /uses: release-drafter\/release-drafter@v7\.7\.0[\s\S]*?\n\s+from:/,
