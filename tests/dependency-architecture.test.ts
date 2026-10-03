@@ -27,9 +27,7 @@ test("dependency architecture rules block high-signal failures", () => {
   ]) {
     assert.match(
       config,
-      new RegExp(
-        `name: "${rule}"[\\s\\S]*?severity: "error"`,
-      ),
+      new RegExp(`name: "${rule}"[\\s\\S]*?severity: "error"`),
     );
   }
 });
@@ -42,9 +40,7 @@ test("noisier architecture smells begin as warnings", () => {
   ]) {
     assert.match(
       config,
-      new RegExp(
-        `name: "${rule}"[\\s\\S]*?severity: "warn"`,
-      ),
+      new RegExp(`name: "${rule}"[\\s\\S]*?severity: "warn"`),
     );
   }
 });
