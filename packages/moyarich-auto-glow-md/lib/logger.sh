@@ -39,31 +39,32 @@ fi
 # Arguments:
 #   $1  Log type: SECTION, PIPELINE, INFO, ACTION, WARNING, or ERROR.
 #   $2  Message text.
+#
+# Notes:
+#   Avoid assigning generic helper variables here because this file is sourced
+#   into callers and POSIX sh has no portable local-variable declaration.
 logger() {
-  log_type="$1"
-  message="${2:-}"
-
-  case "$log_type" in
+  case "$1" in
     SECTION)
-      printf '\n%b%s%b\n\n' "$PURPLE" "$message" "$NC"
+      printf '\n%b%s%b\n\n' "$PURPLE" "${2:-}" "$NC"
       ;;
     PIPELINE)
-      printf '%b%s%b\n' "$GREEN" "$message" "$NC"
+      printf '%b%s%b\n' "$GREEN" "${2:-}" "$NC"
       ;;
     INFO)
-      printf '%bINFO:%b   %s\n' "$WHITE" "$NC" "$message"
+      printf '%bINFO:%b   %s\n' "$WHITE" "$NC" "${2:-}"
       ;;
     ACTION)
-      printf '%bACTION:%b %b%s%b\n' "$YELLOW" "$NC" "$DARK_YELLOW" "$message" "$NC"
+      printf '%bACTION:%b %b%s%b\n' "$YELLOW" "$NC" "$DARK_YELLOW" "${2:-}" "$NC"
       ;;
     WARNING)
-      printf '%bWARNING:%b %b%s%b\n' "$YELLOW" "$NC" "$DARK_YELLOW" "$message" "$NC" >&2
+      printf '%bWARNING:%b %b%s%b\n' "$YELLOW" "$NC" "$DARK_YELLOW" "${2:-}" "$NC" >&2
       ;;
     ERROR)
-      printf '%bERROR:%b  %b%s%b\n' "$RED" "$NC" "$DARK_RED" "$message" "$NC" >&2
+      printf '%bERROR:%b  %b%s%b\n' "$RED" "$NC" "$DARK_RED" "${2:-}" "$NC" >&2
       ;;
     *)
-      printf '%b*%b %b%s%b%s%b\n' "$GREEN" "$NC" "$YELLOW" "$log_type" "$CYAN" "$message" "$NC"
+      printf '%b*%b %b%s%b%s%b\n' "$GREEN" "$NC" "$YELLOW" "$1" "$CYAN" "${2:-}" "$NC"
       ;;
   esac
 }
