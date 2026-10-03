@@ -86,8 +86,17 @@ else
   COLOR_GREEN=''
   COLOR_YELLOW=''
   COLOR_RED=''
+  COLOR_CYAN=''
   COLOR_DIM=''
 fi
+
+# Print an error message.
+#
+# Arguments:
+#   $@  Message text.
+error() {
+  printf '%b%s%b\n' "$COLOR_RED" "$*" "$COLOR_RESET" >&2
+}
 
 # Print a verbose operation message.
 #
