@@ -14,6 +14,10 @@
 set -eu
 
 PLUGIN_NAME="moyarich-auto-glow-md"
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+
+. "${SCRIPT_DIR}/lib/logger.sh"
+
 ZSH_CUSTOM_DIR="${ZSH_CUSTOM:-${HOME}/.oh-my-zsh/custom}"
 PLUGIN_DIR="${ZSH_CUSTOM_DIR}/plugins/${PLUGIN_NAME}"
 MARKER="${PLUGIN_DIR}/.moyarich-auto-glow-md-install"
