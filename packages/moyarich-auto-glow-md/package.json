@@ -13,7 +13,7 @@
   ],
   "scripts": {
     "build": "vite build --config vite.config.ts",
-    "test": "npm run test:syntax && npm run test:shell && npm run test:glow",
+    "test": "npm run test:syntax && npm run test:shell",
     "test:shell": "zsh test/run-tests.zsh && zsh test/install-completion.test.zsh",
     "test:dist": "npm run build && zsh -n dist/moyarich-auto-glow-md.plugin.zsh && zsh -n dist/lib/core.zsh && zsh -n dist/bin/moyarich-auto-glow-md.sh && sh -n dist/install.sh && sh -n dist/uninstall.sh && MOYARICH_AUTO_GLOW_DISABLE_RENDER=1 ./dist/bin/moyarich-auto-glow-md.sh -- printf '%s' '# CLI works'",
     "plugin:install": "sh install.sh",
@@ -24,7 +24,8 @@
     "plugin:install:verbose": "sh install.sh --verbose",
     "plugin:install:symlink:verbose": "sh install.sh --symlink --verbose",
     "plugin:install:quiet": "sh install.sh --quiet",
-    "plugin:install:symlink:quiet": "sh install.sh --symlink --quiet"
+    "plugin:install:symlink:quiet": "sh install.sh --symlink --quiet",
+    "test:ci": "npm test && npm run test:glow"
   },
   "repository": {
     "type": "git",
