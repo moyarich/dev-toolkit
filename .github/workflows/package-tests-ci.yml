@@ -21,17 +21,30 @@ on:
       - main
 
 permissions:
-  contents: read
+  # The format job may commit Prettier repairs back to the current branch.
+  contents: write
   packages: read
 
 jobs:
+  format:
+    name: "Self-heal formatting"
+    uses: ./.github/workflows/reusable_format.yml
+    with:
+      commit: true
+      node-version: ${{ inputs.node-version || '24' }}
+
   root-checks:
     name: "Root checks"
+    needs: format
     if: ${{ github.event_name != 'workflow_dispatch' || inputs.package-directory == 'all' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7 # v7
         with:
+          # The format job can push a repair after this workflow starts. Check
+          # out the branch tip so checks validate the healed commit, not the
+          # stale event SHA.
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
           persist-credentials: false
 
       - uses: actions/setup-node@v7 # v7
@@ -71,6 +84,7 @@ jobs:
 
   package-ci:
     name: "Package CI"
+    needs: format
     if: ${{ github.event_name != 'workflow_dispatch' || inputs.package-directory == 'all' }}
     uses: ./.github/workflows/reusable_package-ci.yml
     with:
@@ -79,6 +93,7 @@ jobs:
 
   selected-package-ci:
     name: "Package CI · ${{ inputs.package-directory }}"
+    needs: format
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.package-directory != 'all' }}
     uses: ./.github/workflows/reusable_node-ci.yml
     with:
