@@ -103,7 +103,26 @@ capture_file="$(mktemp)"
 moyarich_auto_glow_run "printf 'hello\\n\\n'" > "$capture_file"
 assert_equal "preserves trailing newlines" "7" "$(wc -c < "$capture_file" | tr -d ' ')"
 capture_with_sentinel="$(cat "$capture_file"; printf x)"
-assert_equal "preserves exact trailing-newline content" 
+assert_equal "preserves exact trailing-newline content" $'hello\n\nx' "$capture_with_sentinel"
+rm -f "$capture_file"
+
+quoted_output="$(moyarich_auto_glow_run "printf '%s' 'hello world'")"
+assert_equal "preserves quoted arguments" "hello world" "$quoted_output"
+
+pipeline_output="$(moyarich_auto_glow_run "printf '%s\\n' alpha beta | tail -n 1")"
+assert_equal "preserves pipelines" "beta" "$pipeline_output"
+
+redirect_file="$(mktemp)"
+moyarich_auto_glow_run "printf '%s' redirected > ${(q)redirect_file}"
+assert_equal "preserves redirections" "redirected" "$(cat "$redirect_file")"
+rm -f "$redirect_file"
+
+and_output="$(moyarich_auto_glow_run "true && printf '%s' chained")"
+assert_equal "preserves && command chains" "chained" "$and_output"
+
+or_output="$(moyarich_auto_glow_run "false || printf '%s' fallback")"
+assert_equal "preserves || command chains" "fallback" "$or_output"
+
 set +e
 MOYARICH_AUTO_GLOW_DISABLE_RENDER=1 moyarich_auto_glow_run "return 7" >/dev/null 2>&1
 exit_code=$?
