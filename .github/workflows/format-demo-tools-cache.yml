@@ -1,0 +1,45 @@
+name: Format demo-tools cache changes
+
+on:
+  push:
+    branches:
+      - feat/demo-tools-shared-vscode-cache
+    paths:
+      - .github/workflows/format-demo-tools-cache.yml
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: feat/demo-tools-shared-vscode-cache
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Run Prettier
+        run: |
+          npx prettier --write             packages/demo-tools/src/vscode/runtime.ts             packages/demo-tools/tests/vscode.test.ts             packages/demo-tools/docs/03-environments/02-vscode/page.mdx
+
+      - name: Commit formatting if changed
+        run: |
+          if git diff --quiet; then
+            echo "Formatting is already current."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add packages/demo-tools/src/vscode/runtime.ts
+          git add packages/demo-tools/tests/vscode.test.ts
+          git add packages/demo-tools/docs/03-environments/02-vscode/page.mdx
+          git commit -m "style(demo-tools): format shared cache changes"
+          git push
