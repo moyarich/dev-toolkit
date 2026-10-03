@@ -11,7 +11,8 @@ module.exports = {
   forbidden: [
     {
       name: "no-circular",
-      comment: "Circular module dependencies make package behavior and build order harder to reason about.",
+      comment:
+        "Circular module dependencies make package behavior and build order harder to reason about.",
       severity: "error",
       from: {},
       to: {
@@ -29,7 +30,8 @@ module.exports = {
     },
     {
       name: "no-undeclared-package-dependencies",
-      comment: "Imported npm packages must be declared by the owning package.",
+      comment:
+        "Imported npm packages must be declared by the owning package.",
       severity: "error",
       from: {},
       to: {
@@ -62,7 +64,8 @@ module.exports = {
     },
     {
       name: "no-orphans",
-      comment: "Orphan modules can indicate dead code or incomplete refactors.",
+      comment:
+        "Orphan modules can indicate dead code or incomplete refactors.",
       severity: "warn",
       from: {
         orphan: true,
