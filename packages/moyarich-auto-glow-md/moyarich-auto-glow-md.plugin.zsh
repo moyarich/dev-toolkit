@@ -9,6 +9,9 @@
 # Environment:
 #   MOYARICH_AUTO_GLOW_CHILD
 #     Internal recursion guard. When set, this plugin returns immediately.
+#   MOYARICH_AUTO_GLOW_INTERCEPT
+#     Set to 1 to opt into experimental Enter-key interception.
+#     Disabled by default so normal shell commands are never rewritten.
 
 [[ -n "${MOYARICH_AUTO_GLOW_CHILD:-}" ]] && return
 
@@ -45,7 +48,13 @@ _moyarich_auto_glow_accept_line() {
   zle .accept-line
 }
 
-# Register Enter and Line Feed with the auto-glow ZLE widget.
-zle -N _moyarich_auto_glow_accept_line
-bindkey '^M' _moyarich_auto_glow_accept_line
-bindkey '^J' _moyarich_auto_glow_accept_line
+# Register the experimental ZLE interceptor only when explicitly enabled.
+#
+# Default behavior is intentionally non-invasive: the plugin adds its bin/
+# directory to PATH and exposes the moyarich-auto-glow-md CLI, but it does not
+# rewrite normal commands typed into the terminal.
+if [[ "${MOYARICH_AUTO_GLOW_INTERCEPT:-0}" == "1" ]]; then
+  zle -N _moyarich_auto_glow_accept_line
+  bindkey '^M' _moyarich_auto_glow_accept_line
+  bindkey '^J' _moyarich_auto_glow_accept_line
+fi
