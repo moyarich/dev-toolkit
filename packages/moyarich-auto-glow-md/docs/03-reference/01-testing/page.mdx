@@ -15,6 +15,7 @@ That expands to:
 ```bash
 zsh -n moyarich-auto-glow-md.plugin.zsh &&
 zsh -n lib/core.zsh &&
+sh -n lib/logger.sh &&
 zsh -n src/cli/moyarich-auto-glow-md.sh &&
 sh -n install.sh &&
 sh -n uninstall.sh &&
@@ -29,6 +30,8 @@ What each part does:
   - does not execute the plugin
 - `zsh -n lib/core.zsh`
   - syntax-checks the shared runtime functions
+- `sh -n lib/logger.sh`
+  - syntax-checks the shared POSIX installer logger
 - `zsh -n src/cli/moyarich-auto-glow-md.sh`
   - syntax-checks the source CLI
 - `sh -n install.sh`
@@ -39,7 +42,7 @@ What each part does:
   - actually executes the behavioral tests
   - tests Markdown detection
   - tests normal/non-Markdown output
-  - tests shell-state bypass rules
+  - tests shell-state bypass rules, including environment assignments and Zsh precommand modifiers
   - tests command execution
   - tests exit-code preservation
   - tests the source CLI
@@ -75,6 +78,7 @@ That command first runs the build, then checks:
 ```text
 dist/moyarich-auto-glow-md.plugin.zsh
 dist/lib/core.zsh
+dist/lib/logger.sh
 dist/bin/moyarich-auto-glow-md.sh
 dist/install.sh
 dist/uninstall.sh
