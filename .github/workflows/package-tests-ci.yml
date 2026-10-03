@@ -91,10 +91,18 @@ jobs:
       packages-directory: packages
       node-version: ${{ inputs.node-version || '24' }}
 
+  auto-glow-ci:
+    name: "Auto Glow CI"
+    needs: format
+    if: ${{ always() && (needs.format.result == 'success' || needs.format.result == 'skipped') && (github.event_name != 'workflow_dispatch' || inputs.package-directory == 'all' || inputs.package-directory == 'packages/moyarich-auto-glow-md' || inputs.package-directory == '@moyarich/auto-glow-md') }}
+    uses: ./.github/workflows/reusable_auto-glow-ci.yml
+    with:
+      node-version: ${{ inputs.node-version || '24' }}
+
   selected-package-ci:
     name: "Package CI · ${{ inputs.package-directory }}"
     needs: format
-    if: ${{ always() && (needs.format.result == 'success' || needs.format.result == 'skipped') && github.event_name == 'workflow_dispatch' && inputs.package-directory != 'all' }}
+    if: ${{ always() && (needs.format.result == 'success' || needs.format.result == 'skipped') && github.event_name == 'workflow_dispatch' && inputs.package-directory != 'all' && inputs.package-directory != 'packages/moyarich-auto-glow-md' && inputs.package-directory != '@moyarich/auto-glow-md' }}
     uses: ./.github/workflows/reusable_node-ci.yml
     with:
       package-directory: ${{ inputs.package-directory }}
