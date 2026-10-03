@@ -134,6 +134,7 @@ moyarich_auto_glow_run() {
   local command_line="$1"
   local output
   local exit_code
+  local sentinel="__MOYARICH_AUTO_GLOW_CAPTURE_END__"
 
   # Command substitution normally removes trailing newlines. Append a
   # non-newline sentinel inside the substitution, then remove only that
@@ -145,15 +146,11 @@ moyarich_auto_glow_run() {
     eval "$command_line" 2>&1
     exit_code=$?
 
-    print -rn -- 
-}
-\x1e'
+    print -rn -- "$sentinel"
     exit "$exit_code"
   )"
   exit_code=$?
-  output="${output%
-}
-\x1e'}"
+  output="${output%$sentinel}"
 
   moyarich_auto_glow_render "$output"
   return "$exit_code"
