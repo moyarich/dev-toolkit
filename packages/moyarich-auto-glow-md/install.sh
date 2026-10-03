@@ -115,7 +115,36 @@ verbose() {
 #   $2  Value.
 verbose_path() {
   [ "$VERBOSE" -eq 1 ] || return 0
-  printf '%b%s%b %b%s%b\n'     "$COLOR_CYAN" "$1" "$COLOR_RESET"     "$COLOR_DIM" "$2" "$COLOR_RESET"
+  printf '%b%s%b %b%s%b\n' \
+    "$COLOR_CYAN" "$1" "$COLOR_RESET" \
+    "$COLOR_DIM" "$2" "$COLOR_RESET"
+}
+
+# Print a verbose transfer operation.
+#
+# Arguments:
+#   $1  Operation label.
+#   $2  Source path.
+#   $3  Destination path.
+verbose_transfer() {
+  [ "$VERBOSE" -eq 1 ] || return 0
+  printf '%b%s%b %b%s%b %s %b%s%b\n' \
+    "$COLOR_GREEN" "$1" "$COLOR_RESET" \
+    "$COLOR_DIM" "$2" "$COLOR_RESET" \
+    "->" \
+    "$COLOR_DIM" "$3" "$COLOR_RESET"
+}
+
+# Print a verbose destructive/replacement operation.
+#
+# Arguments:
+#   $1  Operation label.
+#   $2  Path.
+verbose_replace() {
+  [ "$VERBOSE" -eq 1 ] || return 0
+  printf '%b%s%b %b%s%b\n' \
+    "$COLOR_YELLOW" "$1" "$COLOR_RESET" \
+    "$COLOR_DIM" "$2" "$COLOR_RESET"
 }
 
 # Print a success message.
