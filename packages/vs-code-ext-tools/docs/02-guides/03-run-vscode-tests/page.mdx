@@ -36,7 +36,6 @@ VSCODE_VERSION=stable npm run test:vscode
 
 Arguments after the command are forwarded to `vscode-test`.
 
-
 ## `.vscode-test.ts`
 
 Keep installation selection in the consumer's VS Code test config:
@@ -47,8 +46,7 @@ import { defineConfig } from "@vscode/test-cli";
 const vscodeExecutablePath =
   process.env.VSCODE_TEST_EXECUTABLE_PATH ?? undefined;
 
-const fromMachine =
-  process.env.VSCODE_TEST_FROM_MACHINE === "true";
+const fromMachine = process.env.VSCODE_TEST_FROM_MACHINE === "true";
 
 export default defineConfig({
   files: "out/test/**/*.test.js",
