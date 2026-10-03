@@ -10,7 +10,6 @@ test("VS Code shortcuts are platform aware", () => {
   assert.equal(getQuickOpenShortcut("win32"), "Control+P");
 });
 
-
 test("VS Code cache path is shared across projects", () => {
   assert.equal(
     getVSCodeCachePath({
