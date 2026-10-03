@@ -271,18 +271,37 @@ case "${MODE}" in
     ;;
 esac
 
+ZSHRC="${ZDOTDIR:-$HOME}/.zshrc"
+
 printf '%s\n' ""
 notice "Next steps"
 printf '%s\n' ""
-printf '%b%s%b\n' "$COLOR_BOLD" "1. Enable the plugin in ~/.zshrc:" "$COLOR_RESET"
-printf '%s\n' "   plugins=(... ${PLUGIN_NAME})"
-printf '%s\n' ""
-printf '%b%s%b\n' "$COLOR_BOLD" "2. Reload your current shell:" "$COLOR_RESET"
-printf '%s\n' "   source ~/.zshrc"
-printf '%s\n' ""
-printf '%b%s%b\n' "$COLOR_BOLD" "3. Verify the CLI is available:" "$COLOR_RESET"
-printf '%s\n' "   command -v ${PLUGIN_NAME}"
-printf '%s\n' ""
-printf '%b%s%b\n' "$COLOR_BOLD" "4. Try it:" "$COLOR_RESET"
-printf '%s\n' "   ${PLUGIN_NAME} -- printf '%s\\n' '# Hello from auto-glow'"
+
+if [ -f "$ZSHRC" ] && grep -Eq "(^|[[:space:]()])${PLUGIN_NAME}([[:space:]()]|$)" "$ZSHRC"; then
+  printf '%b%s%b\n' "$COLOR_BOLD" "Plugin is already enabled in ~/.zshrc." "$COLOR_RESET"
+  printf '%s\n' ""
+  printf '%b%s%b\n' "$COLOR_BOLD" "1. Reload your current shell:" "$COLOR_RESET"
+  printf '%s\n' "   source ~/.zshrc"
+  printf '%s\n' ""
+  printf '%b%s%b\n' "$COLOR_BOLD" "2. Verify the CLI is available:" "$COLOR_RESET"
+  printf '%s\n' "   command -v ${PLUGIN_NAME}"
+  printf '%s\n' ""
+  printf '%b%s%b\n' "$COLOR_BOLD" "3. Try it:" "$COLOR_RESET"
+  printf '%s\n' "   ${PLUGIN_NAME} -- printf '%s\\n' '# Hello from auto-glow'"
+else
+  printf '%b%s%b\n' "$COLOR_YELLOW" "Installed, but not enabled in ~/.zshrc." "$COLOR_RESET"
+  printf '%s\n' ""
+  printf '%b%s%b\n' "$COLOR_BOLD" "1. Add ${PLUGIN_NAME} to your existing plugins=(...) list:" "$COLOR_RESET"
+  printf '%s\n' "   plugins=(... ${PLUGIN_NAME})"
+  printf '%s\n' ""
+  printf '%b%s%b\n' "$COLOR_BOLD" "2. Reload your shell:" "$COLOR_RESET"
+  printf '%s\n' "   source ~/.zshrc"
+  printf '%s\n' ""
+  printf '%b%s%b\n' "$COLOR_BOLD" "Or activate it only for this shell:" "$COLOR_RESET"
+  printf '%s\n' "   source ${PLUGIN_DIR}/moyarich-auto-glow-md.plugin.zsh"
+  printf '%s\n' ""
+  printf '%b%s%b\n' "$COLOR_BOLD" "Then verify:" "$COLOR_RESET"
+  printf '%s\n' "   command -v ${PLUGIN_NAME}"
+fi
+
 printf '%s\n' ""
