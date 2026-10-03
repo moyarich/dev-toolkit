@@ -277,27 +277,21 @@ printf '%s\n' ""
 notice "Next steps"
 printf '%s\n' ""
 
-if command -v "${PLUGIN_NAME}" >/dev/null 2>&1; then
-  success "Plugin is active in the current shell."
+if [ -f "$ZSHRC" ] && grep -Eq "(^|[[:space:]()])${PLUGIN_NAME}([[:space:]()]|$)" "$ZSHRC"; then
+  printf '%b%s%b\n' "$COLOR_YELLOW" "Plugin is installed and enabled." "$COLOR_RESET"
   printf '%s\n' ""
-  printf '%b%s%b\n' "$COLOR_BOLD" "Try it:" "$COLOR_RESET"
+  printf '%b%s%b\n' "$COLOR_BOLD" "Reload Oh My Zsh to load this installed version:" "$COLOR_RESET"
+  printf '%s\n' "   omz reload"
+  printf '%s\n' ""
+  printf '%b%s%b\n' "$COLOR_BOLD" "Then test it:" "$COLOR_RESET"
   printf '%s\n' "   ${PLUGIN_NAME} -- echo '# Hello from auto-glow'"
-elif [ -f "$ZSHRC" ] && grep -Eq "(^|[[:space:]()])${PLUGIN_NAME}([[:space:]()]|$)" "$ZSHRC"; then
-  printf '%b%s%b\n' "$COLOR_YELLOW" "Plugin is enabled, but not loaded in the current shell." "$COLOR_RESET"
-  printf '%s\n' ""
-  printf '%b%s%b\n' "$COLOR_BOLD" "Load it now with Oh My Zsh:" "$COLOR_RESET"
-  printf '%s\n' "   omz plugin load ${PLUGIN_NAME}"
-  printf '%s\n' ""
-  printf '%b%s%b\n' "$COLOR_BOLD" "Then verify:" "$COLOR_RESET"
-  printf '%s\n' "   command -v ${PLUGIN_NAME}"
 else
   printf '%b%s%b\n' "$COLOR_YELLOW" "Plugin is installed, but not enabled in Oh My Zsh." "$COLOR_RESET"
   printf '%s\n' ""
   printf '%b%s%b\n' "$COLOR_BOLD" "Enable it with Oh My Zsh:" "$COLOR_RESET"
   printf '%s\n' "   omz plugin enable ${PLUGIN_NAME}"
   printf '%s\n' ""
-  printf '%b%s%b\n' "$COLOR_BOLD" "Then verify:" "$COLOR_RESET"
-  printf '%s\n' "   command -v ${PLUGIN_NAME}"
+  printf '%b%s%b\n' "$COLOR_BOLD" "Then test it:" "$COLOR_RESET"
+  printf '%s\n' "   ${PLUGIN_NAME} -- echo '# Hello from auto-glow'"
 fi
-
 printf '%s\n' ""
