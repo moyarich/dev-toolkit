@@ -44,70 +44,9 @@ set -eu
 PLUGIN_NAME="moyarich-auto-glow-md"
 MODE="copy"
 VERBOSE=1
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 
-# Output colors. Keep every value initialized so logging remains safe with
-# `set -u` in both interactive and non-interactive environments.
-if [ -t 1 ]; then
-  NC='\033[0m'
-  BOLD='\033[1m'
-  RED='\033[1;31m'
-  DARK_RED='\033[0;31m'
-  GREEN='\033[1;32m'
-  YELLOW='\033[1;33m'
-  DARK_YELLOW='\033[0;33m'
-  BLUE='\033[1;34m'
-  PURPLE='\033[1;35m'
-  CYAN='\033[1;36m'
-  WHITE='\033[1;37m'
-  DIM='\033[2m'
-else
-  NC=''
-  BOLD=''
-  RED=''
-  DARK_RED=''
-  GREEN=''
-  YELLOW=''
-  DARK_YELLOW=''
-  BLUE=''
-  PURPLE=''
-  CYAN=''
-  WHITE=''
-  DIM=''
-fi
-
-# Print a formatted log message.
-#
-# Arguments:
-#   $1  Log type: SECTION, PIPELINE, INFO, ACTION, WARNING, or ERROR.
-#   $2  Message text.
-logger() {
-  log_type="$1"
-  message="${2:-}"
-
-  case "$log_type" in
-    SECTION)
-      printf '\n%b%s%b\n\n' "$PURPLE" "$message" "$NC"
-      ;;
-    PIPELINE)
-      printf '%b%s%b\n' "$GREEN" "$message" "$NC"
-      ;;
-    INFO)
-      printf '%bINFO:%b   %s\n' "$WHITE" "$NC" "$message"
-      ;;
-    ACTION)
-      printf '%bACTION:%b %b%s%b\n' "$YELLOW" "$NC" "$DARK_YELLOW" "$message" "$NC"
-      ;;
-    WARNING)
-      printf '%bWARNING:%b %b%s%b\n' "$YELLOW" "$NC" "$DARK_YELLOW" "$message" "$NC" >&2
-      ;;
-    ERROR)
-      printf '%bERROR:%b  %b%s%b\n' "$RED" "$NC" "$DARK_RED" "$message" "$NC" >&2
-      ;;
-    *)
-      printf '%b*%b %b%s%b%s%b\n' "$GREEN" "$NC" "$YELLOW" "$log_type" "$CYAN" "$message" "$NC"
-      ;;
-  esac
-}
+. "${SCRIPT_DIR}/lib/logger.sh"
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
@@ -183,7 +122,6 @@ verbose_replace() {
 
 ZSH_CUSTOM_DIR="${ZSH_CUSTOM:-${HOME}/.oh-my-zsh/custom}"
 PLUGIN_DIR="${ZSH_CUSTOM_DIR}/plugins/${PLUGIN_NAME}"
-SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 MARKER="${PLUGIN_DIR}/.moyarich-auto-glow-md-install"
 
 
@@ -249,6 +187,7 @@ install_copy() {
 
   copy_verbose     "${RUNTIME_DIR}/moyarich-auto-glow-md.plugin.zsh"     "${PLUGIN_DIR}/moyarich-auto-glow-md.plugin.zsh"
   copy_verbose     "${RUNTIME_DIR}/lib/core.zsh"     "${PLUGIN_DIR}/lib/core.zsh"
+  copy_verbose     "${RUNTIME_DIR}/lib/logger.sh"   "${PLUGIN_DIR}/lib/logger.sh"
   copy_verbose     "${CLI_SOURCE}"     "${PLUGIN_DIR}/bin/moyarich-auto-glow-md"
 
   [ ! -f "${RUNTIME_DIR}/README.md" ] ||     copy_verbose "${RUNTIME_DIR}/README.md" "${PLUGIN_DIR}/README.md"
@@ -272,6 +211,7 @@ install_symlink() {
 
   link_verbose     "${RUNTIME_DIR}/moyarich-auto-glow-md.plugin.zsh"     "${PLUGIN_DIR}/moyarich-auto-glow-md.plugin.zsh"
   link_verbose     "${RUNTIME_DIR}/lib/core.zsh"     "${PLUGIN_DIR}/lib/core.zsh"
+  link_verbose     "${RUNTIME_DIR}/lib/logger.sh"   "${PLUGIN_DIR}/lib/logger.sh"
   link_verbose     "${CLI_SOURCE}"     "${PLUGIN_DIR}/bin/moyarich-auto-glow-md"
 
   [ ! -f "${RUNTIME_DIR}/README.md" ] ||     link_verbose "${RUNTIME_DIR}/README.md" "${PLUGIN_DIR}/README.md"
