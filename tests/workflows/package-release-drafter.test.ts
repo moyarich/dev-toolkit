@@ -106,8 +106,17 @@ test("release drafter keeps push-range selection separate from cumulative releas
   //                       published package release through current main
   //
   // Never set Release Drafter's `from:` input to `github.event.before`.
-  // Doing so would limit release notes to one push and could omit commits when
-  // an older per-package draft run is cancelled by a newer one.
+  // Doing so would limit release notes to one push and could omit commits.
+  //
+  // Draft jobs use package-scoped GitHub Actions concurrency:
+  //   group: draft-package-${{ github.repository }}-${{ matrix.directory }}
+  //   cancel-in-progress: true
+  //
+  // If two pushes change the same package, the newer job enters the same
+  // concurrency group and GitHub cancels the older in-progress job. The newer
+  // job must therefore rebuild release notes cumulatively from the previous
+  // published package release through current main, not just from its own
+  // `github.event.before -> github.sha` push range.
   assert.doesNotMatch(
     workflow,
     /uses: release-drafter\/release-drafter@v7\.7\.0[\s\S]*?\n\s+from:/,
