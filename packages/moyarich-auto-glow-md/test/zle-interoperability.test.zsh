@@ -18,17 +18,37 @@ assert_equal() {
   fi
 }
 
-# A normal ZLE widget bound before Auto Glow must remain callable. This models
-# interoperability with plugins that register their own widgets before ours.
-zle -N test_previous_accept_line 2>/dev/null || true
+# Static contracts protect the keymap boundary. Auto Glow wraps the logical
+# accept-line widget and must not directly bind Enter or Line Feed.
+plugin_source="$(<"${PACKAGE_DIR}/moyarich-auto-glow-md.plugin.zsh")"
+
+if [[ "$plugin_source" == *"bindkey '^M'"* || "$plugin_source" == *"bindkey '^J'"* ]]; then
+  print -u2 -- "FAIL: plugin must not directly rebind Enter or Line Feed"
+  failures+=1
+else
+  print -- "PASS: plugin leaves Enter and Line Feed key bindings untouched"
+fi
+
+if [[ "$plugin_source" == *'zle -A accept-line _moyarich_auto_glow_previous_accept_line'* ]]; then
+  print -- "PASS: plugin preserves the previous accept-line widget"
+else
+  print -u2 -- "FAIL: plugin must preserve the previous accept-line widget"
+  failures+=1
+fi
+
+if [[ "$plugin_source" == *'zle -N accept-line _moyarich_auto_glow_accept_line'* ]]; then
+  print -- "PASS: plugin wraps the logical accept-line widget"
+else
+  print -u2 -- "FAIL: plugin must wrap the logical accept-line widget"
+  failures+=1
+fi
 
 # Static contract: Auto Glow must delegate bypassed commands to Zsh's builtin
 # accept-line instead of evaluating shell-state commands in a captured subshell.
-plugin_source="$(<"${PACKAGE_DIR}/moyarich-auto-glow-md.plugin.zsh")"
-if [[ "$plugin_source" == *'zle .accept-line'* ]]; then
-  print -- "PASS: bypassed commands delegate to builtin accept-line"
+if [[ "$plugin_source" == *'zle _moyarich_auto_glow_previous_accept_line'* ]]; then
+  print -- "PASS: bypassed commands delegate to the previous accept-line widget"
 else
-  print -u2 -- "FAIL: bypassed commands must delegate to builtin accept-line"
+  print -u2 -- "FAIL: bypassed commands must delegate to the previous accept-line widget"
   failures+=1
 fi
 
