@@ -22,9 +22,40 @@ typeset -ga MOYARICH_AUTO_GLOW_BYPASS_COMMANDS=(
 #   1 when the command may run through the auto-glow runtime.
 moyarich_auto_glow_should_bypass() {
   local command_line="$1"
-  local first_word="${${(z)command_line}[1]}"
+  local -a words
+  words=(${(z)command_line})
 
-  [[ -z "$first_word" ]] && return 0
+  (( ${#words[@]} == 0 )) && return 0
+
+  local index=1
+  local token
+
+  # Skip leading environment assignments so shell-state commands such as
+  # `FOO=bar cd /tmp` still execute in the current interactive shell.
+  while (( index <= ${#words[@]} )); do
+    token="${words[index]}"
+    [[ "$token" =~ '^[A-Za-z_][A-Za-z0-9_]*=' ]] || break
+    (( index += 1 ))
+  done
+
+  (( index > ${#words[@]} )) && return 1
+
+  # Zsh precommand modifiers do not identify the command that ultimately
+  # executes. Walk past the modifiers that are safe to inspect.
+  while (( index <= ${#words[@]} )); do
+    token="${words[index]}"
+    case "$token" in
+      noglob|nocorrect|time)
+        (( index += 1 ))
+        ;;
+      *)
+        break
+        ;;
+    esac
+  done
+
+  (( index > ${#words[@]} )) && return 1
+  local first_word="${words[index]}"
 
   local bypass
   for bypass in "${MOYARICH_AUTO_GLOW_BYPASS_COMMANDS[@]}"; do
