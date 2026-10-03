@@ -67,6 +67,19 @@ jobs:
           sudo apt-get update
           sudo apt-get install --yes zsh
 
+      # auto-glow-md integrates with the real Glow CLI. Keep Go/Glow scoped to
+      # this package so unrelated Node workspaces do not inherit the dependency.
+      - name: Set up Go for Glow integration tests
+        if: ${{ inputs.package-directory == 'packages/moyarich-auto-glow-md' || inputs.package-directory == '@moyarich/auto-glow-md' }}
+        uses: actions/setup-go@v6
+        with:
+          go-version: "1.25.x"
+
+      - name: Install Glow for integration tests
+        if: ${{ inputs.package-directory == 'packages/moyarich-auto-glow-md' || inputs.package-directory == '@moyarich/auto-glow-md' }}
+        run: go install charm.land/glow/v2@v2.1.1
+
+
       - name: Build selected workspace and local dependencies
         env:
           WORKSPACE: ${{ inputs.package-directory }}
