@@ -39,9 +39,7 @@ test("uses LOCALAPPDATA with Windows path semantics", () => {
       home: "C:\\Users\\moya",
       env: { LOCALAPPDATA: "C:\\Users\\moya\\AppData\\Local" },
     }),
-  ).toBe(
-    "C:\\Users\\moya\\AppData\\Local\\vscode.test-electron-cache",
-  );
+  ).toBe("C:\\Users\\moya\\AppData\\Local\\vscode.test-electron-cache");
 });
 
 test("allows an explicit cache override", () => {
