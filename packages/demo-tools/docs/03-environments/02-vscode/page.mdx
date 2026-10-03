@@ -7,10 +7,7 @@ A strategy can prepare a VS Code executable, launch an isolated extension develo
 ```js
 import { chromium } from "playwright-core";
 import * as testElectron from "@vscode/test-electron";
-import {
-  createVSCodeDemoRuntime,
-  prepareVSCodeExecutable,
-} from "@moyarich/demo-tools/vscode";
+import { createVSCodeDemoRuntime, prepareVSCodeExecutable } from "@moyarich/demo-tools/vscode";
 
 const vscodeExecutablePath = await prepareVSCodeExecutable({
   testElectron,
@@ -34,7 +31,6 @@ try {
 ```
 
 For presentation components inside VS Code, use the adapters from `@moyarich/demo-tools/components`. They consume the namespaced elements from `@moyarich/web-components` and use CDP evaluation where Trusted Types prevents normal module installation.
-
 
 ## Shared VS Code download cache
 
