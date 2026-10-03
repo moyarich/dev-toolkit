@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+- Share downloaded VS Code test builds through an OS-level cache while keeping run state isolated.
+
+# Changelog
+
 ## 0.1.0
 
 ### Added
