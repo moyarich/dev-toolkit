@@ -73,7 +73,11 @@ assert_true "detects fenced code" moyarich_auto_glow_looks_like_markdown $'```js
 assert_true "detects table" moyarich_auto_glow_looks_like_markdown $'| Name | Status |\n| --- | --- |\n| api | active |'
 assert_false "ignores ordinary output" moyarich_auto_glow_looks_like_markdown "npm notice run test"
 assert_true "bypasses cd" moyarich_auto_glow_should_bypass "cd /tmp"
+assert_true "bypasses cd after environment assignment" moyarich_auto_glow_should_bypass "FOO=bar cd /tmp"
+assert_true "bypasses source after environment assignment" moyarich_auto_glow_should_bypass "FOO=bar source ./example.zsh"
+assert_true "bypasses shell-state command after zsh precommand modifier" moyarich_auto_glow_should_bypass "noglob cd /tmp"
 assert_false "runs normal commands" moyarich_auto_glow_should_bypass "printf hello"
+assert_false "runs normal command after environment assignment" moyarich_auto_glow_should_bypass "FOO=bar printf hello"
 
 fake_glow_dir="$(mktemp -d)"
 cat > "$fake_glow_dir/glow" <<'EOF'
@@ -131,6 +135,9 @@ uninstall_home="$(mktemp -d)"
 uninstall_output="$(HOME="$uninstall_home" ZSH_CUSTOM="$uninstall_home/.oh-my-zsh/custom" sh "${PACKAGE_DIR}/uninstall.sh")"
 assert_true "uninstaller uses shared logger" grep -q "INFO:.*Plugin is not installed:" <<< "$uninstall_output"
 rm -rf "$uninstall_home"
+
+assert_true "plugin preserves existing accept-line widget" grep -q "zle -A accept-line _moyarich_auto_glow_original_accept_line" "${PACKAGE_DIR}/moyarich-auto-glow-md.plugin.zsh"
+assert_true "interception remains opt-in" grep -q 'MOYARICH_AUTO_GLOW_INTERCEPT:-0.*== "1"' "${PACKAGE_DIR}/moyarich-auto-glow-md.plugin.zsh"
 
 if (( failures > 0 )); then
   print -u2 -- "$failures test(s) failed"
