@@ -1,0 +1,41 @@
+name: "Temporary · Add dependency cruiser lockfile"
+
+on:
+  push:
+    branches:
+      - refactor/shared-release-identity
+
+permissions:
+  contents: write
+
+jobs:
+  update-lockfile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: refactor/shared-release-identity
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+
+      - name: Add pinned Dependency Cruiser dev dependency
+        run: npm install --package-lock-only --save-dev --save-exact dependency-cruiser@18.4.0 --ignore-scripts
+
+      - name: Commit lockfile update
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if git diff --quiet -- package.json package-lock.json; then
+            echo "No lockfile changes required."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json
+          git commit -m "build: add dependency cruiser"
+          git push origin HEAD:refactor/shared-release-identity
