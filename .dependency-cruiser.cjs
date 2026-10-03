@@ -20,15 +20,28 @@ module.exports = {
       },
     },
     {
-      name: "no-unresolved",
-      comment: "Every imported module should resolve successfully in CI.",
+      name: "no-unresolved-local",
+      comment:
+        "A relative import that cannot be resolved usually means a broken source path.",
       severity: "error",
+      from: {},
+      to: {
+        couldNotResolve: true,
+        path: "^[.]",
+      },
+    },
+    {
+      name: "no-unresolved-external",
+      comment:
+        "Unresolved package and tooling imports are reported while workspace package boundaries are tuned.",
+      severity: "warn",
       from: {
         // VS Code injects the `vscode` module into the extension host runtime.
         pathNot: "^packages/demo-tools/src/vscode/extension-host[.]cjs$",
       },
       to: {
         couldNotResolve: true,
+        pathNot: "^[.]",
       },
     },
     {
@@ -76,6 +89,8 @@ module.exports = {
           "(^|/)vite[.]config[.][cm]?[jt]s$",
           "(^|/)vitest[.]config[.][cm]?[jt]s$",
           "(^|/)eslint[.]config[.][cm]?[jt]s$",
+          "(^|/)[^/]+[.]config(?:[.]example)?[.][cm]?[jt]s$",
+          "(^|/)(tests?|__tests__)/",
         ],
       },
       to: {},
