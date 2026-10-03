@@ -144,6 +144,8 @@ Run commands normally:
 
 When output looks like Markdown, it is rendered through Glow. Ordinary output is printed as normal text.
 
+To prevent unusually large captured output from being sent through Glow, set `MOYARICH_AUTO_GLOW_MAX_LENGTH` to a positive character count. Output beyond that limit is printed unchanged.
+
 Example:
 
     printf '# Build Results\n\n| Package | Status |\n| --- | --- |\n| api | passing |\n'
@@ -248,7 +250,7 @@ Or run only the behavioral shell tests:
 
     npm run test:shell --workspace @moyarich/auto-glow-md
 
-The tests exercise Markdown detection, bypass behavior, command output, exit-status preservation, the source shell CLI, and installer generation of Glow's native Zsh completion. `test:dist` validates the assembled `dist/` runtime package, including the generated CLI.
+The tests exercise Markdown detection, bypass behavior, command output, exit-status preservation, ZLE command interoperability, the source shell CLI, and installer generation of Glow's native Zsh completion. `test:dist` validates the assembled `dist/` runtime package, including the generated CLI.
 
 npm is only a monorepo development convenience. It is not required to install or run the plugin or CLI.
 

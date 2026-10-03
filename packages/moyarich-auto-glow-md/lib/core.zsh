@@ -5,6 +5,8 @@
 #     When non-empty, bypass Glow rendering and print captured output directly.
 #   MOYARICH_AUTO_GLOW_CHILD
 #     Internal recursion guard set while executing wrapped commands.
+#   MOYARICH_AUTO_GLOW_MAX_LENGTH
+#     Optional maximum captured-output length eligible for Glow rendering.
 
 typeset -ga MOYARICH_AUTO_GLOW_BYPASS_COMMANDS=(
   cd builtin command source . export unset alias unalias
@@ -70,6 +72,12 @@ moyarich_auto_glow_looks_like_markdown() {
 #   Invokes glow - when Markdown is detected and Glow is available.
 moyarich_auto_glow_render() {
   local output="$1"
+  local max_length="${MOYARICH_AUTO_GLOW_MAX_LENGTH:-0}"
+
+  if [[ "$max_length" == <-> ]] && (( max_length > 0 && ${#output} > max_length )); then
+    print -r -- "$output"
+    return
+  fi
 
   if [[ -n "${MOYARICH_AUTO_GLOW_DISABLE_RENDER:-}" ]]; then
     print -r -- "$output"
