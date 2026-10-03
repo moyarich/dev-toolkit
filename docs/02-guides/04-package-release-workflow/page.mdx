@@ -128,7 +128,43 @@ candidate draft jobs only for affected packages
 
 A package is selected only when a changed path is inside that package directory. Root files and shared repository tooling do not implicitly draft every package.
 
-Each package draft writer also uses package-scoped concurrency. A newer draft run for the same package cancels the older in-progress draft run so two pushes cannot race to update the same candidate.
+Each package draft writer also uses package-scoped concurrency. If a newer push changes the same package, GitHub cancels the older in-progress draft job so two jobs do not race to update the same draft.
+
+### Why cancelled draft jobs do not lose changes
+
+The workflow uses two different ranges for two different jobs:
+
+```text
+Which packages should run?
+current push only
+
+What should go into the draft?
+all unreleased package changes
+from the previous published package release
+through current main
+```
+
+The current push range is used only to decide **which package draft jobs need to run**.
+
+Release Drafter then rebuilds the affected package's candidate draft from the previous published package release through current `main`.
+
+For example:
+
+```text
+previous foo release
+    ↓
+commit A → foo
+    ↓
+commit B → foo
+    ↓
+current main
+```
+
+If the draft job started by commit A is still running when commit B arrives, commit B starts a newer `foo` draft job and GitHub cancels the older one.
+
+The newer job still rebuilds the draft from the previous `foo` release through current `main`, so the draft contains both commit A and commit B.
+
+This is why the Release Drafter `from:` input must not be set to `github.event.before`. Doing that would limit release notes to a single push instead of the full unreleased package history.
 
 The candidate draft gives maintainers an early place to review and edit release notes, but its proposed version is not authoritative.
 
