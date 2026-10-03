@@ -4,17 +4,12 @@
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "target": "ES2024",
-    "types": [
-      "node",
-      "vitest/globals"
-    ],
+    "types": ["node", "vitest/globals"],
     "skipLibCheck": true,
     "strict": true,
     "allowImportingTsExtensions": true,
     "paths": {
-      "@moyarich/demo-tools": [
-        "./packages/demo-tools/src/index.ts"
-      ]
+      "@moyarich/demo-tools": ["./packages/demo-tools/src/index.ts"]
     }
   },
   "include": [
