@@ -19,7 +19,7 @@
 #     current checkout. This is intended for development.
 #
 #   --verbose, -v
-#     Print resolved paths, install mode, and each copy/symlink operation.
+#     Print the install mode, destination, and files copied or linked.
 #     This is the default.
 #
 #   --quiet, -q
@@ -99,40 +99,35 @@ error() {
   printf '%b%s%b\n' "$COLOR_RED" "$*" "$COLOR_RESET" >&2
 }
 
-# Print a verbose operation message.
-#
-# Arguments:
-#   $@  Message text.
-verbose() {
-  [ "$VERBOSE" -eq 1 ] || return 0
-  printf '%s\n' "$*"
-}
-
-# Print a verbose label/value pair with a dimmed value.
+# Print a concise verbose label/value pair.
 #
 # Arguments:
 #   $1  Label.
 #   $2  Value.
-verbose_path() {
+verbose_value() {
   [ "$VERBOSE" -eq 1 ] || return 0
   printf '%b%s%b %b%s%b\n' \
     "$COLOR_CYAN" "$1" "$COLOR_RESET" \
     "$COLOR_DIM" "$2" "$COLOR_RESET"
 }
 
-# Print a verbose transfer operation.
+# Print a concise verbose section heading.
 #
 # Arguments:
-#   $1  Operation label.
-#   $2  Source path.
-#   $3  Destination path.
-verbose_transfer() {
+#   $1  Heading text.
+verbose_heading() {
   [ "$VERBOSE" -eq 1 ] || return 0
-  printf '%b%s%b %b%s%b %s %b%s%b\n' \
-    "$COLOR_GREEN" "$1" "$COLOR_RESET" \
-    "$COLOR_DIM" "$2" "$COLOR_RESET" \
-    "->" \
-    "$COLOR_DIM" "$3" "$COLOR_RESET"
+  printf '%b%s%b\n' "$COLOR_GREEN" "$1" "$COLOR_RESET"
+}
+
+# Print one installed file relative to the plugin destination.
+#
+# Arguments:
+#   $1  Destination path.
+verbose_file() {
+  [ "$VERBOSE" -eq 1 ] || return 0
+  relative_path="${1#"$PLUGIN_DIR"/}"
+  printf '  %b%s%b\n' "$COLOR_DIM" "$relative_path" "$COLOR_RESET"
 }
 
 # Print a verbose destructive/replacement operation.
@@ -168,10 +163,6 @@ PLUGIN_DIR="${ZSH_CUSTOM_DIR}/plugins/${PLUGIN_NAME}"
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 MARKER="${PLUGIN_DIR}/.moyarich-auto-glow-md-install"
 
-verbose_path "Install mode:" "${MODE}"
-verbose_path "Installer:" "${SCRIPT_DIR}"
-verbose_path "ZSH_CUSTOM:" "${ZSH_CUSTOM_DIR}"
-verbose_path "Plugin destination:" "${PLUGIN_DIR}"
 
 # Support installation from either the source package or the assembled dist/.
 if [ -f "${SCRIPT_DIR}/src/cli/${PLUGIN_NAME}.sh" ]; then
@@ -185,12 +176,9 @@ else
   exit 1
 fi
 
-verbose_path "Runtime source:" "${RUNTIME_DIR}"
-verbose_path "CLI source:" "${CLI_SOURCE}"
 
 # Prepare a clean managed plugin directory.
 prepare_plugin_dir() {
-  verbose_path "Ensure directory:" "${ZSH_CUSTOM_DIR}/plugins"
   mkdir -p "${ZSH_CUSTOM_DIR}/plugins"
 
   if [ -L "${PLUGIN_DIR}" ]; then
@@ -206,7 +194,6 @@ prepare_plugin_dir() {
     rm -rf "${PLUGIN_DIR}"
   fi
 
-  verbose_path "Create runtime directories:" "${PLUGIN_DIR}/bin ${PLUGIN_DIR}/lib"
   mkdir -p "${PLUGIN_DIR}/bin" "${PLUGIN_DIR}/lib"
 }
 
@@ -216,8 +203,8 @@ prepare_plugin_dir() {
 #   $1  Source path.
 #   $2  Destination path.
 copy_verbose() {
-  verbose_transfer "Copy:" "$1" "$2"
   cp "$1" "$2"
+  verbose_file "$2"
 }
 
 # Symlink a source file into the managed plugin directory.
@@ -226,13 +213,17 @@ copy_verbose() {
 #   $1  Source path.
 #   $2  Destination path.
 link_verbose() {
-  verbose_transfer "Link:" "$2" "$1"
   ln -s "$1" "$2"
+  verbose_file "$2"
 }
 
 # Install a self-contained copy of the plugin.
 install_copy() {
   prepare_plugin_dir
+  verbose_value "Install mode:" "copy"
+  verbose_value "Destination:" "$PLUGIN_DIR"
+  printf '%s\n' ""
+  verbose_heading "Copied:"
 
   copy_verbose     "${RUNTIME_DIR}/moyarich-auto-glow-md.plugin.zsh"     "${PLUGIN_DIR}/moyarich-auto-glow-md.plugin.zsh"
   copy_verbose     "${RUNTIME_DIR}/lib/core.zsh"     "${PLUGIN_DIR}/lib/core.zsh"
@@ -242,19 +233,21 @@ install_copy() {
   [ ! -f "${RUNTIME_DIR}/install.sh" ] ||     copy_verbose "${RUNTIME_DIR}/install.sh" "${PLUGIN_DIR}/install.sh"
   [ ! -f "${RUNTIME_DIR}/uninstall.sh" ] ||     copy_verbose "${RUNTIME_DIR}/uninstall.sh" "${PLUGIN_DIR}/uninstall.sh"
 
-  verbose_path "Write install marker:" "${MARKER}"
   printf '%s\n' "copy" > "${MARKER}"
 
-  verbose_path "Make executable:" "${PLUGIN_DIR}/bin/moyarich-auto-glow-md"
   chmod 0755 "${PLUGIN_DIR}/bin/moyarich-auto-glow-md"
 
-  success "Installed plugin copy"
-  printf '  %s\n' "${PLUGIN_DIR}"
+  printf '%s\n' ""
+  success "Installed plugin successfully"
 }
 
 # Install development symlinks inside the normal Oh My Zsh plugin directory.
 install_symlink() {
   prepare_plugin_dir
+  verbose_value "Install mode:" "symlink"
+  verbose_value "Destination:" "$PLUGIN_DIR"
+  printf '%s\n' ""
+  verbose_heading "Linked:"
 
   link_verbose     "${RUNTIME_DIR}/moyarich-auto-glow-md.plugin.zsh"     "${PLUGIN_DIR}/moyarich-auto-glow-md.plugin.zsh"
   link_verbose     "${RUNTIME_DIR}/lib/core.zsh"     "${PLUGIN_DIR}/lib/core.zsh"
@@ -264,11 +257,10 @@ install_symlink() {
   [ ! -f "${RUNTIME_DIR}/install.sh" ] ||     link_verbose "${RUNTIME_DIR}/install.sh" "${PLUGIN_DIR}/install.sh"
   [ ! -f "${RUNTIME_DIR}/uninstall.sh" ] ||     link_verbose "${RUNTIME_DIR}/uninstall.sh" "${PLUGIN_DIR}/uninstall.sh"
 
-  verbose_path "Write install marker:" "${MARKER}"
   printf '%s\n' "symlink" > "${MARKER}"
 
-  success "Installed development symlinks"
-  printf '  %s\n' "${PLUGIN_DIR}"
+  printf '%s\n' ""
+  success "Installed plugin successfully"
 }
 
 case "${MODE}" in
@@ -295,5 +287,3 @@ printf '%s\n' ""
 printf '%b%s%b\n' "$COLOR_BOLD" "4. Try it:" "$COLOR_RESET"
 printf '%s\n' "   ${PLUGIN_NAME} -- printf '%s\\n' '# Hello from auto-glow'"
 printf '%s\n' ""
-verbose_path "Plugin entry point:" "${PLUGIN_DIR}/moyarich-auto-glow-md.plugin.zsh"
-verbose_path "CLI command:" "${PLUGIN_DIR}/bin/moyarich-auto-glow-md"
