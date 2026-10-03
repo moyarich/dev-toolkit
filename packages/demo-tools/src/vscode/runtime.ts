@@ -34,7 +34,8 @@ async function ensureExtension({
     /* Build the extension below when package.json is not available yet. */
   }
   if (!build) throw new Error(`VS Code extension is not built: ${developmentPath}`);
-  const command = typeof build === "string" ? { command: "npm", args: ["run", build] } : build;
+  const command =
+    typeof build === "string" ? { command: "npm", args: ["run", build] } : build;
   await runProcess(command.command, command.args ?? [], { cwd });
   await access(path.join(developmentPath, "package.json"));
 }
@@ -68,7 +69,7 @@ export function getVSCodeCachePath({
     const localAppData =
       environment.LOCALAPPDATA ??
       path.join(homeDirectory, "AppData", "Local");
-    return path.join(localAppData, "moya-vscode-test");
+    return path.win32.join(localAppData, "moya-vscode-test");
   }
 
   const xdgCacheHome =
