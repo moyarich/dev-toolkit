@@ -44,11 +44,8 @@ export function getVSCodeCachePath({
 }: VSCodeCachePathOptions = {}): string {
   const pathApi = platform === "win32" ? path.win32 : path.posix;
 
-  const override =
-    env.VSCODE_TEST_CACHE ?? env.DEMO_TOOLS_VSCODE_CACHE;
-
-  if (override) {
-    return pathApi.resolve(override);
+  if (env.VSCODE_TEST_CACHE) {
+    return pathApi.resolve(env.VSCODE_TEST_CACHE);
   }
 
   const resolveRoot = platformCacheRoots[platform];
