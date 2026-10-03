@@ -1,7 +1,7 @@
 {
   "name": "@moyarich/auto-glow-md",
   "version": "0.1.0",
-  "description": "Shell-native Oh My Zsh plugin that automatically renders Markdown terminal output with Glow.",
+  "description": "Shell-native Oh My Zsh Markdown renderer powered by Glow, with a CLI and opt-in command interception.",
   "bin": {
     "moyarich-auto-glow-md": "./dist/bin/moyarich-auto-glow-md.sh"
   },
