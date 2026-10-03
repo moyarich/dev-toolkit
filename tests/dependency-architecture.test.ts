@@ -18,16 +18,12 @@ test("root checks include the pinned dependency architecture scan", () => {
 
 test("dependency architecture rules block high-signal failures", () => {
   assert.match(config, /name: "no-circular"/);
-  assert.match(config, /name: "no-unresolved"/);
-  assert.match(
-    config,
-    /packages\/demo-tools\/src\/vscode\/extension-host\[\.\]cjs/,
-  );
+  assert.match(config, /name: "no-unresolved-local"/);
   assert.match(config, /name: "no-undeclared-package-dependencies"/);
 
   for (const rule of [
     "no-circular",
-    "no-unresolved",
+    "no-unresolved-local",
     "no-undeclared-package-dependencies",
   ]) {
     assert.match(
@@ -38,7 +34,13 @@ test("dependency architecture rules block high-signal failures", () => {
 });
 
 test("noisier architecture smells begin as warnings", () => {
+  assert.match(
+    config,
+    /packages\/demo-tools\/src\/vscode\/extension-host\[\.\]cjs/,
+  );
+
   for (const rule of [
+    "no-unresolved-external",
     "no-production-to-tests",
     "no-cross-package-internals",
     "no-orphans",
