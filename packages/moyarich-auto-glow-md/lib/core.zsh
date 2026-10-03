@@ -103,14 +103,14 @@ moyarich_auto_glow_render() {
   local output="$1"
 
   if [[ -n "${MOYARICH_AUTO_GLOW_DISABLE_RENDER:-}" ]]; then
-    print -r -- "$output"
+    print -rn -- "$output"
     return
   fi
 
   if moyarich_auto_glow_looks_like_markdown "$output" && command -v glow >/dev/null 2>&1; then
-    print -r -- "$output" | command glow -
+    print -rn -- "$output" | command glow -
   else
-    print -r -- "$output"
+    print -rn -- "$output"
   fi
 }
 
@@ -128,13 +128,32 @@ moyarich_auto_glow_render() {
 #
 # Side effects:
 #   Captures stdout and stderr together, then writes the rendered result.
+#   Preserves trailing newlines in captured text. As with shell variables in
+#   general, NUL bytes cannot be represented by this capture model.
 moyarich_auto_glow_run() {
   local command_line="$1"
   local output
   local exit_code
 
-  MOYARICH_AUTO_GLOW_CHILD=1 output="$(eval "$command_line" 2>&1)"
+  # Command substitution normally removes trailing newlines. Append a
+  # non-newline sentinel inside the substitution, then remove only that
+  # sentinel afterwards so the command's trailing newlines are retained.
+  output="$(
+    MOYARICH_AUTO_GLOW_CHILD=1
+    export MOYARICH_AUTO_GLOW_CHILD
+
+    eval "$command_line" 2>&1
+    exit_code=$?
+
+    print -rn -- 
+}
+\x1e'
+    exit "$exit_code"
+  )"
   exit_code=$?
+  output="${output%
+}
+\x1e'}"
 
   moyarich_auto_glow_render "$output"
   return "$exit_code"
