@@ -1,0 +1,37 @@
+# Run VS Code tests
+
+Use `run-vscode-tests` to reuse downloaded VS Code builds across extension repositories while continuing to run tests through `@vscode/test-cli`.
+
+Add it to an extension package:
+
+```json
+{
+  "scripts": {
+    "test:vscode": "run-vscode-tests"
+  }
+}
+```
+
+The command resolves a shared cache directory, passes that directory to `@vscode/test-electron`, and then launches `vscode-test` with `VSCODE_TEST_EXECUTABLE_PATH` pointing at the resolved VS Code executable.
+
+Default cache locations:
+
+| Platform | Cache |
+| --- | --- |
+| macOS | `~/Library/Caches/vscode.test-electron-cache` |
+| Linux | `$XDG_CACHE_HOME/vscode.test-electron-cache` or `~/.cache/vscode.test-electron-cache` |
+| Windows | `%LOCALAPPDATA%\vscode.test-electron-cache` |
+
+Override the cache location with:
+
+```sh
+VSCODE_TEST_CACHE=/path/to/shared/cache npm run test:vscode
+```
+
+Override the VS Code version with:
+
+```sh
+VSCODE_VERSION=stable npm run test:vscode
+```
+
+Arguments after the command are forwarded to `vscode-test`.
