@@ -92,6 +92,7 @@ installer_home="$(mktemp -d)"
 trap 'rm -rf "$installer_home"' EXIT
 installer_output="$(HOME="$installer_home" ZSH_CUSTOM="$installer_home/.oh-my-zsh/custom" sh "${PACKAGE_DIR}/install.sh" --quiet)"
 assert_true "installer completes with nounset enabled" test -f "$installer_home/.oh-my-zsh/custom/plugins/moyarich-auto-glow-md/.moyarich-auto-glow-md-install"
+assert_equal "installer defines COLOR_CYAN in both TTY branches" "2" "$(grep -c "COLOR_CYAN=" "${PACKAGE_DIR}/install.sh")"
 assert_true "installer prints completion guidance" grep -q "Next steps" <<< "$installer_output"
 
 set +e
