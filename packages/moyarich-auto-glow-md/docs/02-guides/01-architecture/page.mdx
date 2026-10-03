@@ -84,7 +84,7 @@ The plugin directory can therefore be symlinked directly into:
 
 ## Tradeoff
 
-The shell-native implementation captures output before classifying it. This keeps installation and runtime dependencies minimal, but it is less suitable for commands that require continuous TTY streaming or full-screen terminal behavior.
+The shell-native implementation captures stdout and stderr together before classifying it. It preserves text output and trailing newlines, but intentionally loses stdout/stderr stream separation and cannot represent NUL bytes in shell variables. This keeps installation and runtime dependencies minimal, but it is not suitable for binary output, continuous TTY streaming, or full-screen terminal behavior.
 
 ## ZLE compatibility
 
