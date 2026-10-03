@@ -25,9 +25,23 @@ permissions:
   packages: read
 
 jobs:
+  # Pushes can be repaired deterministically before CI evaluates the tree.
+  # Pull requests remain read-only: their normal checks still report formatting
+  # problems without allowing CI to write to contributor branches.
+  format-on-push:
+    name: "Format pushed branch"
+    if: ${{ github.event_name == 'push' }}
+    permissions:
+      contents: write
+    uses: ./.github/workflows/reusable_format.yml
+    with:
+      commit: true
+      node-version: ${{ inputs.node-version || '24' }}
+
   root-checks:
     name: "Root checks"
-    if: ${{ github.event_name != 'workflow_dispatch' || inputs.package-directory == 'all' }}
+    needs: format-on-push
+    if: ${{ always() && (needs.format-on-push.result == 'success' || needs.format-on-push.result == 'skipped') && (github.event_name != 'workflow_dispatch' || inputs.package-directory == 'all') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7 # v7
@@ -71,7 +85,8 @@ jobs:
 
   package-ci:
     name: "Package CI"
-    if: ${{ github.event_name != 'workflow_dispatch' || inputs.package-directory == 'all' }}
+    needs: format-on-push
+    if: ${{ always() && (needs.format-on-push.result == 'success' || needs.format-on-push.result == 'skipped') && (github.event_name != 'workflow_dispatch' || inputs.package-directory == 'all') }}
     uses: ./.github/workflows/reusable_package-ci.yml
     with:
       packages-directory: packages
@@ -79,7 +94,8 @@ jobs:
 
   selected-package-ci:
     name: "Package CI · ${{ inputs.package-directory }}"
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.package-directory != 'all' }}
+    needs: format-on-push
+    if: ${{ always() && (needs.format-on-push.result == 'success' || needs.format-on-push.result == 'skipped') && github.event_name == 'workflow_dispatch' && inputs.package-directory != 'all' }}
     uses: ./.github/workflows/reusable_node-ci.yml
     with:
       package-directory: ${{ inputs.package-directory }}
