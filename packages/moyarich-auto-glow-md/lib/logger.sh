@@ -34,6 +34,22 @@ else
   DIM=''
 fi
 
+# Error colors follow stderr independently so redirected stdout does not
+# disable colors for warnings and errors that still target an interactive TTY.
+if [ -t 2 ]; then
+  ERR_NC='\033[0m'
+  ERR_RED='\033[1;31m'
+  ERR_DARK_RED='\033[0;31m'
+  ERR_YELLOW='\033[1;33m'
+  ERR_DARK_YELLOW='\033[0;33m'
+else
+  ERR_NC=''
+  ERR_RED=''
+  ERR_DARK_RED=''
+  ERR_YELLOW=''
+  ERR_DARK_YELLOW=''
+fi
+
 # Print a formatted log message.
 #
 # Arguments:
@@ -58,10 +74,10 @@ logger() {
       printf '%bACTION:%b %b%s%b\n' "$YELLOW" "$NC" "$DARK_YELLOW" "${2:-}" "$NC"
       ;;
     WARNING)
-      printf '%bWARNING:%b %b%s%b\n' "$YELLOW" "$NC" "$DARK_YELLOW" "${2:-}" "$NC" >&2
+      printf '%bWARNING:%b %b%s%b\n' "$ERR_YELLOW" "$ERR_NC" "$ERR_DARK_YELLOW" "${2:-}" "$ERR_NC" >&2
       ;;
     ERROR)
-      printf '%bERROR:%b  %b%s%b\n' "$RED" "$NC" "$DARK_RED" "${2:-}" "$NC" >&2
+      printf '%bERROR:%b  %b%s%b\n' "$ERR_RED" "$ERR_NC" "$ERR_DARK_RED" "${2:-}" "$ERR_NC" >&2
       ;;
     *)
       printf '%b*%b %b%s%b%s%b\n' "$GREEN" "$NC" "$YELLOW" "$1" "$CYAN" "${2:-}" "$NC"
