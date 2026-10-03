@@ -16,21 +16,20 @@ on:
         type: string
 
   pull_request:
+  # Format every branch when commits are uploaded. Existing pull requests
+  # receive the repair automatically because their head branch is updated.
   push:
-    branches:
-      - main
 
 permissions:
   contents: read
   packages: read
 
 jobs:
-  # Self-heal formatting before checks for repository-owned branches.
-  # Fork pull requests remain read-only because their head repository cannot
-  # safely receive commits from this workflow.
+  # Pushes are writable and self-healing. Pull requests are verification-only;
+  # they never receive workflow-authored commits.
   format:
-    name: "Format branch"
-    if: ${{ github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) }}
+    name: "Format pushed branch"
+    if: ${{ github.event_name == 'push' }}
     permissions:
       contents: write
     uses: ./.github/workflows/reusable_format.yml
