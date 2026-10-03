@@ -281,7 +281,7 @@ if command -v "${PLUGIN_NAME}" >/dev/null 2>&1; then
   success "Plugin is active in the current shell."
   printf '%s\n' ""
   printf '%b%s%b\n' "$COLOR_BOLD" "Try it:" "$COLOR_RESET"
-  printf '%s\n' "   ${PLUGIN_NAME} -- printf '%s\\n' '# Hello from auto-glow'"
+  printf '%s\n' "   ${PLUGIN_NAME} -- echo '# Hello from auto-glow'"
 elif [ -f "$ZSHRC" ] && grep -Eq "(^|[[:space:]()])${PLUGIN_NAME}([[:space:]()]|$)" "$ZSHRC"; then
   printf '%b%s%b\n' "$COLOR_YELLOW" "Plugin is enabled, but not loaded in the current shell." "$COLOR_RESET"
   printf '%s\n' ""
