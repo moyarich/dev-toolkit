@@ -76,8 +76,8 @@ moyarich_auto_glow_render() {
     return
   fi
 
-  if moyarich_auto_glow_looks_like_markdown "$output" && (( $+commands[glow] )); then
-    print -r -- "$output" | glow -
+  if moyarich_auto_glow_looks_like_markdown "$output" && command -v glow >/dev/null 2>&1; then
+    print -r -- "$output" | command glow -
   else
     print -r -- "$output"
   fi
