@@ -10,8 +10,9 @@ const config = readFileSync(resolve(repo, ".dependency-cruiser.cjs"), "utf8");
 test("root checks include the pinned dependency architecture scan", () => {
   assert.equal(
     pkg.scripts["deps:architecture"],
-    "npx --yes -p typescript@6.0.3 -p dependency-cruiser@18.4.0 dependency-cruiser --config .dependency-cruiser.cjs --output-type err packages apps",
+    "dependency-cruiser --config .dependency-cruiser.cjs --output-type err packages apps",
   );
+  assert.equal(pkg.devDependencies["dependency-cruiser"], "18.4.0");
   assert.match(pkg.scripts.checks, /npm run deps:architecture$/);
 });
 
