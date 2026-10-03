@@ -173,9 +173,13 @@ Commands that modify the current shell bypass the capture path, including:
     exec
     exit
 
+## ZLE integration
+
+Auto Glow wraps Zsh's logical `accept-line` widget instead of directly rebinding `^M` or `^J`. The previously installed `accept-line` widget is preserved and receives empty or shell-state commands. Custom keymaps and keys mapped to unrelated widgets remain untouched.
+
 ## Runtime model
 
-    ZLE accept-line
+    ZLE accept-line wrapper
          |
          +-- shell-state command -----------> normal Zsh execution
          |
@@ -250,7 +254,7 @@ Or run only the behavioral shell tests:
 
     npm run test:shell --workspace @moyarich/auto-glow-md
 
-The tests exercise Markdown detection, bypass behavior, command output, exit-status preservation, ZLE command interoperability, the source shell CLI, and installer generation of Glow's native Zsh completion. `test:dist` validates the assembled `dist/` runtime package, including the generated CLI.
+The tests exercise Markdown detection, bypass behavior, command output, exit-status preservation, preservation of existing ZLE key bindings and the previous `accept-line` widget, the source shell CLI, and installer generation of Glow's native Zsh completion. `test:dist` validates the assembled `dist/` runtime package, including the generated CLI.
 
 npm is only a monorepo development convenience. It is not required to install or run the plugin or CLI.
 
