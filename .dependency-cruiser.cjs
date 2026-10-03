@@ -23,7 +23,10 @@ module.exports = {
       name: "no-unresolved",
       comment: "Every imported module should resolve successfully in CI.",
       severity: "error",
-      from: {},
+      from: {
+        // VS Code injects the `vscode` module into the extension host runtime.
+        pathNot: "^packages/demo-tools/src/vscode/extension-host[.]cjs$",
+      },
       to: {
         couldNotResolve: true,
       },
