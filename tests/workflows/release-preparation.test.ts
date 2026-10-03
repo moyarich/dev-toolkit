@@ -109,3 +109,96 @@ test("reusable release and publish define target-branch only for workflow_call",
     assert.equal([...call.matchAll(/^ {6}target-branch:/gm)].length, 1);
   }
 });
+
+test("release workflow keeps GitHub releases draft until package publication completes", () => {
+  assert.match(release, /Ensure matching GitHub draft/);
+  assert.match(release, /Publish GitHub Release draft/);
+  assert.match(release, /-F draft=false/);
+  assert.match(release, /GitHub Release: \*\*draft\*\*/);
+  assert.match(release, /Package publication: \*\*not requested\*\*/);
+  assert.match(release, /status == "staged"/);
+  assert.match(
+    release,
+    /remains a draft until registry publication is complete/,
+  );
+});
+
+test("release workflow consumes canonical release identity from workspace-release", () => {
+  assert.match(release, /\.identity\.tagName/);
+  assert.match(release, /\.identity\.releaseName/);
+  assert.match(release, /RELEASE_TAG/);
+  assert.match(release, /RELEASE_NAME/);
+});
+
+test("standalone publish finalizes the canonical GitHub draft after publication", () => {
+  assert.match(publish, /releaseIdentity\.tagName/);
+  assert.match(publish, /releaseIdentity\.releaseName/);
+  assert.match(publish, /Verify matching GitHub draft/);
+  assert.match(publish, /Publish GitHub Release draft/);
+  assert.match(publish, /-F draft=false/);
+  assert.match(publish, /status == "staged"/);
+  assert.match(publish, /canonical Git tag does not exist/);
+  assert.match(publish, /contents: write/);
+  assert.match(publishWrapper, /contents: write/);
+});
+
+test("release resolves the target before ensuring a draft and performing mutation", () => {
+  const preview = release.indexOf("- name: Resolve target release");
+  const draft = release.indexOf("- name: Ensure matching GitHub draft");
+  const perform = release.indexOf("- name: Perform release");
+  const push = release.indexOf("- name: Push release commit and tag");
+
+  assert.ok(preview >= 0);
+  assert.ok(draft > preview);
+  assert.ok(perform > draft);
+  assert.ok(push > perform);
+  assert.match(release, /"--dry-run"/);
+  assert.match(release, /\.nextVersion/);
+  assert.match(release, /\.identity\.tagName/);
+  assert.match(release, /\.identity\.releaseName/);
+});
+
+test("release creates a missing target draft and reuses an existing one", () => {
+  assert.match(release, /select\(\.draft == true and \.tag_name == \$tag\)/);
+  assert.match(release, /--method POST/);
+  assert.match(release, /--method PATCH/);
+  assert.match(release, /ACTION="created"/);
+  assert.match(release, /ACTION="reused"/);
+  assert.match(release, /-f body="\$BODY"/);
+  assert.match(release, /A published GitHub Release already exists/);
+});
+
+test("release preview and real release must resolve the same canonical identity", () => {
+  assert.match(release, /--arg expectedTag "\$RELEASE_TAG"/);
+  assert.match(release, /--arg expectedName "\$RELEASE_NAME"/);
+  assert.match(release, /\.identity\.tagName == \$expectedTag/);
+  assert.match(release, /\.identity\.releaseName == \$expectedName/);
+});
+
+test("release removes only superseded automation-owned untagged candidate drafts", () => {
+  assert.match(
+    release,
+    /dev-toolkit-release-draft:candidate package=\$PACKAGE_NAME/,
+  );
+  assert.match(release, /SUPERSEDED_DRAFTS/);
+  assert.match(release, /\.tag_name != \$target/);
+  assert.match(release, /contains\(\$marker\)/);
+  assert.match(release, /refs\/tags\/\$DRAFT_TAG/);
+  assert.match(release, /--method DELETE/);
+  assert.match(release, /Superseded candidate drafts/);
+});
+
+test("failed releases report that the prepared draft is retained for retry", () => {
+  assert.match(release, /steps\.draft\.outcome/);
+  assert.match(release, /steps\.release\.outcome/);
+  assert.match(release, /draft retained for retry/);
+  assert.match(release, /Release commit\/tag: \*\*not completed\*\*/);
+});
+
+test("publishing is retry-safe across partially published registries", () => {
+  assert.match(publish, /workspace-publish\.mjs/);
+  assert.match(
+    publish,
+    /GitHub Release remains a draft while staged registry publication awaits completion/,
+  );
+});

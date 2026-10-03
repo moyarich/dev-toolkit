@@ -6,10 +6,12 @@
 
 - Workspace package discovery with reusable metadata for GitHub Actions.
 - `workspace-release` with bump, exact-version, package-json, dry-run, JSON, and interactive selection modes.
+- `workspace-release-identity` for canonical package-directory Git tags and GitHub Release names shared by drafting, releasing, and publishing.
 - `workspace-publish` with registry selection, dependency ordering, dry-run plans, JSON output, and interactive confirmation.
 - Dependency checks and safe workspace-selector validation before release or publish operations.
 - Registry-state checks that distinguish unpublished packages from registry failures.
 - Git-tag verification and conflict guardrails for releases and publishing.
+- Release identity metadata in release and publish JSON for workflow orchestration.
 - Package-scoped changelog generation from commit history.
 - `workspace-package-lock` and reusable package-discovery CLIs.
 - Package-local release, publish, and CLI documentation.

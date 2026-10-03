@@ -1,6 +1,6 @@
-name-template: "{{PACKAGE_NAME}} v$RESOLVED_VERSION"
-tag-template: "{{PACKAGE_DIRECTORY}}@$RESOLVED_VERSION"
-tag-prefix: "{{PACKAGE_DIRECTORY}}@"
+name-template: "{{RELEASE_NAME_TEMPLATE}}"
+tag-template: "{{TAG_TEMPLATE}}"
+tag-prefix: "{{TAG_PREFIX}}"
 
 include-paths:
   - "{{PACKAGE_DIRECTORY}}/**"
@@ -57,6 +57,8 @@ version-resolver:
   default: patch
 
 template: |
+  <!-- dev-toolkit-release-draft:candidate package={{PACKAGE_NAME}} -->
+
   ## Release notes
 
   $CHANGES

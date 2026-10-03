@@ -25,7 +25,7 @@ test("release drafter discovers publishable packages dynamically", () => {
   assert.match(workflow, /require-publish-config: true/);
   assert.ok(
     workflow.includes(
-      "matrix: ${{ fromJSON(needs.discover-packages.outputs.matrix",
+      "matrix: ${{ fromJSON(needs.select-packages.outputs.matrix",
     ),
   );
   assert.doesNotMatch(workflow, /directory: workspace-tools/);
@@ -40,15 +40,13 @@ test("release drafter generates one package config template at runtime", () => {
   assert.ok(workflow.includes('replaceAll("{{PACKAGE_NAME}}"'));
   assert.ok(workflow.includes('replaceAll("{{PACKAGE_DIRECTORY}}"'));
 
-  assert.ok(
-    template.includes('name-template: "{{PACKAGE_NAME}} v$RESOLVED_VERSION"'),
-  );
-  assert.ok(
-    template.includes(
-      'tag-template: "{{PACKAGE_DIRECTORY}}@$RESOLVED_VERSION"',
-    ),
-  );
-  assert.ok(template.includes('tag-prefix: "{{PACKAGE_DIRECTORY}}@"'));
+  assert.ok(template.includes('name-template: "{{RELEASE_NAME_TEMPLATE}}"'));
+  assert.ok(template.includes('tag-template: "{{TAG_TEMPLATE}}"'));
+  assert.ok(template.includes('tag-prefix: "{{TAG_PREFIX}}"'));
+  assert.match(workflow, /releaseIdentity/);
+  assert.match(workflow, /identity\.releaseName/);
+  assert.match(workflow, /identity\.tagName/);
+  assert.match(workflow, /identity\.tagPrefix/);
   assert.ok(template.includes('- "{{PACKAGE_DIRECTORY}}/**"'));
 });
 
@@ -91,7 +89,34 @@ test("draft release workflow does not require the release environment", () => {
   assert.doesNotMatch(workflow, /approve-release:/);
 });
 
-test("release drafter uses only supported action inputs", () => {
+test("release drafter keeps push-range selection separate from cumulative release history", () => {
+  // IMPORTANT:
+  // `github.event.before -> github.sha` is used only to decide which package
+  // draft jobs need to run for a push. It must NOT become Release Drafter's
+  // `from:` comparison range.
+  //
+  // Release Drafter must keep rebuilding each package draft cumulatively from
+  // the previous published package release through current `main`. Otherwise,
+  // cancelling an older per-package draft job could drop commits that were
+  // present in the cancelled push but not in the newer push range.
+  //
+  // Invariant:
+  //   package selection = only the current push range
+  //   release notes     = all unreleased package changes from the previous
+  //                       published package release through current main
+  //
+  // Never set Release Drafter's `from:` input to `github.event.before`.
+  // Doing so would limit release notes to one push and could omit commits.
+  //
+  // Draft jobs use package-scoped GitHub Actions concurrency:
+  //   group: draft-package-${{ github.repository }}-${{ matrix.directory }}
+  //   cancel-in-progress: true
+  //
+  // If two pushes change the same package, the newer job enters the same
+  // concurrency group and GitHub cancels the older in-progress job. The newer
+  // job must therefore rebuild release notes cumulatively from the previous
+  // published package release through current main, not just from its own
+  // `github.event.before -> github.sha` push range.
   assert.doesNotMatch(
     workflow,
     /uses: release-drafter\/release-drafter@v7\.7\.0[\s\S]*?\n\s+from:/,
@@ -102,11 +127,14 @@ test("release drafter uses only supported action inputs", () => {
   );
 });
 
-test("first release is blocked when package tags exist without a published release", () => {
+test("tagged drafts are valid release-in-progress state while orphan tags are blocked", () => {
   assert.match(workflow, /git tag --list "\$PACKAGE_DIRECTORY@\*"/);
   assert.match(workflow, /EXISTING_GIT_TAG/);
-  assert.match(workflow, /Refusing to treat this package as a first release/);
-  assert.match(workflow, /existing-git-tag=/);
+  assert.match(workflow, /EXISTING_DRAFT_ID/);
+  assert.match(workflow, /select\(\.draft == true and \.tag_name == \$tag\)/);
+  assert.match(workflow, /existing tagged draft release/);
+  assert.match(workflow, /Found orphan package Git tag/);
+  assert.match(workflow, /existing-draft-id=/);
 });
 
 test("blocked first release writes would-have-created details to the summary", () => {
@@ -115,6 +143,7 @@ test("blocked first release writes would-have-created details to the summary", (
   assert.match(workflow, /WOULD_VERSION/);
   assert.match(workflow, /WOULD_TAG/);
   assert.match(workflow, /WOULD_NAME/);
+  assert.match(workflow, /releaseIdentity/);
   assert.match(workflow, /release history requires reconciliation/);
 });
 
@@ -130,5 +159,44 @@ test("release draft template includes install guidance", () => {
   assert.match(
     template,
     /npm install \{\{PACKAGE_NAME\}\}@\$RESOLVED_VERSION --registry=https:\/\/npm\.pkg\.github\.com/,
+  );
+});
+
+test("tagged draft releases are preserved for the release workflow", () => {
+  assert.match(workflow, /steps\.baseline\.outputs\.existing-draft-id == ''/);
+  assert.match(
+    workflow,
+    /Existing tagged draft detected\. The draft was left unchanged/,
+  );
+});
+
+test("push drafting selects only packages changed by the pushed commits", () => {
+  assert.match(workflow, /Select packages for drafting/);
+  assert.match(workflow, /git diff --name-only "\$BEFORE_SHA" "\$AFTER_SHA"/);
+  assert.match(workflow, /file\.startsWith\(`\$\{pkg\.directory\}\/`\)/);
+  assert.match(workflow, /needs\.select-packages\.outputs\.matrix/);
+  assert.match(
+    workflow,
+    /Root and shared-tooling changes do not implicitly draft every package/,
+  );
+});
+
+test("package draft writers are serialized per package", () => {
+  assert.match(workflow, /concurrency:/);
+  assert.match(
+    workflow,
+    /group: draft-package-\$\{\{ github\.repository \}\}-\$\{\{ matrix\.directory \}\}/,
+  );
+  assert.match(workflow, /cancel-in-progress: true/);
+});
+
+test("automation-owned release drafts are marked as candidates", () => {
+  assert.match(
+    workflow,
+    /dev-toolkit-release-draft:candidate package=\$PACKAGE_NAME/,
+  );
+  assert.match(
+    template,
+    /dev-toolkit-release-draft:candidate package=\{\{PACKAGE_NAME\}\}/,
   );
 });

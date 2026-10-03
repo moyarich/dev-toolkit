@@ -87,7 +87,7 @@ jobs:
     name: "package: @moyarich/workspace-tools | dir: packages/workspace-tools"
     needs: publish-approval
     permissions:
-      contents: read
+      contents: write
       packages: write
     if: ${{ always() && (inputs.dry-run || needs.publish-approval.result == 'success') }}
     uses: ./.github/workflows/reusable_npm-publish.yml

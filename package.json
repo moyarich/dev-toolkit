@@ -20,7 +20,8 @@
     "format": "prettier . --write",
     "prebuild": "npm run build --workspace @moyarich/vite-plugin-package-bin && npm run build --workspace @moyarich/web-components",
     "test:workflows": "vitest run --dir tests/workflows",
-    "checks": "npm run format:check && npm run lint && npm run typecheck && npm run build && npm test"
+    "checks": "npm run format:check && npm run lint && npm run typecheck && npm run build && npm test && npm run deps:architecture",
+    "deps:architecture": "dependency-cruiser --config .dependency-cruiser.cjs --output-type err packages apps"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -29,6 +30,7 @@
     "@vscode/test-electron": "^3.1.0",
     "@vscode/test-web": "^0.0.81",
     "@vscode/vsce": "^4.0.0",
+    "dependency-cruiser": "18.4.0",
     "esbuild": "^0.28.2",
     "eslint": "^10.11.0",
     "eslint-config-prettier": "^10.1.8",

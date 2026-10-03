@@ -35,6 +35,108 @@ jobs:
       require-publish-config: true
       node-version: "24"
 
+  select-packages:
+    name: "Select packages for drafting"
+    needs: discover-packages
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.select.outputs.matrix }}
+      has-packages: ${{ steps.select.outputs.has-packages }}
+      count: ${{ steps.select.outputs.count }}
+
+    steps:
+      - name: Checkout repository history
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Select affected packages
+        id: select
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_PACKAGE: ${{ inputs.package }}
+          BEFORE_SHA: ${{ github.event.before }}
+          AFTER_SHA: ${{ github.sha }}
+          PACKAGES_JSON: ${{ needs.discover-packages.outputs.packages }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            if [ "$INPUT_PACKAGE" = "all" ]; then
+              SELECTED="$PACKAGES_JSON"
+            else
+              SELECTED="$(
+                jq -c --arg selector "$INPUT_PACKAGE" '
+                  [
+                    .[] |
+                    select(.name == $selector or .directory == $selector)
+                  ]
+                ' <<< "$PACKAGES_JSON"
+              )"
+            fi
+          else
+            if [ -n "$BEFORE_SHA" ] &&
+               [ "$BEFORE_SHA" != "0000000000000000000000000000000000000000" ] &&
+               git cat-file -e "$BEFORE_SHA^{commit}" 2>/dev/null; then
+              CHANGED_FILES="$(git diff --name-only "$BEFORE_SHA" "$AFTER_SHA")"
+            else
+              CHANGED_FILES="$(git diff-tree --root --no-commit-id --name-only -r "$AFTER_SHA")"
+            fi
+
+            SELECTED="$(
+              PACKAGES_JSON="$PACKAGES_JSON" CHANGED_FILES="$CHANGED_FILES" node --input-type=module <<'NODE'
+          const packages = JSON.parse(process.env.PACKAGES_JSON || "[]");
+          const files = (process.env.CHANGED_FILES || "")
+            .split("\n")
+            .map((file) => file.trim())
+            .filter(Boolean);
+
+          const selected = packages.filter((pkg) =>
+            files.some(
+              (file) =>
+                file === pkg.directory || file.startsWith(`${pkg.directory}/`),
+            ),
+          );
+
+          process.stdout.write(JSON.stringify(selected));
+          NODE
+            )"
+          fi
+
+          COUNT="$(jq 'length' <<< "$SELECTED")"
+          MATRIX="$(jq -cn --argjson packages "$SELECTED" '{include: $packages}')"
+
+          {
+            echo "matrix=$MATRIX"
+            echo "count=$COUNT"
+            if [ "$COUNT" -gt 0 ]; then
+              echo "has-packages=true"
+            else
+              echo "has-packages=false"
+            fi
+          } >> "$GITHUB_OUTPUT"
+
+          {
+            echo "# Draft package selection"
+            echo
+            echo "| Setting | Value |"
+            echo "| --- | --- |"
+            printf '| Trigger | `%s` |\n' "$EVENT_NAME"
+            echo "| Selected packages | **$COUNT** |"
+            echo
+            if [ "$EVENT_NAME" = "push" ]; then
+              echo "> Root and shared-tooling changes do not implicitly draft every package."
+              echo "> Only changed files under a publishable package directory select that package."
+              echo
+            fi
+            echo '~~~json'
+            jq . <<< "$SELECTED"
+            echo '~~~'
+          } >> "$GITHUB_STEP_SUMMARY"
+
   validate-selection:
     name: "Validate package selector"
     needs: discover-packages
@@ -68,16 +170,22 @@ jobs:
     name: "package: ${{ matrix.name }} | dir: ${{ matrix.directory }}"
     needs:
       - discover-packages
+      - select-packages
       - validate-selection
     if: >-
       ${{ needs.discover-packages.result == 'success' &&
-          needs.discover-packages.outputs.has-packages == 'true' &&
+          needs.select-packages.result == 'success' &&
+          needs.select-packages.outputs.has-packages == 'true' &&
           (github.event_name != 'workflow_dispatch' ||
            needs.validate-selection.result == 'success') }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-      matrix: ${{ fromJSON(needs.discover-packages.outputs.matrix || '{"include":[]}') }}
+      matrix: ${{ fromJSON(needs.select-packages.outputs.matrix || '{"include":[]}') }}
+
+    concurrency:
+      group: draft-package-${{ github.repository }}-${{ matrix.directory }}
+      cancel-in-progress: true
 
     steps:
       - name: Decide whether package is selected
@@ -108,6 +216,12 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      - name: Setup Node.js
+        if: ${{ steps.selected.outputs.value == 'true' }}
+        uses: actions/setup-node@v7 # v7
+        with:
+          node-version: "24"
+
       - name: Generate package Release Drafter config
         if: ${{ steps.selected.outputs.value == 'true' }}
         env:
@@ -117,17 +231,32 @@ jobs:
         run: |
           set -euo pipefail
 
-          node --input-type=module <<'NODE'
+          node --experimental-strip-types --input-type=module <<'NODE'
           import { readFileSync, writeFileSync } from "node:fs";
+          import { releaseIdentity } from "./packages/workspace-tools/src/release-identity.ts";
 
           const template = readFileSync(
             ".github/release-drafter-package-template.yml",
             "utf8",
           );
 
+          const identity = releaseIdentity(
+            {
+              directory: process.env.PACKAGE_DIRECTORY,
+              manifest: {
+                name: process.env.PACKAGE_NAME,
+                version: "$RESOLVED_VERSION",
+              },
+            },
+            "$RESOLVED_VERSION",
+          );
+
           const config = template
-            .replaceAll("{{PACKAGE_NAME}}", process.env.PACKAGE_NAME)
-            .replaceAll("{{PACKAGE_DIRECTORY}}", process.env.PACKAGE_DIRECTORY);
+            .replaceAll("{{PACKAGE_NAME}}", identity.packageName)
+            .replaceAll("{{PACKAGE_DIRECTORY}}", identity.packageDirectory)
+            .replaceAll("{{RELEASE_NAME_TEMPLATE}}", identity.releaseName)
+            .replaceAll("{{TAG_TEMPLATE}}", identity.tagName)
+            .replaceAll("{{TAG_PREFIX}}", identity.tagPrefix);
 
           writeFileSync(
             ".github/release-drafter-package-generated.yml",
@@ -142,13 +271,14 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           INPUT_VERSION: ${{ inputs.version }}
+          PACKAGE_NAME: ${{ matrix.name }}
           PACKAGE_DIRECTORY: ${{ matrix.directory }}
         shell: bash
         run: |
           set -euo pipefail
 
           RELEASES="$(
-            gh api               --paginate               --slurp               "repos/$GH_REPO/releases?per_page=100"
+            gh api --paginate --slurp "repos/$GH_REPO/releases?per_page=100"
           )"
 
           PREVIOUS_TAG="$(
@@ -167,6 +297,9 @@ jobs:
           )"
 
           VERSION="$INPUT_VERSION"
+          EXISTING_DRAFT_ID=""
+          EXISTING_DRAFT_URL=""
+          EXISTING_DRAFT_NAME=""
 
           EXISTING_GIT_TAG="$(
             git tag --list "$PACKAGE_DIRECTORY@*" |
@@ -174,60 +307,104 @@ jobs:
               tail -n 1
           )"
 
-          if [ -n "$PREVIOUS_TAG" ]; then
-            SOURCE="previous published package release"
-          elif [ -n "$EXISTING_GIT_TAG" ]; then
-            WOULD_VERSION="${VERSION:-0.1.0}"
-            WOULD_TAG="$PACKAGE_DIRECTORY@$WOULD_VERSION"
-            WOULD_NAME="$PACKAGE_NAME v$WOULD_VERSION"
-
-            WOULD_CHANGES="$(
-              git log \
-                --reverse \
-                --format='- %s (%h)' \
-                HEAD \
-                -- "$PACKAGE_DIRECTORY" |
-                sed '/^- $/d'
+          # A newer package tag with a matching draft is an intentional
+          # release-in-progress state. Only a tag with neither a published
+          # release nor a matching draft is considered orphaned.
+          if [ -n "$EXISTING_GIT_TAG" ] && [ "$EXISTING_GIT_TAG" != "$PREVIOUS_TAG" ]; then
+            EXISTING_DRAFT="$(
+              jq -c --arg tag "$EXISTING_GIT_TAG" '
+                [
+                  .[][] |
+                  select(.draft == true and .tag_name == $tag)
+                ]
+                | first // empty
+              ' <<< "$RELEASES"
             )"
 
-            if [ -z "$WOULD_CHANGES" ]; then
-              WOULD_CHANGES="- No package-specific commits found."
-            fi
+            if [ -n "$EXISTING_DRAFT" ]; then
+              EXISTING_DRAFT_ID="$(jq -r '.id' <<< "$EXISTING_DRAFT")"
+              EXISTING_DRAFT_URL="$(jq -r '.html_url' <<< "$EXISTING_DRAFT")"
+              EXISTING_DRAFT_NAME="$(jq -r '.name' <<< "$EXISTING_DRAFT")"
+              VERSION="${EXISTING_GIT_TAG#"$PACKAGE_DIRECTORY@"}"
+              SOURCE="existing tagged draft release"
+            else
+              WOULD_VERSION="${VERSION:-${EXISTING_GIT_TAG#"$PACKAGE_DIRECTORY@"}}"
+              IDENTITY="$(
+                PACKAGE_NAME="$PACKAGE_NAME" \
+                PACKAGE_DIRECTORY="$PACKAGE_DIRECTORY" \
+                VERSION="$WOULD_VERSION" \
+                node --experimental-strip-types --input-type=module <<'NODE'
+          import { releaseIdentity } from "./packages/workspace-tools/src/release-identity.ts";
 
-            WOULD_BODY="$(
+          process.stdout.write(
+            JSON.stringify(
+              releaseIdentity(
+                {
+                  directory: process.env.PACKAGE_DIRECTORY,
+                  manifest: {
+                    name: process.env.PACKAGE_NAME,
+                    version: process.env.VERSION,
+                  },
+                },
+                process.env.VERSION,
+              ),
+            ),
+          );
+          NODE
+              )"
+              WOULD_TAG="$(jq -r '.tagName' <<< "$IDENTITY")"
+              WOULD_NAME="$(jq -r '.releaseName' <<< "$IDENTITY")"
+
+              WOULD_CHANGES="$(
+                git log \
+                  --reverse \
+                  --format='- %s (%h)' \
+                  HEAD \
+                  -- "$PACKAGE_DIRECTORY" |
+                  sed '/^- $/d'
+              )"
+
+              if [ -z "$WOULD_CHANGES" ]; then
+                WOULD_CHANGES="- No package-specific commits found."
+              fi
+
+              WOULD_BODY="$(
+                {
+                  echo "## What's Changed"
+                  echo
+                  echo "$WOULD_CHANGES"
+                }
+              )"
+
               {
-                echo "## What's Changed"
+                echo "# Package release draft"
                 echo
-                echo "$WOULD_CHANGES"
-              }
-            )"
+                echo "## Release blocked"
+                echo
+                echo "A package Git tag exists without a matching draft or published GitHub Release."
+                echo
+                echo "| Would-have-created | Value |"
+                echo "| --- | --- |"
+                echo "| Package | \`$PACKAGE_NAME\` |"
+                echo "| Directory | \`$PACKAGE_DIRECTORY\` |"
+                echo "| Version | \`$WOULD_VERSION\` |"
+                echo "| Tag | \`$WOULD_TAG\` |"
+                echo "| Release name | \`$WOULD_NAME\` |"
+                echo "| Existing Git tag | \`$EXISTING_GIT_TAG\` |"
+                echo "| Result | **Blocked — release history requires reconciliation** |"
+                echo
+                echo "## Would-have-created release content"
+                echo
+                echo "$WOULD_BODY"
+                echo
+              } >> "$GITHUB_STEP_SUMMARY"
 
-            {
-              echo "# Package release draft"
-              echo
-              echo "## Release blocked"
-              echo
-              echo "A package Git tag exists without a matching published GitHub Release, so the workflow did not create or update a draft."
-              echo
-              echo "| Would-have-created | Value |"
-              echo "| --- | --- |"
-              echo "| Package | \`$PACKAGE_NAME\` |"
-              echo "| Directory | \`$PACKAGE_DIRECTORY\` |"
-              echo "| Version | \`$WOULD_VERSION\` |"
-              echo "| Tag | \`$WOULD_TAG\` |"
-              echo "| Release name | \`$WOULD_NAME\` |"
-              echo "| Existing Git tag | \`$EXISTING_GIT_TAG\` |"
-              echo "| Result | **Blocked — release history requires reconciliation** |"
-              echo
-              echo "## Would-have-created release content"
-              echo
-              echo "$WOULD_BODY"
-              echo
-            } >> "$GITHUB_STEP_SUMMARY"
-
-            echo "::error::Found Git tag '$EXISTING_GIT_TAG' for $PACKAGE_DIRECTORY but no matching published GitHub Release."
-            echo "::error::Refusing to treat this package as a first release. Publish/restore the release or supply an explicit version after reconciling release history."
-            exit 1
+              echo "::error::Found orphan package Git tag '$EXISTING_GIT_TAG'."
+              echo "::error::Expected a matching draft or published GitHub Release before continuing."
+              exit 1
+            fi
+          elif [ -n "$PREVIOUS_TAG" ]; then
+            SOURCE="previous published package release"
           else
             SOURCE="full package Git history"
 
@@ -241,6 +418,9 @@ jobs:
             echo "version=$VERSION"
             echo "previous-tag=$PREVIOUS_TAG"
             echo "existing-git-tag=$EXISTING_GIT_TAG"
+            echo "existing-draft-id=$EXISTING_DRAFT_ID"
+            echo "existing-draft-url=$EXISTING_DRAFT_URL"
+            echo "existing-draft-name=$EXISTING_DRAFT_NAME"
           } >> "$GITHUB_OUTPUT"
 
       - name: Initialize workflow summary
@@ -268,7 +448,7 @@ jobs:
 
       - name: Create or update first package draft
         id: first-draft
-        if: ${{ steps.selected.outputs.value == 'true' && steps.baseline.outputs.previous-tag == '' }}
+        if: ${{ steps.selected.outputs.value == 'true' && steps.baseline.outputs.previous-tag == '' && steps.baseline.outputs.existing-draft-id == '' }}
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
@@ -279,8 +459,31 @@ jobs:
         run: |
           set -euo pipefail
 
-          TAG="$PACKAGE_DIRECTORY@$VERSION"
-          NAME="$PACKAGE_NAME v$VERSION"
+          IDENTITY="$(
+            PACKAGE_NAME="$PACKAGE_NAME" \
+            PACKAGE_DIRECTORY="$PACKAGE_DIRECTORY" \
+            VERSION="$VERSION" \
+            node --experimental-strip-types --input-type=module <<'NODE'
+          import { releaseIdentity } from "./packages/workspace-tools/src/release-identity.ts";
+
+          process.stdout.write(
+            JSON.stringify(
+              releaseIdentity(
+                {
+                  directory: process.env.PACKAGE_DIRECTORY,
+                  manifest: {
+                    name: process.env.PACKAGE_NAME,
+                    version: process.env.VERSION,
+                  },
+                },
+                process.env.VERSION,
+              ),
+            ),
+          );
+          NODE
+          )"
+          TAG="$(jq -r '.tagName' <<< "$IDENTITY")"
+          NAME="$(jq -r '.releaseName' <<< "$IDENTITY")"
 
           CHANGELOG_PATH="$PACKAGE_DIRECTORY/CHANGELOG.md"
 
@@ -395,6 +598,8 @@ jobs:
 
           BODY="$(
             {
+              echo "<!-- dev-toolkit-release-draft:candidate package=$PACKAGE_NAME -->"
+              echo
               echo "## Release notes"
               echo
               echo "$NOTES"
@@ -448,7 +653,7 @@ jobs:
 
       - name: Create or update subsequent package draft
         id: drafter
-        if: ${{ steps.selected.outputs.value == 'true' && steps.baseline.outputs.previous-tag != '' }}
+        if: ${{ steps.selected.outputs.value == 'true' && steps.baseline.outputs.previous-tag != '' && steps.baseline.outputs.existing-draft-id == '' }}
         uses: release-drafter/release-drafter@v7.7.0
         with:
           config-name: file:release-drafter-package-generated.yml
@@ -467,7 +672,12 @@ jobs:
             echo "| Release | Value |"
             echo "| --- | --- |"
             echo "| Package | \`${{ matrix.name }}\` |"
-            echo "| Name | \`${{ steps.first-draft.outputs.name || steps.drafter.outputs.name }}\` |"
-            echo "| Tag | \`${{ steps.first-draft.outputs.tag_name || steps.drafter.outputs.tag_name }}\` |"
-            echo "| Draft | [Open package draft release](${{ steps.first-draft.outputs.html_url || steps.drafter.outputs.html_url }}) |"
+            echo "| Name | \`${{ steps.baseline.outputs.existing-draft-name || steps.first-draft.outputs.name || steps.drafter.outputs.name }}\` |"
+            echo "| Tag | \`${{ steps.baseline.outputs.existing-git-tag || steps.first-draft.outputs.tag_name || steps.drafter.outputs.tag_name }}\` |"
+            echo "| Draft | [Open package draft release](${{ steps.baseline.outputs.existing-draft-url || steps.first-draft.outputs.html_url || steps.drafter.outputs.html_url }}) |"
+
+            if [ -n "${{ steps.baseline.outputs.existing-draft-id }}" ]; then
+              echo
+              echo "> Existing tagged draft detected. The draft was left unchanged for the release workflow to finalize."
+            fi
           } >> "$GITHUB_STEP_SUMMARY"

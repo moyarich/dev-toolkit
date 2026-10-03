@@ -14,19 +14,34 @@ discover-packages [packages-directory] [--json] [--include-private] [--require-p
 
 The JSON output includes each package's directory, name, version, privacy, publishability, and build/test capabilities. GitHub Actions should consume package inventory through `.github/workflows/reusable_discover-packages.yml` rather than maintaining package lists in workflow YAML.
 
+### `workspace-release-identity`
+
+Resolve the canonical package release identity used by draft, release, and publish workflows.
+
+```sh
+workspace-release-identity packages/auto-glow-md --version 0.1.0 --json
+```
+
+The identity contract is:
+
+- Git tag: `<package-directory>@<version>`
+- GitHub Release name: `<package-name> v<version>`
+
+For example, `@moyarich/auto-glow-md@0.1.0` resolves to tag `packages/moyarich-auto-glow-md@0.1.0` and release name `@moyarich/auto-glow-md v0.1.0`.
+
 ### `workspace-release`
 
 Create or preview a package release from a package under `packages/*`.
 
 ```sh
-workspace-release <package>=<version> [--mode=bump|exact|current] [--version=<value>] [--dry-run]
+workspace-release <package>=<version> [--mode=bump|exact|package-json] [--version=<value>] [--dry-run]
 ```
 
 Release modes:
 
 - `bump` — uses an npm version bump: `patch`, `minor`, `major`, `prepatch`, `preminor`, `premajor`, or `prerelease`.
 - `exact` — uses an exact SemVer.
-- `current` — releases the version already present in the package manifest.
+- `package-json` — releases the version already present in the package manifest.
 - `--dry-run` — previews the resolved version, registry state, and changelog without changing the repository.
 
 ### `workspace-publish`
