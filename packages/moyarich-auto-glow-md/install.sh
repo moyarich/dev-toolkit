@@ -117,6 +117,7 @@ verbose_value() {
 #   $1  Heading text.
 verbose_heading() {
   [ "$VERBOSE" -eq 1 ] || return 0
+  printf '%s\n' ""
   printf '%b%s%b\n' "$COLOR_GREEN" "$1" "$COLOR_RESET"
 }
 
@@ -222,7 +223,6 @@ install_copy() {
   prepare_plugin_dir
   verbose_value "Install mode:" "copy"
   verbose_value "Destination:" "$PLUGIN_DIR"
-  printf '%s\n' ""
   verbose_heading "Copied:"
 
   copy_verbose     "${RUNTIME_DIR}/moyarich-auto-glow-md.plugin.zsh"     "${PLUGIN_DIR}/moyarich-auto-glow-md.plugin.zsh"
@@ -237,7 +237,7 @@ install_copy() {
 
   chmod 0755 "${PLUGIN_DIR}/bin/moyarich-auto-glow-md"
 
-  printf '%s\n' ""
+  [ "$VERBOSE" -eq 0 ] || printf '%s\n' ""
   success "Installed plugin successfully"
 }
 
@@ -246,7 +246,6 @@ install_symlink() {
   prepare_plugin_dir
   verbose_value "Install mode:" "symlink"
   verbose_value "Destination:" "$PLUGIN_DIR"
-  printf '%s\n' ""
   verbose_heading "Linked:"
 
   link_verbose     "${RUNTIME_DIR}/moyarich-auto-glow-md.plugin.zsh"     "${PLUGIN_DIR}/moyarich-auto-glow-md.plugin.zsh"
