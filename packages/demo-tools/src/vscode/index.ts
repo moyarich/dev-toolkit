@@ -7,4 +7,4 @@ export {
   fillVisibleQuickInput,
 } from "./quick-input.ts";
 export { findFrameByHeading, openWorkspaceFile, scrollThroughWebview } from "./workbench.ts";
-export { createVSCodeDemoRuntime, prepareVSCodeExecutable } from "./runtime.ts";
+export { createVSCodeDemoRuntime, getVSCodeCachePath, prepareVSCodeExecutable } from "./runtime.ts";
