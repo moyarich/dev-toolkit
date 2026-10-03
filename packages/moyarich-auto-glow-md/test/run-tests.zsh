@@ -75,6 +75,22 @@ assert_false "ignores ordinary output" moyarich_auto_glow_looks_like_markdown "n
 assert_true "bypasses cd" moyarich_auto_glow_should_bypass "cd /tmp"
 assert_false "runs normal commands" moyarich_auto_glow_should_bypass "printf hello"
 
+fake_glow_dir="$(mktemp -d)"
+cat > "$fake_glow_dir/glow" <<'EOF'
+#!/usr/bin/env sh
+printf 'GLOW_RENDERED:'
+cat
+EOF
+chmod +x "$fake_glow_dir/glow"
+
+rendered_output="$(PATH="$fake_glow_dir:$PATH" moyarich_auto_glow_render "# Render me")"
+assert_true "markdown is routed through glow discovered on PATH" grep -q "^GLOW_RENDERED:# Render me$" <<< "$rendered_output"
+
+plain_output="$(PATH="$fake_glow_dir:$PATH" moyarich_auto_glow_render "plain output")"
+assert_equal "plain output bypasses glow" "plain output" "$plain_output"
+
+rm -rf "$fake_glow_dir"
+
 MOYARICH_AUTO_GLOW_DISABLE_RENDER=1
 output="$(moyarich_auto_glow_run "printf '%s' hello")"
 assert_equal "runs command and returns output" "hello" "$output"
