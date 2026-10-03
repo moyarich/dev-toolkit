@@ -35,3 +35,44 @@ VSCODE_VERSION=stable npm run test:vscode
 ```
 
 Arguments after the command are forwarded to `vscode-test`.
+
+
+## `.vscode-test.ts`
+
+Keep installation selection in the consumer's VS Code test config:
+
+```ts
+import { defineConfig } from "@vscode/test-cli";
+
+const vscodeExecutablePath =
+  process.env.VSCODE_TEST_EXECUTABLE_PATH ?? undefined;
+
+const fromMachine =
+  process.env.VSCODE_TEST_FROM_MACHINE === "true";
+
+export default defineConfig({
+  files: "out/test/**/*.test.js",
+  useInstallation: vscodeExecutablePath
+    ? { fromPath: vscodeExecutablePath }
+    : fromMachine
+      ? { fromMachine: true }
+      : undefined,
+});
+```
+
+Precedence is intentional:
+
+```text
+VSCODE_TEST_EXECUTABLE_PATH
+→ useInstallation.fromPath
+
+else VSCODE_TEST_FROM_MACHINE=true
+→ useInstallation.fromMachine
+
+else
+→ @vscode/test-cli default behavior
+```
+
+`run-vscode-tests` sets `VSCODE_TEST_EXECUTABLE_PATH` after resolving the
+shared download cache. `VSCODE_TEST_FROM_MACHINE` is user-configurable and
+belongs in the consumer environment when machine-profile reuse is desired.
