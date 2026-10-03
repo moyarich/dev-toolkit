@@ -95,6 +95,15 @@ assert_true "installer completes with nounset enabled" test -f "$installer_home/
 assert_equal "installer defines COLOR_CYAN in both TTY branches" "2" "$(grep -c "COLOR_CYAN=" "${PACKAGE_DIR}/install.sh")"
 assert_true "installer prints completion guidance" grep -q "Next steps" <<< "$installer_output"
 
+verbose_installer_home="$(mktemp -d)"
+verbose_installer_output="$(HOME="$verbose_installer_home" ZSH_CUSTOM="$verbose_installer_home/.oh-my-zsh/custom" sh "${PACKAGE_DIR}/install.sh" --verbose)"
+assert_true "verbose installer prints destination once" grep -q "^Destination: " <<< "$verbose_installer_output"
+assert_true "verbose installer prints copied heading" grep -q "^Copied:$" <<< "$verbose_installer_output"
+assert_true "verbose installer lists plugin entry file" grep -q "^  moyarich-auto-glow-md.plugin.zsh$" <<< "$verbose_installer_output"
+assert_true "verbose installer lists nested library file" grep -q "^  lib/core.zsh$" <<< "$verbose_installer_output"
+assert_false "verbose installer does not repeat copy source paths" grep -q "^Copy: " <<< "$verbose_installer_output"
+rm -rf "$verbose_installer_home"
+
 set +e
 invalid_option_output="$(HOME="$installer_home" ZSH_CUSTOM="$installer_home/.oh-my-zsh/custom" sh "${PACKAGE_DIR}/install.sh" --not-a-real-option 2>&1)"
 invalid_option_exit=$?
