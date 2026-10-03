@@ -152,3 +152,4 @@ packages/*/bin/
 .secrets
 .env.local
 .env.production
+.vscode-test/
