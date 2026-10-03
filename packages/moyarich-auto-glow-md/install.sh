@@ -105,7 +105,7 @@ error() {
 #   $@  Message text.
 verbose() {
   [ "$VERBOSE" -eq 1 ] || return 0
-  printf '%b%s%b\n' "$COLOR_CYAN" "$*" "$COLOR_RESET"
+  printf '%s\n' "$*"
 }
 
 # Print a verbose label/value pair with a dimmed value.
@@ -161,11 +161,11 @@ verbose_path "CLI source:" "${CLI_SOURCE}"
 
 # Prepare a clean managed plugin directory.
 prepare_plugin_dir() {
-  verbose "Ensure directory: ${ZSH_CUSTOM_DIR}/plugins"
+  verbose_path "Ensure directory:" "${ZSH_CUSTOM_DIR}/plugins"
   mkdir -p "${ZSH_CUSTOM_DIR}/plugins"
 
   if [ -L "${PLUGIN_DIR}" ]; then
-    verbose "Remove existing plugin symlink: ${PLUGIN_DIR}"
+    verbose_replace "Remove existing plugin symlink:" "${PLUGIN_DIR}"
     rm "${PLUGIN_DIR}"
   elif [ -e "${PLUGIN_DIR}" ]; then
     if [ ! -f "${MARKER}" ]; then
@@ -173,11 +173,11 @@ prepare_plugin_dir() {
       exit 1
     fi
 
-    verbose "Remove existing managed plugin directory: ${PLUGIN_DIR}"
+    verbose_replace "Remove existing managed plugin directory:" "${PLUGIN_DIR}"
     rm -rf "${PLUGIN_DIR}"
   fi
 
-  verbose "Create runtime directories: ${PLUGIN_DIR}/bin ${PLUGIN_DIR}/lib"
+  verbose_path "Create runtime directories:" "${PLUGIN_DIR}/bin ${PLUGIN_DIR}/lib"
   mkdir -p "${PLUGIN_DIR}/bin" "${PLUGIN_DIR}/lib"
 }
 
@@ -187,7 +187,7 @@ prepare_plugin_dir() {
 #   $1  Source path.
 #   $2  Destination path.
 copy_verbose() {
-  verbose "Copy: $1 -> $2"
+  verbose_transfer "Copy:" "$1" "$2"
   cp "$1" "$2"
 }
 
@@ -197,7 +197,7 @@ copy_verbose() {
 #   $1  Source path.
 #   $2  Destination path.
 link_verbose() {
-  verbose "Link: $2 -> $1"
+  verbose_transfer "Link:" "$2" "$1"
   ln -s "$1" "$2"
 }
 
@@ -213,10 +213,10 @@ install_copy() {
   [ ! -f "${RUNTIME_DIR}/install.sh" ] ||     copy_verbose "${RUNTIME_DIR}/install.sh" "${PLUGIN_DIR}/install.sh"
   [ ! -f "${RUNTIME_DIR}/uninstall.sh" ] ||     copy_verbose "${RUNTIME_DIR}/uninstall.sh" "${PLUGIN_DIR}/uninstall.sh"
 
-  verbose "Write install marker: ${MARKER}"
+  verbose_path "Write install marker:" "${MARKER}"
   printf '%s\n' "copy" > "${MARKER}"
 
-  verbose "Make executable: ${PLUGIN_DIR}/bin/moyarich-auto-glow-md"
+  verbose_path "Make executable:" "${PLUGIN_DIR}/bin/moyarich-auto-glow-md"
   chmod 0755 "${PLUGIN_DIR}/bin/moyarich-auto-glow-md"
 
   success "Installed plugin copy"
@@ -235,7 +235,7 @@ install_symlink() {
   [ ! -f "${RUNTIME_DIR}/install.sh" ] ||     link_verbose "${RUNTIME_DIR}/install.sh" "${PLUGIN_DIR}/install.sh"
   [ ! -f "${RUNTIME_DIR}/uninstall.sh" ] ||     link_verbose "${RUNTIME_DIR}/uninstall.sh" "${PLUGIN_DIR}/uninstall.sh"
 
-  verbose "Write install marker: ${MARKER}"
+  verbose_path "Write install marker:" "${MARKER}"
   printf '%s\n' "symlink" > "${MARKER}"
 
   success "Installed development symlinks"
