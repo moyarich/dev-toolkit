@@ -268,7 +268,7 @@ npm is only a monorepo development convenience. It is not required to install or
 
 ## Current limitation
 
-The shell-native implementation captures command output before deciding whether to render it. Commands that rely heavily on interactive TTY behavior, live progress redraws, or full-screen terminal interfaces should be bypassed or run with the plugin disabled for that command.
+The shell-native implementation captures stdout and stderr together before deciding whether to render it. Text output, including trailing newlines, is preserved through the capture path, but stream separation is intentionally lost and shell variables cannot represent NUL bytes. Commands that rely heavily on interactive TTY behavior, live progress redraws, binary output, or full-screen terminal interfaces should be run outside the capture path.
 
 ## Troubleshooting plugin discovery
 
