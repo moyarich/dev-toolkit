@@ -92,22 +92,31 @@ Refusing to remove unmanaged plugin directory: ...
 
 ## Usage
 
-Run commands normally:
+By default, run commands explicitly through the CLI:
 
 ```sh
-git status
-python script.py
-go test ./...
-curl https://example.com
+moyarich-auto-glow-md -- git status
+moyarich-auto-glow-md -- python script.py
+moyarich-auto-glow-md -- go test ./...
 ```
 
-When output looks like Markdown, the plugin renders it through Glow. Ordinary output is printed unchanged.
+When captured output looks like Markdown, the plugin renders it through Glow. Ordinary output is printed unchanged.
 
 Example:
 
 ```sh
-printf '# Build Results\n\n| Package | Status |\n| --- | --- |\n| api | passing |\n'
+moyarich-auto-glow-md -- printf '# Build Results\n\n| Package | Status |\n| --- | --- |\n| api | passing |\n'
 ```
+
+### Enable automatic interception
+
+Automatic Enter-key interception is experimental and disabled by default. To enable it, set this before Oh My Zsh loads plugins:
+
+```zsh
+export MOYARICH_AUTO_GLOW_INTERCEPT=1
+```
+
+The interceptor preserves the existing ZLE `accept-line` widget and bypasses shell-state commands that need to execute in the current shell.
 
 ## Next steps
 
