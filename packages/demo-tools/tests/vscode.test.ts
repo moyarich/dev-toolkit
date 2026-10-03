@@ -34,7 +34,9 @@ test("VS Code cache path is shared across projects", () => {
     getVSCodeCachePath({
       platform: "win32",
       homeDirectory: "C:\\Users\\moya",
-      environment: { LOCALAPPDATA: "C:\\Users\\moya\\AppData\\Local" },
+      environment: {
+        LOCALAPPDATA: "C:\\Users\\moya\\AppData\\Local",
+      },
     }),
     "C:\\Users\\moya\\AppData\\Local\\moya-vscode-test",
   );
