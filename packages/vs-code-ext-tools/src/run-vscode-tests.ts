@@ -30,8 +30,7 @@ const platformCacheRoots: Partial<
 > = {
   darwin: (home) => path.posix.join(home, "Library", "Caches"),
   win32: (home, env) =>
-    env.LOCALAPPDATA ??
-    path.win32.join(home, "AppData", "Local"),
+    env.LOCALAPPDATA ?? path.win32.join(home, "AppData", "Local"),
 };
 
 function defaultCacheRoot(
