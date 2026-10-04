@@ -166,7 +166,7 @@ The default path is:
 
     ${XDG_CONFIG_HOME:-$HOME/.config}/moyarich-auto-glow-md/config.zsh
 
-Set `MOYARICH_AUTO_GLOW_CONFIG` to use a different file. The config is sourced as Zsh, so it only needs to be readable; it does not need executable permissions. Existing config files are never overwritten.
+Set `MOYARICH_AUTO_GLOW_CONFIG_FILE` to use a different file. The config is sourced as Zsh, so it only needs to be readable; it does not need executable permissions. Existing config files are never overwritten.
 
 Configuration precedence is:
 
