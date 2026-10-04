@@ -2,7 +2,7 @@
   "name": "@moyarich/dev-toolkit",
   "private": true,
   "version": "0.0.0",
-  "description": "Shared development tooling and reusable GitHub workflows.",
+  "description": "Shared developer tooling and reusable packages for Moya projects.",
   "workspaces": [
     "packages/*",
     "apps/*"
