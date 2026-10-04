@@ -45,6 +45,7 @@ function assembleRuntimePackage(): Plugin {
       const dist = resolve(root, "dist");
       const bin = resolve(dist, "bin");
       const lib = resolve(dist, "lib");
+      const config = resolve(dist, "config");
       const cli = resolve(bin, "moyarich-auto-glow-md.sh");
       const install = resolve(dist, "install.sh");
       const uninstall = resolve(dist, "uninstall.sh");
@@ -52,10 +53,15 @@ function assembleRuntimePackage(): Plugin {
       await rm(dist, { recursive: true, force: true });
       await mkdir(bin, { recursive: true });
       await mkdir(lib, { recursive: true });
+      await mkdir(config, { recursive: true });
 
       await Promise.all([
         copyFile(resolve(root, "src/cli/moyarich-auto-glow-md.sh"), cli),
         copyFile(resolve(root, "lib/core.zsh"), resolve(lib, "core.zsh")),
+        copyFile(
+          resolve(root, "config/config.zsh.example"),
+          resolve(config, "config.zsh.example"),
+        ),
         copyFile(
           resolve(root, "moyarich-auto-glow-md.plugin.zsh"),
           resolve(dist, "moyarich-auto-glow-md.plugin.zsh"),
