@@ -32,7 +32,7 @@ jobs:
     if: ${{ github.event_name == 'push' }}
     permissions:
       contents: write
-    uses: moyarich/actions/.github/workflows/reusable_format.yml@d430b304d667341f76cadaba64bfdbb23d3685d2
+    uses: moyarich/actions/.github/workflows/reusable_prettier.yml@d430b304d667341f76cadaba64bfdbb23d3685d2
     with:
       commit: true
       node-version: ${{ inputs.node-version || '24' }}
