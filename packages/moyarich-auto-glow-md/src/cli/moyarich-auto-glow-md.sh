@@ -35,7 +35,8 @@ case "${1:-}" in
     fi
 
     editor="${VISUAL:-${EDITOR:-vi}}"
-    "${(z)editor[@]}" "$config_file"
+    editor_words=(${(z)editor})
+    command "${editor_words[@]}" "$config_file"
     exit $?
     ;;
 esac
