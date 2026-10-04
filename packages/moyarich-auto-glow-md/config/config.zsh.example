@@ -1,0 +1,36 @@
+# moyarich-auto-glow-md configuration
+#
+# Auto Glow works without this file. Uncomment only settings you want to
+# override.
+#
+# Configuration precedence:
+#   built-in defaults < this file < pre-existing environment variables
+#
+# Glow's own rendering configuration remains managed by:
+#   glow config
+#
+# This is a Zsh configuration file. It is sourced by Auto Glow and therefore
+# does not need executable permissions.
+
+# Maximum captured-output length eligible for Glow rendering.
+# Set to 0 for no limit.
+# MOYARICH_AUTO_GLOW_MAX_LENGTH=0
+
+# Disable Glow rendering while retaining command capture.
+# Any non-empty value disables rendering.
+# MOYARICH_AUTO_GLOW_DISABLE_RENDER=1
+
+# Commands that must execute directly in the current interactive shell.
+# MOYARICH_AUTO_GLOW_BYPASS_COMMANDS=(
+#   cd builtin command source . export unset alias unalias
+#   typeset declare local set setopt unsetopt autoload functions
+#   hash rehash pushd popd dirs jobs fg bg wait disown exec exit return
+# )
+
+# Optional CLI arguments used only when Auto Glow invokes Glow.
+# These arguments may override corresponding values from Glow's own config.
+# Keep this empty to use Glow's native configuration unchanged.
+# MOYARICH_AUTO_GLOW_ARGS=(
+#   --style auto
+#   --width 100
+# )
