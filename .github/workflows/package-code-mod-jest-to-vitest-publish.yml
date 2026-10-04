@@ -41,7 +41,7 @@ jobs:
     permissions:
       contents: read
       id-token: write
-    uses: moyarich/actions/.github/workflows/reusable_codemod-publish.yml@2e2984f7daeea056897e198747e6d3d42773e42c
+    uses: moyarich/actions/.github/workflows/reusable_codemod-publish.yml@d430b304d667341f76cadaba64bfdbb23d3685d2
     with:
       codemod-directory: packages/code-mod-jest-to-vitest
       target-branch: ${{ inputs.target-branch }}
