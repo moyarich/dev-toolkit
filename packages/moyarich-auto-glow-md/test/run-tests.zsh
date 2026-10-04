@@ -75,17 +75,17 @@ assert_false "ignores ordinary output" moyarich_auto_glow_looks_like_markdown "n
 assert_true "bypasses cd" moyarich_auto_glow_should_bypass "cd /tmp"
 assert_false "runs normal commands" moyarich_auto_glow_should_bypass "printf hello"
 
-MOYARICH_AUTO_GLOW_DISABLE_RENDER=1
+MOYARICH_AUTO_GLOW_ENABLED=0
 output="$(moyarich_auto_glow_run "printf '%s' hello")"
 assert_equal "runs command and returns output" "hello" "$output"
 
 set +e
-MOYARICH_AUTO_GLOW_DISABLE_RENDER=1 moyarich_auto_glow_run "return 7" >/dev/null 2>&1
+MOYARICH_AUTO_GLOW_ENABLED=0 moyarich_auto_glow_run "return 7" >/dev/null 2>&1
 exit_code=$?
 set -e
 assert_equal "preserves exit status" "7" "$exit_code"
 
-cli_output="$(MOYARICH_AUTO_GLOW_DISABLE_RENDER=1 zsh "${PACKAGE_DIR}/src/cli/moyarich-auto-glow-md.sh" -- printf '%s' '# CLI works')"
+cli_output="$(MOYARICH_AUTO_GLOW_ENABLED=0 zsh "${PACKAGE_DIR}/src/cli/moyarich-auto-glow-md.sh" -- printf '%s' '# CLI works')"
 assert_equal "source shell CLI runs commands" "# CLI works" "$cli_output"
 
 if (( failures > 0 )); then
