@@ -22,7 +22,7 @@ permissions:
 jobs:
   pages:
     name: "site: Playground | dir: apps/playground"
-    uses: moyarich/actions/.github/workflows/reusable_github-pages.yml@2e2984f7daeea056897e198747e6d3d42773e42c
+    uses: moyarich/actions/.github/workflows/reusable_github-pages.yml@d430b304d667341f76cadaba64bfdbb23d3685d2
     with:
       build-command: npm run build
       output-directory: apps/playground/dist
