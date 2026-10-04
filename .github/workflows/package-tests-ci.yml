@@ -16,18 +16,22 @@ on:
         type: string
 
   pull_request:
+  # Format every branch when commits are uploaded. Existing pull requests
+  # receive the repair automatically because their head branch is updated.
   push:
-    branches:
-      - main
 
 permissions:
-  # The format job may commit Prettier repairs back to the current branch.
-  contents: write
+  contents: read
   packages: read
 
 jobs:
+  # Pushes are writable and self-healing. Pull requests are verification-only;
+  # they never receive workflow-authored commits.
   format:
-    name: "Self-heal formatting"
+    name: "Format pushed branch"
+    if: ${{ github.event_name == 'push' }}
+    permissions:
+      contents: write
     uses: ./.github/workflows/reusable_format.yml
     with:
       commit: true
@@ -36,15 +40,11 @@ jobs:
   root-checks:
     name: "Root checks"
     needs: format
-    if: ${{ github.event_name != 'workflow_dispatch' || inputs.package-directory == 'all' }}
+    if: ${{ always() && (needs.format.result == 'success' || needs.format.result == 'skipped') && (github.event_name != 'workflow_dispatch' || inputs.package-directory == 'all') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7 # v7
         with:
-          # The format job can push a repair after this workflow starts. Check
-          # out the branch tip so checks validate the healed commit, not the
-          # stale event SHA.
-          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
           persist-credentials: false
 
       - uses: actions/setup-node@v7 # v7
@@ -85,16 +85,24 @@ jobs:
   package-ci:
     name: "Package CI"
     needs: format
-    if: ${{ github.event_name != 'workflow_dispatch' || inputs.package-directory == 'all' }}
+    if: ${{ always() && (needs.format.result == 'success' || needs.format.result == 'skipped') && (github.event_name != 'workflow_dispatch' || inputs.package-directory == 'all') }}
     uses: ./.github/workflows/reusable_package-ci.yml
     with:
       packages-directory: packages
       node-version: ${{ inputs.node-version || '24' }}
 
+  auto-glow-ci:
+    name: "Auto Glow CI"
+    needs: format
+    if: ${{ always() && (needs.format.result == 'success' || needs.format.result == 'skipped') && (github.event_name != 'workflow_dispatch' || inputs.package-directory == 'all' || inputs.package-directory == 'packages/moyarich-auto-glow-md' || inputs.package-directory == '@moyarich/auto-glow-md') }}
+    uses: ./.github/workflows/glow-ci.yml
+    with:
+      node-version: ${{ inputs.node-version || '24' }}
+
   selected-package-ci:
     name: "Package CI · ${{ inputs.package-directory }}"
     needs: format
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.package-directory != 'all' }}
+    if: ${{ always() && (needs.format.result == 'success' || needs.format.result == 'skipped') && github.event_name == 'workflow_dispatch' && inputs.package-directory != 'all' && inputs.package-directory != 'packages/moyarich-auto-glow-md' && inputs.package-directory != '@moyarich/auto-glow-md' }}
     uses: ./.github/workflows/reusable_node-ci.yml
     with:
       package-directory: ${{ inputs.package-directory }}
