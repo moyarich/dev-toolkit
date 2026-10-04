@@ -32,7 +32,7 @@ jobs:
     if: ${{ github.event_name == 'push' }}
     permissions:
       contents: write
-    uses: moyarich/actions/.github/workflows/reusable_format.yml@2e2984f7daeea056897e198747e6d3d42773e42c
+    uses: moyarich/actions/.github/workflows/reusable_format.yml@d430b304d667341f76cadaba64bfdbb23d3685d2
     with:
       commit: true
       node-version: ${{ inputs.node-version || '24' }}
@@ -86,24 +86,16 @@ jobs:
     name: "Package CI"
     needs: format
     if: ${{ always() && (needs.format.result == 'success' || needs.format.result == 'skipped') && (github.event_name != 'workflow_dispatch' || inputs.package-directory == 'all') }}
-    uses: moyarich/actions/.github/workflows/reusable_package-ci.yml@2e2984f7daeea056897e198747e6d3d42773e42c
+    uses: moyarich/actions/.github/workflows/reusable_package-ci.yml@d430b304d667341f76cadaba64bfdbb23d3685d2
     with:
       packages-directory: packages
-      node-version: ${{ inputs.node-version || '24' }}
-
-  auto-glow-ci:
-    name: "Auto Glow CI"
-    needs: format
-    if: ${{ always() && (needs.format.result == 'success' || needs.format.result == 'skipped') && (github.event_name != 'workflow_dispatch' || inputs.package-directory == 'all' || inputs.package-directory == 'packages/moyarich-auto-glow-md' || inputs.package-directory == '@moyarich/auto-glow-md') }}
-    uses: ./.github/workflows/glow-ci.yml
-    with:
       node-version: ${{ inputs.node-version || '24' }}
 
   selected-package-ci:
     name: "Package CI · ${{ inputs.package-directory }}"
     needs: format
-    if: ${{ always() && (needs.format.result == 'success' || needs.format.result == 'skipped') && github.event_name == 'workflow_dispatch' && inputs.package-directory != 'all' && inputs.package-directory != 'packages/moyarich-auto-glow-md' && inputs.package-directory != '@moyarich/auto-glow-md' }}
-    uses: moyarich/actions/.github/workflows/reusable_node-ci.yml@2e2984f7daeea056897e198747e6d3d42773e42c
+    if: ${{ always() && (needs.format.result == 'success' || needs.format.result == 'skipped') && github.event_name == 'workflow_dispatch' && inputs.package-directory != 'all' }}
+    uses: moyarich/actions/.github/workflows/reusable_node-ci.yml@d430b304d667341f76cadaba64bfdbb23d3685d2
     with:
       package-directory: ${{ inputs.package-directory }}
       node-version: ${{ inputs.node-version }}
