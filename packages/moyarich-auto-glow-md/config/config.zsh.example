@@ -16,9 +16,9 @@
 # Set to 0 for no limit.
 # MOYARICH_AUTO_GLOW_MAX_LENGTH=0
 
-# Disable Glow rendering while retaining command capture.
-# Any non-empty value disables rendering.
-# MOYARICH_AUTO_GLOW_DISABLE_RENDER=1
+# Enable automatic Glow rendering.
+# Set to 0 to print captured output without Glow rendering.
+# MOYARICH_AUTO_GLOW_ENABLED=1
 
 # Commands that must execute directly in the current interactive shell.
 # MOYARICH_AUTO_GLOW_BYPASS_COMMANDS=(
