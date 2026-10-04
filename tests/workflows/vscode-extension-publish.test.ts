@@ -12,7 +12,10 @@ const publish = readFileSync(
 test("VS Code extension publishing is reusable and dry-run first", () => {
   assert.match(publish, /workflow_call:/);
   assert.match(publish, /dry-run:[\s\S]*?default: true/);
-  assert.match(publish, /environment:\s*\n\s*name: \$\{\{ inputs\.release-environment \}\}/);
+  assert.match(
+    publish,
+    /environment:\s*\n\s*name: \$\{\{ inputs\.release-environment \}\}/,
+  );
   assert.match(
     publish,
     /always\(\) && \(inputs\.dry-run \|\| needs\.publish-approval\.result == 'success'\)/,
@@ -24,18 +27,26 @@ test("VS Code extension publishing verifies release identity before mutation", (
   assert.match(publish, /No matching GitHub draft release exists for \$TAG/);
   assert.match(publish, /Draft release name must match canonical tag \$TAG/);
   assert.match(publish, /git checkout --detach "\$TAG"/);
-  assert.match(publish, /Tagged package version \$TAGGED_VERSION does not match expected version \$VERSION/);
+  assert.match(
+    publish,
+    /Tagged package version \$TAGGED_VERSION does not match expected version \$VERSION/,
+  );
 });
 
 test("VS Code extension publishing packages before Marketplace and GitHub Release publication", () => {
   const packageIndex = publish.indexOf("- name: Package VSIX");
-  const marketplaceIndex = publish.indexOf("- name: Publish to VS Code Marketplace");
+  const marketplaceIndex = publish.indexOf(
+    "- name: Publish to VS Code Marketplace",
+  );
   const releaseIndex = publish.indexOf("- name: Publish GitHub Release");
 
   assert.ok(packageIndex >= 0);
   assert.ok(marketplaceIndex > packageIndex);
   assert.ok(releaseIndex > marketplaceIndex);
-  assert.match(publish, /npx @vscode\/vsce publish --packagePath "\$VSIX_PATH"/);
+  assert.match(
+    publish,
+    /npx @vscode\/vsce publish --packagePath "\$VSIX_PATH"/,
+  );
   assert.match(publish, /retention-days: 14/);
 });
 
