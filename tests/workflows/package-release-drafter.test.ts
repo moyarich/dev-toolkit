@@ -59,14 +59,26 @@ test("first package release falls back from changelog to PRs, commits, then mini
   assert.match(workflow, /VERSION="0\.1\.0"/);
   assert.match(workflow, /CHANGELOG_PATH="\$PACKAGE_DIRECTORY\/CHANGELOG\.md"/);
   assert.match(workflow, /line\.trim\(\) === heading/);
-  assert.match(workflow, /if \[ -z "\$NOTES" \]; then/);
+
+  assert.ok(workflow.includes('NOTE_SOURCE="changelog"'));
+  assert.ok(workflow.includes('NOTE_SOURCE="merged-prs"'));
+  assert.ok(workflow.includes('commits/$COMMIT_SHA/pulls'));
+  assert.ok(
+    workflow.includes(
+      'select(.merged_at != null and .base.ref == "main")',
+    ),
+  );
+
+  assert.ok(workflow.includes('NOTE_SOURCE="commits"'));
   assert.match(workflow, /git log \\/);
   assert.match(workflow, /-- "\$PACKAGE_DIRECTORY"/);
   assert.match(workflow, /groups = new Map/);
   assert.match(workflow, /seen = new Set/);
-  assert.match(workflow, /NOTE_SOURCE="minimal"/);
-  assert.match(workflow, /Initial release of \\$PACKAGE_NAME\./);
-  assert.match(workflow, /Release notes source: \\$NOTE_SOURCE/);
+
+  assert.ok(workflow.includes('NOTE_SOURCE="minimal"'));
+  assert.ok(workflow.includes('NOTES="Initial release of $PACKAGE_NAME."'));
+  assert.ok(workflow.includes('Release notes source: $NOTE_SOURCE'));
+
   assert.match(workflow, /Create or update first package draft/);
   assert.match(workflow, /Create or update subsequent package draft/);
   assert.match(workflow, /tag_name=/);
