@@ -13,10 +13,6 @@ Cross-repository GitHub Actions workflows now live in [`moyarich/actions`](https
 
 ## Packages
 
-### `@moyarich/workspace-tools`
-
-Reusable workspace release and publishing commands, including package discovery and canonical release identity.
-
 ### `@moyarich/vscode-test-cleaner`
 
 Interactive and automation-friendly cleanup for VS Code test environments created by `@vscode/test-electron`.
@@ -33,6 +29,6 @@ Public reusable workflows were moved to:
 https://github.com/moyarich/actions
 ```
 
-Consumer repositories should call the released workflows from that repository. `dev-toolkit` remains the home of supporting npm packages such as `@moyarich/workspace-tools` and `@moyarich/readme-screenshots`.
+Consumer repositories should call the released workflows from that repository. `@moyarich/workspace-tools` moved with the workflow platform to `moyarich/actions`; `dev-toolkit` remains the home of general-purpose developer packages such as `@moyarich/readme-screenshots` and `@moyarich/vite-plugin-package-bin`.
 
 See [Getting started](docs/01-getting-started/page.mdx) for monorepo development guidance.
