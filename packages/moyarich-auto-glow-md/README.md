@@ -50,6 +50,8 @@ The installed layout is:
     │   └── moyarich-auto-glow-md
     ├── lib/
     │   └── core.zsh
+    ├── config/
+    │   └── config.zsh.example
     ├── _glow                    # generated Glow Zsh completion
     ├── moyarich-auto-glow-md.plugin.zsh
     ├── install.sh
@@ -150,6 +152,34 @@ Example:
 
     printf '# Build Results\n\n| Package | Status |\n| --- | --- |\n| api | passing |\n'
 
+## Configuration
+
+Auto Glow works without a config file. To see the path it would use:
+
+    moyarich-auto-glow-md config-path
+
+To create the config from the shipped, commented example and open it in your editor:
+
+    moyarich-auto-glow-md config
+
+The default path is:
+
+    ${XDG_CONFIG_HOME:-$HOME/.config}/moyarich-auto-glow-md/config.zsh
+
+Set `MOYARICH_AUTO_GLOW_CONFIG` to use a different file. The config is sourced as Zsh, so it only needs to be readable; it does not need executable permissions. Existing config files are never overwritten.
+
+Configuration precedence is:
+
+    built-in defaults < config.zsh < pre-existing environment variables
+
+The shipped example documents Auto Glow settings such as `MOYARICH_AUTO_GLOW_MAX_LENGTH`, `MOYARICH_AUTO_GLOW_BYPASS_COMMANDS`, and `MOYARICH_AUTO_GLOW_ARGS`.
+
+Glow's own appearance and rendering settings remain owned by Glow. Use:
+
+    glow config
+
+Auto Glow does not duplicate Glow's YAML settings. If `MOYARICH_AUTO_GLOW_ARGS` is set, those values are passed directly to `glow` and may override corresponding Glow config values. No `.env` file is required or loaded.
+
 ## Shell-state commands
 
 Commands that modify the current shell bypass the capture path, including:
@@ -218,6 +248,8 @@ The build assembles:
     │   └── moyarich-auto-glow-md.sh
     ├── lib/
     │   └── core.zsh
+    ├── config/
+    │   └── config.zsh.example
     ├── moyarich-auto-glow-md.plugin.zsh
     ├── install.sh
     ├── uninstall.sh
