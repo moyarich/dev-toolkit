@@ -29,7 +29,7 @@ permissions:
 jobs:
   discover-packages:
     name: "Discover publishable packages"
-    uses: ./.github/workflows/reusable_discover-packages.yml
+    uses: moyarich/actions/.github/workflows/reusable_discover-packages.yml@362daf4c0bb6c74a71825d613778cd9eea7352c7
     with:
       packages-directory: packages
       require-publish-config: true
