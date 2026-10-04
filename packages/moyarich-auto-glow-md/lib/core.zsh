@@ -1,7 +1,7 @@
 # Shared runtime functions for moyarich-auto-glow-md.
 #
 # Configuration:
-#   ${MOYARICH_AUTO_GLOW_CONFIG:-${XDG_CONFIG_HOME:-$HOME/.config}/moyarich-auto-glow-md/config.zsh}
+#   ${MOYARICH_AUTO_GLOW_CONFIG_FILE:-${XDG_CONFIG_HOME:-$HOME/.config}/moyarich-auto-glow-md/config.zsh}
 #
 # Precedence:
 #   built-in defaults < config.zsh < pre-existing environment variables
@@ -20,7 +20,7 @@ fi
 
 # Print the resolved user configuration path.
 moyarich_auto_glow_config_path() {
-  print -r -- "${MOYARICH_AUTO_GLOW_CONFIG:-${XDG_CONFIG_HOME:-${HOME}/.config}/moyarich-auto-glow-md/config.zsh}"
+  print -r -- "${MOYARICH_AUTO_GLOW_CONFIG_FILE:-${XDG_CONFIG_HOME:-${HOME}/.config}/moyarich-auto-glow-md/config.zsh}"
 }
 
 # Load the optional user configuration while preserving scalar values that
@@ -32,7 +32,7 @@ moyarich_auto_glow_load_config() {
 
   local -A preserved
   local name
-  for name in MOYARICH_AUTO_GLOW_DISABLE_RENDER MOYARICH_AUTO_GLOW_MAX_LENGTH; do
+  for name in MOYARICH_AUTO_GLOW_ENABLED MOYARICH_AUTO_GLOW_MAX_LENGTH; do
     if (( ${(P)+name} )); then
       preserved[$name]="${(P)name}"
     fi
@@ -80,7 +80,7 @@ moyarich_auto_glow_render() {
     return
   fi
 
-  if [[ -n "${MOYARICH_AUTO_GLOW_DISABLE_RENDER:-}" ]]; then
+  if [[ "${MOYARICH_AUTO_GLOW_ENABLED:-1}" == "0" ]]; then
     print -r -- "$output"
     return
   fi
