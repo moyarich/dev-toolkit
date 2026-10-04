@@ -40,15 +40,7 @@ test("format workflow previews by default and only commits when requested", () =
     /if: \$\{\{ inputs\.commit && steps\.format\.outputs\.changed == 'true' \}\}/,
   );
   assert.match(workflow, /git commit -m "style: format repository"/);
-  assert.match(
-    workflow,
-    /ref: \$\{\{ github\.event_name == 'pull_request' && github\.event\.pull_request\.head\.ref \|\| github\.ref_name \}\}/,
-  );
-  assert.match(
-    workflow,
-    /TARGET_REF="\$\{\{ github\.event_name == 'pull_request' && github\.event\.pull_request\.head\.ref \|\| github\.ref_name \}\}"/,
-  );
-  assert.match(workflow, /git push origin "HEAD:\$TARGET_REF"/);
+  assert.match(workflow, /git push origin "HEAD:\$\{\{ github\.ref_name \}\}"/);
   assert.match(workflow, /persist-credentials: \$\{\{ inputs\.commit \}\}/);
 });
 
