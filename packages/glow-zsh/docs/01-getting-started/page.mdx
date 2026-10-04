@@ -1,0 +1,115 @@
+# Getting started
+
+## Requirements
+
+- Zsh
+- Oh My Zsh
+- Glow
+
+Verify Glow is available:
+
+```sh
+command -v glow
+```
+
+## Install from the monorepo
+
+From the package directory:
+
+```sh
+./install.sh
+```
+
+From the workspace root:
+
+```sh
+npm run plugin:install --workspace @moyarich/glow-zsh
+```
+
+Copy installation is the default. For development, install using symlinks:
+
+```sh
+npm run plugin:install:symlink --workspace @moyarich/glow-zsh
+```
+
+The installer prints the next steps for enabling the plugin, reloading Zsh, verifying the command, and running a smoke test.
+
+## Enable the plugin
+
+Add `glow-zsh` to the Oh My Zsh plugin list in `~/.zshrc`:
+
+```zsh
+plugins=(
+  git
+  glow-zsh
+)
+```
+
+Reload the shell:
+
+```sh
+source ~/.zshrc
+```
+
+Verify the CLI:
+
+```sh
+command -v glow-zsh
+```
+
+## Uninstall safety
+
+The uninstaller protects existing plugin directories from accidental deletion by requiring an installer marker before it uses `rm -rf`.
+
+When `glow-zsh-md` is installed, the installer creates this marker file:
+
+```text
+~/.oh-my-zsh/custom/plugins/glow-zsh/.glow-zsh-install
+```
+
+When you run `uninstall.sh`:
+
+- If the plugin path is a symlink, the uninstaller removes the symlink.
+- If the plugin path is a directory and contains the installer marker, the directory is considered managed by `glow-zsh-md` and may be removed recursively.
+- If the directory exists but does not contain the marker, the uninstaller refuses to delete it.
+
+In other words, the uninstaller will not run `rm -rf` on a plugin directory unless it can verify that the `glow-zsh-md` installer created or manages that directory.
+
+For example, an existing directory like this is protected when it does not contain the installer marker:
+
+```text
+~/.oh-my-zsh/custom/plugins/glow-zsh/
+├── my-important-custom-file.zsh
+├── experiments/
+└── ...
+```
+
+If the directory was created manually or came from another installation, `uninstall.sh` exits instead of deleting it:
+
+```text
+Refusing to remove unmanaged plugin directory: ...
+```
+
+## Usage
+
+Run commands normally:
+
+```sh
+git status
+python script.py
+go test ./...
+curl https://example.com
+```
+
+When output looks like Markdown, the plugin renders it through Glow. Ordinary output is printed unchanged.
+
+Example:
+
+```sh
+printf '# Build Results\n\n| Package | Status |\n| --- | --- |\n| api | passing |\n'
+```
+
+## Next steps
+
+- Learn how command interception and recursion protection work in [Architecture](../02-guides/01-architecture/page.mdx).
+- See the package validation commands in [Testing](../03-reference/01-testing/page.mdx).

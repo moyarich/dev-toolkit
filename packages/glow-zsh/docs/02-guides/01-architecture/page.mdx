@@ -1,0 +1,71 @@
+# Architecture
+
+glow-zsh is a shell-native Oh My Zsh plugin.
+
+It runs directly from Zsh and depends on Glow for Markdown rendering. There is no Node.js runtime, generated JavaScript CLI, or node-pty layer.
+
+## Flow
+
+    ZLE accept-line
+          |
+          +-- shell-state command -----------> normal Zsh execution
+          |
+          +-- other command
+                 |
+                 +-- capture command output
+                 |
+                 +-- Markdown detected -> glow
+                 |
+                 +-- otherwise -> print unchanged
+
+The plugin bypasses commands that must modify the current shell, such as cd, export, source, alias, setopt, pushd, jobs, fg, bg, exec, and exit.
+
+## Recursion guard
+
+The plugin uses the environment variable `GLOW_ZSH_CHILD` as an internal recursion guard.
+
+Before a command is evaluated through the glow-zsh runtime, the command is executed with:
+
+```zsh
+GLOW_ZSH_CHILD=1
+```
+
+The plugin entry point starts with:
+
+```zsh
+[[ -n "${GLOW_ZSH_CHILD:-}" ]] && return
+```
+
+This prevents a command launched by `glow-zsh` from loading the plugin again and wrapping itself recursively.
+
+The variable is intended for internal runtime use. Users normally do not need to set it manually.
+
+Execution flow:
+
+```text
+interactive Zsh
+    |
+    +-- plugin active
+            |
+            +-- run command with GLOW_ZSH_CHILD=1
+                    |
+                    +-- child shell sees guard
+                    |
+                    +-- plugin entry point returns immediately
+                    |
+                    +-- command executes once
+```
+
+## Oh My Zsh entry point
+
+Oh My Zsh loads the package directly through:
+
+    glow-zsh.plugin.zsh
+
+The plugin directory can therefore be symlinked directly into:
+
+    $ZSH_CUSTOM/plugins/glow-zsh
+
+## Tradeoff
+
+The shell-native implementation captures output before classifying it. This keeps installation and runtime dependencies minimal, but it is less suitable for commands that require continuous TTY streaming or full-screen terminal behavior.
