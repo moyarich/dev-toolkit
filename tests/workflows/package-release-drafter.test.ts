@@ -50,7 +50,7 @@ test("release drafter generates one package config template at runtime", () => {
   assert.ok(template.includes('- "{{PACKAGE_DIRECTORY}}/**"'));
 });
 
-test("first package release uses curated changelog notes with commit fallback", () => {
+test("first package release falls back from changelog to PRs, commits, then minimal notes", () => {
   assert.match(workflow, /gh api/);
   assert.match(workflow, /\.draft == false/);
   assert.match(workflow, /startswith\(\$prefix\)/);
@@ -64,6 +64,9 @@ test("first package release uses curated changelog notes with commit fallback", 
   assert.match(workflow, /-- "\$PACKAGE_DIRECTORY"/);
   assert.match(workflow, /groups = new Map/);
   assert.match(workflow, /seen = new Set/);
+  assert.match(workflow, /NOTE_SOURCE="minimal"/);
+  assert.match(workflow, /Initial release of \\$PACKAGE_NAME\./);
+  assert.match(workflow, /Release notes source: \\$NOTE_SOURCE/);
   assert.match(workflow, /Create or update first package draft/);
   assert.match(workflow, /Create or update subsequent package draft/);
   assert.match(workflow, /tag_name=/);
