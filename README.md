@@ -13,6 +13,18 @@ Cross-repository GitHub Actions workflows now live in [`moyarich/actions`](https
 
 ## Packages
 
+### `@moyarich/git-history-cleanup`
+
+Interactive and scriptable Git history inspection and cleanup.
+
+- Lists the largest reachable historical blobs.
+- Browses deleted and current historical paths as a virtual filesystem.
+- Shows aggregate historical size, largest blob size, and blob counts.
+- Multi-selects files and directories before rewriting history with `git filter-repo`.
+- Keeps remote pushes opt-in while still supporting scripted cleanup.
+
+See [packages/git-history-cleanup/README.md](packages/git-history-cleanup/README.md).
+
 ### `@moyarich/vscode-test-cleaner`
 
 Interactive and automation-friendly cleanup for VS Code test environments created by `@vscode/test-electron`.
