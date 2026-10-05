@@ -46,7 +46,9 @@ program
   .description("List the largest reachable historical blobs.")
   .argument("[path]", "Limit results to a repository-relative path")
   .addOption(
-    new Option("-n, --limit <number>", "Number of blobs to print").default("50"),
+    new Option("-n, --limit <number>", "Number of blobs to print").default(
+      "50",
+    ),
   )
   .option("--json", "Print machine-readable JSON")
   .action((path: string | undefined, options: InspectOptions) => {
@@ -60,7 +62,9 @@ program
     const prefix = path?.replace(/^\.\//, "").replace(/\/+$/, "");
     const blobs = getHistoricalBlobs()
       .filter((blob) =>
-        prefix ? blob.path === prefix || blob.path.startsWith(prefix + "/") : true,
+        prefix
+          ? blob.path === prefix || blob.path.startsWith(prefix + "/")
+          : true,
       )
       .sort((left, right) => right.size - left.size)
       .slice(0, limit);
@@ -72,11 +76,7 @@ program
 
     for (const blob of blobs) {
       console.log(
-        blob.hash +
-          " " +
-          String(blob.size).padStart(12) +
-          " " +
-          blob.path,
+        blob.hash + " " + String(blob.size).padStart(12) + " " + blob.path,
       );
     }
   });

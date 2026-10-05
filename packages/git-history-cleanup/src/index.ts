@@ -143,7 +143,9 @@ export function listHistoricalChildren(
 
   return [...directory.children.values()]
     .filter((node) =>
-      normalizedQuery ? node.name.toLowerCase().includes(normalizedQuery) : true,
+      normalizedQuery
+        ? node.name.toLowerCase().includes(normalizedQuery)
+        : true,
     )
     .sort((left, right) => {
       if (left.type !== right.type) {
@@ -159,7 +161,9 @@ export function normalizeRemovalPaths(paths: Iterable<string>): string[] {
   const normalized = [...new Set(paths)]
     .map((path) => path.replace(/^\.\//, ""))
     .filter(Boolean)
-    .sort((left, right) => left.length - right.length || left.localeCompare(right));
+    .sort(
+      (left, right) => left.length - right.length || left.localeCompare(right),
+    );
 
   const result: string[] = [];
 

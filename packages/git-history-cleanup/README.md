@@ -59,18 +59,18 @@ It shows:
 
 ### Keyboard controls
 
-| Key | Action |
-| --- | --- |
-| `↑` / `↓` | Move |
-| `Enter` / `→` | Open directory |
-| `←` / `Backspace` | Parent directory |
-| `Space` | Toggle current path |
-| `/` | Filter current directory |
-| `a` | Select visible entries |
-| `A` | Clear visible entries |
-| `c` | Clear all selections |
-| `x` | Review and rewrite |
-| `q` / `Esc` | Quit |
+| Key               | Action                   |
+| ----------------- | ------------------------ |
+| `↑` / `↓`         | Move                     |
+| `Enter` / `→`     | Open directory           |
+| `←` / `Backspace` | Parent directory         |
+| `Space`           | Toggle current path      |
+| `/`               | Filter current directory |
+| `a`               | Select visible entries   |
+| `A`               | Clear visible entries    |
+| `c`               | Clear all selections     |
+| `x`               | Review and rewrite       |
+| `q` / `Esc`       | Quit                     |
 
 Selecting a directory stores one repository-relative path such as
 `packages/visualize-css-colors/`. Descendant selections are automatically

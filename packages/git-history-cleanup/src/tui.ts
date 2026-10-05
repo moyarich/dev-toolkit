@@ -74,7 +74,10 @@ export async function browseHistoricalTree(
 
         if (key.ctrl && key.name === "c") {
           cleanup();
-          resolve({ action: "quit", paths: normalizeRemovalPaths(state.selected) });
+          resolve({
+            action: "quit",
+            paths: normalizeRemovalPaths(state.selected),
+          });
           return;
         }
 
@@ -111,7 +114,10 @@ export async function browseHistoricalTree(
           case "escape":
           case "q":
             cleanup();
-            resolve({ action: "quit", paths: normalizeRemovalPaths(state.selected) });
+            resolve({
+              action: "quit",
+              paths: normalizeRemovalPaths(state.selected),
+            });
             return;
           default:
             if (input === "/") {
@@ -154,10 +160,7 @@ export async function browseHistoricalTree(
   }
 }
 
-function toggleSelected(
-  selected: Set<string>,
-  node: HistoricalNode,
-): void {
+function toggleSelected(selected: Set<string>, node: HistoricalNode): void {
   if (selected.has(node.path)) {
     selected.delete(node.path);
   } else {
@@ -185,12 +188,10 @@ function render(state: BrowserState): void {
   process.stdout.write("\x1b[?25l\x1b[2J\x1b[H");
   console.log(chalk.bold("Git historical filesystem"));
   console.log(chalk.dim("Path: ") + "/" + state.current.path);
+  console.log(chalk.dim("Historical    Largest blob    Blobs   Path"));
   console.log(
-    chalk.dim(
-      "Historical    Largest blob    Blobs   Path",
-    ),
+    chalk.dim("─".repeat(Math.min(process.stdout.columns ?? 80, 100))),
   );
-  console.log(chalk.dim("─".repeat(Math.min(process.stdout.columns ?? 80, 100))));
 
   if (!visible.length) {
     console.log(chalk.dim("  No matching historical paths."));

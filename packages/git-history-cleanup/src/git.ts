@@ -43,7 +43,7 @@ export function runGitOptional(args: string[]): string {
     maxBuffer: MAX_BUFFER,
   });
 
-  return result.status === 0 ? result.stdout ?? "" : "";
+  return result.status === 0 ? (result.stdout ?? "") : "";
 }
 
 export function assertGitRepository(): void {
