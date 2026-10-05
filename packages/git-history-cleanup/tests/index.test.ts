@@ -5,6 +5,7 @@ import {
   buildHistoricalTree,
   findHistoricalMatches,
   findHistoricalNode,
+  fuzzyMatchScore,
   formatBytes,
   listHistoricalChildren,
   normalizeRemovalPaths,
@@ -58,6 +59,20 @@ describe("historical Git tree", () => {
   });
 });
 
+describe("fuzzy matching", () => {
+  it("matches subsequences and rewards contiguous path matches", () => {
+    expect(fuzzyMatchScore("packages/visualize-css-colors/", "vcc")).not.toBeNull();
+    expect(fuzzyMatchScore("apps/playground/.env", "play env")).not.toBeNull();
+    expect(fuzzyMatchScore("packages/foo/bar.ts", "zzz")).toBeNull();
+
+    expect(
+      fuzzyMatchScore("apps/playground/.env", ".env")!,
+    ).toBeGreaterThan(
+      fuzzyMatchScore("apps/playground/environment.ts", ".env")!,
+    );
+  });
+});
+
 describe("historical find", () => {
   it("finds files and directories by name or path", () => {
     const root = buildHistoricalTree([
@@ -75,6 +90,10 @@ describe("historical find", () => {
       findHistoricalMatches(root, "visualize-css-colors").map(
         (node) => node.path,
       ),
+    ).toContain("packages/visualize-css-colors/");
+
+    expect(
+      findHistoricalMatches(root, "vcc").map((node) => node.path),
     ).toContain("packages/visualize-css-colors/");
   });
 });
