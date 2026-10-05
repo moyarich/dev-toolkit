@@ -90,6 +90,7 @@ jobs:
     with:
       packages-directory: packages
       node-version: ${{ inputs.node-version || '24' }}
+      exclude-package-names: '["@moyarich/auto-glow-md"]'
 
   auto-glow-ci:
     name: "Auto Glow CI"

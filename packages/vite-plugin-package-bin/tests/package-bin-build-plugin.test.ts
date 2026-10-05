@@ -105,3 +105,24 @@ test("builds Node package bins and copies shell package bins", async () => {
   );
   expect(chmod).toHaveBeenCalledWith("/repo/dist/bin/install.sh", 0o755);
 });
+
+test("does not write an empty coordinator build to Vite's default dist", async () => {
+  const plugin = packageBinBuild({ emptyOutDir: true, outDir: "dist/bin" });
+
+  const config =
+    typeof plugin.config === "function"
+      ? plugin.config
+      : plugin.config?.handler;
+  expect(config).toBeTypeOf("function");
+
+  const result = await config?.call({} as never, {} as never, {} as never);
+
+  expect(result).toEqual(
+    expect.objectContaining({
+      build: expect.objectContaining({
+        write: false,
+        emptyOutDir: false,
+      }),
+    }),
+  );
+});

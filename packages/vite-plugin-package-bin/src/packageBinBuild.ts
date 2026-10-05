@@ -176,6 +176,11 @@ export function packageBinBuild(options: PackageBinBuildOptions): Plugin {
     config() {
       return {
         build: {
+          // This outer Vite build only coordinates the real per-bin builds
+          // started in buildStart(). Do not let it create or clean Vite's
+          // default dist/ directory when it has no bundle of its own.
+          write: false,
+          emptyOutDir: false,
           rollupOptions: {
             input: virtualEntry,
             onwarn(warning, warn) {

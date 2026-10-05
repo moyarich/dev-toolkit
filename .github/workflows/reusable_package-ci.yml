@@ -13,6 +13,11 @@ on:
         required: true
         default: packages
         type: string
+      exclude-package-names:
+        description: JSON array of package names handled by specialized CI
+        required: true
+        default: "[]"
+        type: string
 
   workflow_call:
     inputs:
@@ -26,6 +31,11 @@ on:
         required: false
         type: string
         default: packages
+      exclude-package-names:
+        description: JSON array of package names handled by specialized CI
+        required: false
+        type: string
+        default: "[]"
 
 permissions:
   contents: read
@@ -39,6 +49,7 @@ jobs:
       packages-directory: ${{ inputs.packages-directory }}
       require-test-script: true
       node-version: ${{ inputs.node-version }}
+      exclude-package-names: ${{ inputs.exclude-package-names }}
 
   check-packages:
     name: "package: ${{ matrix.name }} | dir: ${{ matrix.directory }}"

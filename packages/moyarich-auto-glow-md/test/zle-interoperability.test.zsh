@@ -33,11 +33,22 @@ else
 fi
 
 source "${PACKAGE_DIR}/lib/core.zsh"
+
+capture_status() {
+  local exit_code
+  if moyarich_auto_glow_should_bypass "$1"; then
+    exit_code=0
+  else
+    exit_code=$?
+  fi
+  print -- "$exit_code"
+}
+
 assert_equal "clear remains eligible for ordinary execution" "1" "$(
-  moyarich_auto_glow_should_bypass 'clear'; print $?
+  capture_status 'clear'
 )"
 assert_equal "omz reload remains eligible for ordinary execution" "1" "$(
-  moyarich_auto_glow_should_bypass 'omz reload'; print $?
+  capture_status 'omz reload'
 )"
 
 if (( failures > 0 )); then

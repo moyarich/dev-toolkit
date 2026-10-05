@@ -33,6 +33,11 @@ on:
         required: true
         default: "24"
         type: string
+      exclude-package-names:
+        description: JSON array of package names to exclude from discovery
+        required: true
+        default: "[]"
+        type: string
 
   workflow_call:
     inputs:
@@ -59,6 +64,10 @@ on:
       node-version:
         required: false
         default: "24"
+        type: string
+      exclude-package-names:
+        required: false
+        default: "[]"
         type: string
     outputs:
       packages:
@@ -134,6 +143,7 @@ jobs:
         name: Discover packages
         env:
           PACKAGES_DIRECTORY: ${{ inputs.packages-directory }}
+          EXCLUDE_PACKAGE_NAMES: ${{ inputs.exclude-package-names }}
           INCLUDE_PRIVATE: ${{ inputs.include-private }}
           REQUIRE_PUBLISH_CONFIG: ${{ inputs.require-publish-config }}
           REQUIRE_TEST_SCRIPT: ${{ inputs.require-test-script }}
@@ -144,6 +154,11 @@ jobs:
 
           PACKAGES="$(node "$DISCOVERY_CLI")"
           echo "$PACKAGES" | jq -e 'type == "array"' >/dev/null
+          echo "$EXCLUDE_PACKAGE_NAMES" | jq -e 'type == "array" and all(.[]; type == "string")' >/dev/null
+
+          PACKAGES="$(
+            jq -cn               --argjson packages "$PACKAGES"               --argjson excluded "$EXCLUDE_PACKAGE_NAMES"               '$packages | map(select(.name as $name | ($excluded | index($name) | not)))'
+          )"
 
           MATRIX="$(jq -cn --argjson packages "$PACKAGES" '{include: $packages}')"
           COUNT="$(jq 'length' <<< "$PACKAGES")"
@@ -165,6 +180,7 @@ jobs:
             echo "| Setting | Value |"
             echo "| --- | --- |"
             echo "| Packages directory | \`${{ inputs.packages-directory }}\` |"
+            echo "| Excluded package names | \`${{ inputs.exclude-package-names }}\` |"
             echo "| Include private | **${{ inputs.include-private }}** |"
             echo "| Require publish config | **${{ inputs.require-publish-config }}** |"
             echo "| Require test script | **${{ inputs.require-test-script }}** |"
