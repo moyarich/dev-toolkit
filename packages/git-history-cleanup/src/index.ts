@@ -213,11 +213,7 @@ export function fuzzyMatchScore(
   query: string,
 ): number | null {
   const normalizedCandidate = candidate.toLowerCase();
-  const tokens = query
-    .trim()
-    .toLowerCase()
-    .split(/\s+/)
-    .filter(Boolean);
+  const tokens = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
 
   if (!tokens.length) return 0;
 

@@ -61,13 +61,13 @@ describe("historical Git tree", () => {
 
 describe("fuzzy matching", () => {
   it("matches subsequences and rewards contiguous path matches", () => {
-    expect(fuzzyMatchScore("packages/visualize-css-colors/", "vcc")).not.toBeNull();
+    expect(
+      fuzzyMatchScore("packages/visualize-css-colors/", "vcc"),
+    ).not.toBeNull();
     expect(fuzzyMatchScore("apps/playground/.env", "play env")).not.toBeNull();
     expect(fuzzyMatchScore("packages/foo/bar.ts", "zzz")).toBeNull();
 
-    expect(
-      fuzzyMatchScore("apps/playground/.env", ".env")!,
-    ).toBeGreaterThan(
+    expect(fuzzyMatchScore("apps/playground/.env", ".env")!).toBeGreaterThan(
       fuzzyMatchScore("apps/playground/environment.ts", ".env")!,
     );
   });
@@ -81,10 +81,9 @@ describe("historical find", () => {
       { hash: "c", size: 300, path: "packages/visualize-css-colors/file.ts" },
     ]);
 
-    expect(findHistoricalMatches(root, ".env").map((node) => node.path)).toEqual([
-      ".env",
-      "apps/web/.env",
-    ]);
+    expect(
+      findHistoricalMatches(root, ".env").map((node) => node.path),
+    ).toEqual([".env", "apps/web/.env"]);
 
     expect(
       findHistoricalMatches(root, "visualize-css-colors").map(
