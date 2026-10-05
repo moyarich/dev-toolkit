@@ -4,6 +4,7 @@
 
 ### Initial Release
 
+- Find historical files and directories with `git-history-cleanup --find <file-or-folder>` and multi-select matching paths.
 - Inspect the largest reachable historical Git blobs.
 - Browse reachable history as a virtual filesystem.
 - Show aggregate historical size, largest blob, and blob count per path.
