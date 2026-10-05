@@ -24,8 +24,11 @@ git-history-cleanup --find .env
 git-history-cleanup --find visualize-css-colors
 ```
 
-The search runs against the historical virtual filesystem, so it can find paths
-that no longer exist in the current working tree. Matching files and directories
+The search runs against the historical virtual filesystem and uses fuzzy
+matching, so short queries such as `vcc` can match
+`packages/visualize-css-colors/`, and tokenized queries such as `play env`
+can match `apps/playground/.env`. It can find paths that no longer exist in
+the current working tree. Matching files and directories
 are shown in a multi-select prompt with their aggregate historical size, largest
 blob, and blob count.
 
@@ -95,7 +98,7 @@ It shows:
 | `Enter` / `→`     | Open directory           |
 | `←` / `Backspace` | Parent directory         |
 | `Space`           | Toggle current path      |
-| `/`               | Filter current directory |
+| `/`               | Fuzzy-filter current directory |
 | `a`               | Select visible entries   |
 | `A`               | Clear visible entries    |
 | `c`               | Clear all selections     |
