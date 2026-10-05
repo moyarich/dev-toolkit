@@ -142,19 +142,29 @@ export function listHistoricalChildren(
   const normalizedQuery = query.trim().toLowerCase();
 
   return [...directory.children.values()]
-    .filter((node) =>
-      normalizedQuery
-        ? node.name.toLowerCase().includes(normalizedQuery)
-        : true,
-    )
+    .map((node) => ({
+      node,
+      score: normalizedQuery
+        ? fuzzyMatchScore(node.path.toLowerCase(), normalizedQuery)
+        : 0,
+    }))
+    .filter(({ score }) => !normalizedQuery || score !== null)
     .sort((left, right) => {
-      if (left.type !== right.type) {
-        return left.type === "directory" ? -1 : 1;
+      if (normalizedQuery && left.score !== right.score) {
+        return (right.score ?? -Infinity) - (left.score ?? -Infinity);
       }
 
-      if (right.size !== left.size) return right.size - left.size;
-      return left.name.localeCompare(right.name);
-    });
+      if (left.node.type !== right.node.type) {
+        return left.node.type === "directory" ? -1 : 1;
+      }
+
+      if (right.node.size !== left.node.size) {
+        return right.node.size - left.node.size;
+      }
+
+      return left.node.name.localeCompare(right.node.name);
+    })
+    .map(({ node }) => node);
 }
 
 export function findHistoricalMatches(
@@ -164,14 +174,14 @@ export function findHistoricalMatches(
   const normalizedQuery = query.trim().toLowerCase();
   if (!normalizedQuery) return [];
 
-  const matches: HistoricalNode[] = [];
+  const matches: Array<{ node: HistoricalNode; score: number }> = [];
+
   const visit = (directory: HistoricalDirectoryNode): void => {
     for (const node of directory.children.values()) {
-      if (
-        node.name.toLowerCase().includes(normalizedQuery) ||
-        node.path.toLowerCase().includes(normalizedQuery)
-      ) {
-        matches.push(node);
+      const score = fuzzyMatchScore(node.path.toLowerCase(), normalizedQuery);
+
+      if (score !== null) {
+        matches.push({ node, score });
       }
 
       if (node.type === "directory") visit(node);
@@ -180,14 +190,75 @@ export function findHistoricalMatches(
 
   visit(root);
 
-  return matches.sort((left, right) => {
-    const leftExact = left.name.toLowerCase() === normalizedQuery ? 1 : 0;
-    const rightExact = right.name.toLowerCase() === normalizedQuery ? 1 : 0;
+  return matches
+    .sort((left, right) => {
+      const leftExact =
+        left.node.name.toLowerCase() === normalizedQuery ? 1 : 0;
+      const rightExact =
+        right.node.name.toLowerCase() === normalizedQuery ? 1 : 0;
 
-    if (leftExact !== rightExact) return rightExact - leftExact;
-    if (right.size !== left.size) return right.size - left.size;
-    return left.path.localeCompare(right.path);
-  });
+      if (leftExact !== rightExact) return rightExact - leftExact;
+      if (left.score !== right.score) return right.score - left.score;
+      if (right.node.size !== left.node.size) {
+        return right.node.size - left.node.size;
+      }
+
+      return left.node.path.localeCompare(right.node.path);
+    })
+    .map(({ node }) => node);
+}
+
+export function fuzzyMatchScore(
+  candidate: string,
+  query: string,
+): number | null {
+  const normalizedCandidate = candidate.toLowerCase();
+  const normalizedQuery = query.trim().toLowerCase();
+
+  if (!normalizedQuery) return 0;
+
+  let score = 0;
+  let queryIndex = 0;
+  let previousMatchIndex = -2;
+
+  for (
+    let candidateIndex = 0;
+    candidateIndex < normalizedCandidate.length &&
+    queryIndex < normalizedQuery.length;
+    candidateIndex += 1
+  ) {
+    if (normalizedCandidate[candidateIndex] !== normalizedQuery[queryIndex]) {
+      continue;
+    }
+
+    score += 1;
+
+    if (candidateIndex === previousMatchIndex + 1) {
+      score += 4;
+    }
+
+    if (
+      candidateIndex === 0 ||
+      "/._- ".includes(normalizedCandidate[candidateIndex - 1] ?? "")
+    ) {
+      score += 6;
+    }
+
+    previousMatchIndex = candidateIndex;
+    queryIndex += 1;
+  }
+
+  if (queryIndex !== normalizedQuery.length) return null;
+
+  const substringIndex = normalizedCandidate.indexOf(normalizedQuery);
+  if (substringIndex !== -1) {
+    score += 25;
+    if (substringIndex === 0) score += 10;
+  }
+
+  score -= normalizedCandidate.length * 0.01;
+
+  return score;
 }
 
 export function normalizeRemovalPaths(paths: Iterable<string>): string[] {
