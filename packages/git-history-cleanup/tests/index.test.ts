@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildFilterRepoArgs,
   buildHistoricalTree,
+  findHistoricalMatches,
   findHistoricalNode,
   formatBytes,
   listHistoricalChildren,
@@ -54,6 +55,27 @@ describe("historical Git tree", () => {
       "small",
       "root.bin",
     ]);
+  });
+});
+
+describe("historical find", () => {
+  it("finds files and directories by name or path", () => {
+    const root = buildHistoricalTree([
+      { hash: "a", size: 100, path: ".env" },
+      { hash: "b", size: 200, path: "apps/web/.env" },
+      { hash: "c", size: 300, path: "packages/visualize-css-colors/file.ts" },
+    ]);
+
+    expect(findHistoricalMatches(root, ".env").map((node) => node.path)).toEqual([
+      ".env",
+      "apps/web/.env",
+    ]);
+
+    expect(
+      findHistoricalMatches(root, "visualize-css-colors").map(
+        (node) => node.path,
+      ),
+    ).toContain("packages/visualize-css-colors/");
   });
 });
 
