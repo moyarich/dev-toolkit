@@ -14,6 +14,36 @@ npm install @moyarich/git-history-cleanup
 
 `git-filter-repo` must also be available on `PATH`.
 
+## Find a historical file or folder
+
+Use the top-level `--find` shortcut when you know the name of the file or
+directory you want to remove:
+
+```sh
+git-history-cleanup --find .env
+git-history-cleanup --find visualize-css-colors
+```
+
+The search runs against the historical virtual filesystem, so it can find paths
+that no longer exist in the current working tree. Matching files and directories
+are shown in a multi-select prompt with their aggregate historical size, largest
+blob, and blob count.
+
+For example, `git-history-cleanup --find .env` can surface:
+
+```text
+.env
+apps/playground/.env
+packages/example/.env
+```
+
+Select one or more matches, review the selected paths, and confirm the rewrite.
+The default remains remote-safe: local history is rewritten, but remote refs are
+not force-pushed unless `--no-dry-run` is provided.
+
+Removing a committed secret from Git history does not revoke the secret. Rotate
+or revoke exposed credentials separately.
+
 ## Inspect the largest historical blobs
 
 ```sh
