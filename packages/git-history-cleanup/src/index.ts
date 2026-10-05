@@ -157,6 +157,39 @@ export function listHistoricalChildren(
     });
 }
 
+export function findHistoricalMatches(
+  root: HistoricalDirectoryNode,
+  query: string,
+): HistoricalNode[] {
+  const normalizedQuery = query.trim().toLowerCase();
+  if (!normalizedQuery) return [];
+
+  const matches: HistoricalNode[] = [];
+  const visit = (directory: HistoricalDirectoryNode): void => {
+    for (const node of directory.children.values()) {
+      if (
+        node.name.toLowerCase().includes(normalizedQuery) ||
+        node.path.toLowerCase().includes(normalizedQuery)
+      ) {
+        matches.push(node);
+      }
+
+      if (node.type === "directory") visit(node);
+    }
+  };
+
+  visit(root);
+
+  return matches.sort((left, right) => {
+    const leftExact = left.name.toLowerCase() === normalizedQuery ? 1 : 0;
+    const rightExact = right.name.toLowerCase() === normalizedQuery ? 1 : 0;
+
+    if (leftExact !== rightExact) return rightExact - leftExact;
+    if (right.size !== left.size) return right.size - left.size;
+    return left.path.localeCompare(right.path);
+  });
+}
+
 export function normalizeRemovalPaths(paths: Iterable<string>): string[] {
   const normalized = [...new Set(paths)]
     .map((path) => path.replace(/^\.\//, ""))
