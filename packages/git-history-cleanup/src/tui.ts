@@ -237,6 +237,13 @@ function render(state: BrowserState): void {
       (selected.length ? selected.length + " path(s)" : "none"),
   );
 
+  for (const path of selected.slice(0, 3)) {
+    console.log(chalk.cyan("  ✓ " + path));
+  }
+  if (selected.length > 3) {
+    console.log(chalk.dim("  … +" + (selected.length - 3) + " more"));
+  }
+
   if (state.searchMode) {
     console.log(chalk.cyan("Filter: /" + state.query));
   } else if (state.query) {
