@@ -67,8 +67,8 @@ describe("fuzzy matching", () => {
     expect(fuzzyMatchScore("apps/playground/.env", "play env")).not.toBeNull();
     expect(fuzzyMatchScore("packages/foo/bar.ts", "zzz")).toBeNull();
 
-    expect(fuzzyMatchScore("apps/playground/.env", ".env")!).toBeGreaterThan(
-      fuzzyMatchScore("apps/playground/environment.ts", ".env")!,
+    expect(fuzzyMatchScore("apps/playground/.env", "env")!).toBeGreaterThan(
+      fuzzyMatchScore("apps/playground/environment.ts", "env")!,
     );
   });
 });
