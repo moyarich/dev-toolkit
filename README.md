@@ -22,15 +22,6 @@ Interactive and scriptable Git history inspection and cleanup.
 
 See [packages/git-history-cleanup/README.md](packages/git-history-cleanup/README.md).
 
-### `@moyarich/workspace-tools`
-
-Home for reusable workspace release and publish commands.
-
-Planned commands:
-
-- `workspace-release`
-- `workspace-publish`
-
 ### `@moyarich/vscode-test-cleaner`
 
 Interactive and automation-friendly cleanup for VS Code test environments created by `@vscode/test-electron`.
