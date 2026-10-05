@@ -35,13 +35,13 @@ fi
 source "${PACKAGE_DIR}/lib/core.zsh"
 
 capture_status() {
-  local status
+  local exit_code
   if moyarich_auto_glow_should_bypass "$1"; then
-    status=0
+    exit_code=0
   else
-    status=$?
+    exit_code=$?
   fi
-  print -- "$status"
+  print -- "$exit_code"
 }
 
 assert_equal "clear remains eligible for ordinary execution" "1" "$(
