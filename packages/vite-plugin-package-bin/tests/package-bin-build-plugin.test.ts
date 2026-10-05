@@ -106,7 +106,6 @@ test("builds Node package bins and copies shell package bins", async () => {
   expect(chmod).toHaveBeenCalledWith("/repo/dist/bin/install.sh", 0o755);
 });
 
-
 test("does not write an empty coordinator build to Vite's default dist", async () => {
   const plugin = packageBinBuild({ emptyOutDir: true, outDir: "dist/bin" });
 
