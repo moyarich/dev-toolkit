@@ -36,20 +36,7 @@ Reusable JavaScript tooling belongs in:
 packages/
 ```
 
-The initial package is:
-
-```text
-packages/workspace-tools/
-```
-
-It is intended to own related release and publishing commands such as:
-
-```text
-workspace-release
-workspace-publish
-```
-
-Keeping these commands in a package allows fixes and features to be released centrally instead of copying scripts between repositories.
+Reusable packages live under `packages/`. Each package owns its source, tests, documentation, build configuration, and published runtime.
 
 ## Repository layout
 
@@ -58,11 +45,10 @@ dev-toolkit/
 ├── .github/
 │   └── workflows/
 ├── docs/
-│   └── readme-dev.md
 ├── packages/
-│   └── workspace-tools/
-│       ├── bin/
+│   └── <package>/
 │       ├── src/
+│       ├── tests/
 │       └── package.json
 ├── package.json
 └── README.md
@@ -162,18 +148,6 @@ _NPM_TOKEN
 ```
 
 They are mapped to `NODE_AUTH_TOKEN` only for the npm subprocess.
-
-## Migration from repository-local tooling
-
-The initial implementation was extracted from `moyarich/css-expand-collapse`.
-
-The migration deliberately separates:
-
-- generic package selection, validation, versioning, tagging, and registry publishing → `@moyarich/workspace-tools`;
-- reusable GitHub job implementation → `.github/workflows/`;
-- repository-specific triggers, playground builds, browser tests, and package-specific checks → consuming repositories.
-
-Until `@moyarich/workspace-tools` has an initial published version, consumers should not depend on `npx @moyarich/workspace-tools` from reusable workflows. Publish/version the package first, then pin consumers to an appropriate released version.
 
 ## README screenshot tooling
 
