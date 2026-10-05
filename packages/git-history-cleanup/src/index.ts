@@ -213,23 +213,36 @@ export function fuzzyMatchScore(
   query: string,
 ): number | null {
   const normalizedCandidate = candidate.toLowerCase();
-  const normalizedQuery = query.trim().toLowerCase();
+  const tokens = query
+    .trim()
+    .toLowerCase()
+    .split(/\s+/)
+    .filter(Boolean);
 
-  if (!normalizedQuery) return 0;
+  if (!tokens.length) return 0;
 
+  let totalScore = 0;
+
+  for (const token of tokens) {
+    const score = fuzzyTokenScore(normalizedCandidate, token);
+    if (score === null) return null;
+    totalScore += score;
+  }
+
+  return totalScore;
+}
+
+function fuzzyTokenScore(candidate: string, token: string): number | null {
   let score = 0;
-  let queryIndex = 0;
+  let tokenIndex = 0;
   let previousMatchIndex = -2;
 
   for (
     let candidateIndex = 0;
-    candidateIndex < normalizedCandidate.length &&
-    queryIndex < normalizedQuery.length;
+    candidateIndex < candidate.length && tokenIndex < token.length;
     candidateIndex += 1
   ) {
-    if (normalizedCandidate[candidateIndex] !== normalizedQuery[queryIndex]) {
-      continue;
-    }
+    if (candidate[candidateIndex] !== token[tokenIndex]) continue;
 
     score += 1;
 
@@ -239,28 +252,27 @@ export function fuzzyMatchScore(
 
     if (
       candidateIndex === 0 ||
-      "/._- ".includes(normalizedCandidate[candidateIndex - 1] ?? "")
+      "/._- ".includes(candidate[candidateIndex - 1] ?? "")
     ) {
       score += 6;
     }
 
     previousMatchIndex = candidateIndex;
-    queryIndex += 1;
+    tokenIndex += 1;
   }
 
-  if (queryIndex !== normalizedQuery.length) return null;
+  if (tokenIndex !== token.length) return null;
 
-  const substringIndex = normalizedCandidate.indexOf(normalizedQuery);
+  const substringIndex = candidate.indexOf(token);
   if (substringIndex !== -1) {
     score += 25;
     if (substringIndex === 0) score += 10;
   }
 
-  score -= normalizedCandidate.length * 0.01;
+  score -= candidate.length * 0.01;
 
   return score;
 }
-
 export function normalizeRemovalPaths(paths: Iterable<string>): string[] {
   const normalized = [...new Set(paths)]
     .map((path) => path.replace(/^\.\//, ""))
