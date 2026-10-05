@@ -287,7 +287,7 @@ export function normalizeRemovalPaths(paths: Iterable<string>): string[] {
     result.push(path);
   }
 
-  return result;
+  return result.sort((left, right) => left.localeCompare(right));
 }
 
 export function pathCoveredBySelection(
