@@ -81,6 +81,7 @@ jobs:
 
   reset-preview:
     permissions:
+      actions: read
       contents: write
       packages: read
       pull-requests: read
