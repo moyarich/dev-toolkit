@@ -32,7 +32,7 @@ jobs:
     if: ${{ github.event_name == 'push' }}
     permissions:
       contents: write
-    uses: moyarich/actions/.github/workflows/reusable_prettier.yml@d430b304d667341f76cadaba64bfdbb23d3685d2
+    uses: moyarich/reusable-workflows/.github/workflows/reusable_prettier.yml@main
     with:
       commit: true
       node-version: ${{ inputs.node-version || '24' }}
@@ -86,7 +86,7 @@ jobs:
     name: "Package CI"
     needs: format
     if: ${{ always() && (needs.format.result == 'success' || needs.format.result == 'skipped') && (github.event_name != 'workflow_dispatch' || inputs.package-directory == 'all') }}
-    uses: moyarich/actions/.github/workflows/reusable_package-ci.yml@d430b304d667341f76cadaba64bfdbb23d3685d2
+    uses: moyarich/reusable-workflows/.github/workflows/reusable_package-ci.yml@main
     with:
       packages-directory: packages
       node-version: ${{ inputs.node-version || '24' }}
@@ -95,7 +95,7 @@ jobs:
     name: "Package CI · ${{ inputs.package-directory }}"
     needs: format
     if: ${{ always() && (needs.format.result == 'success' || needs.format.result == 'skipped') && github.event_name == 'workflow_dispatch' && inputs.package-directory != 'all' }}
-    uses: moyarich/actions/.github/workflows/reusable_node-ci.yml@d430b304d667341f76cadaba64bfdbb23d3685d2
+    uses: moyarich/reusable-workflows/.github/workflows/reusable_node-ci.yml@main
     with:
       package-directory: ${{ inputs.package-directory }}
       node-version: ${{ inputs.node-version }}
