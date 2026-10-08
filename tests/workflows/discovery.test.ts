@@ -18,6 +18,6 @@ test("discovery delegates to the canonical workflow, not deleted workspace tools
   assert.match(discovery, /moyarich\\/reusable-workflows\\/\\.github\\/workflows\\/reusable_discover-packages\\.yml@main/);
   assert.doesNotMatch(discovery, /packages\\/workspace-tools\\/src/);
   for (const name of ["packages", "matrix", "has-packages", "count"]) {
-    assert.match(discovery, new RegExp(`^s{6}${name}:`, "m"));
+    assert.match(discovery, new RegExp(`^ {6}${name}:`, "m"));
   }
 });
