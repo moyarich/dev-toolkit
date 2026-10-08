@@ -15,7 +15,7 @@ const template = readFileSync(
 test("release drafter discovers publishable packages dynamically", () => {
   assert.ok(
     workflow.includes(
-      "uses: moyarich/reusable-workflows/.github/workflows/reusable_discover-packages.yml@main",
+      "uses: ./.github/workflows/reusable_discover-packages.yml",
     ),
   );
   assert.match(workflow, /require-publish-config: true/);
