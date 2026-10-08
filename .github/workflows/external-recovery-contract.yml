@@ -1,5 +1,5 @@
 name: External recovery contract
-# Validate release recovery through an unpublished fixture without mutations
+# Validate merged reusable recovery and semantic-version fixes without mutations
 on:
   pull_request:
     paths:
