@@ -11,15 +11,11 @@ const template = readFileSync(
   join(root, ".github/release-drafter-package-template.yml"),
   "utf8",
 );
-const discovery = readFileSync(
-  join(workflows, "reusable_discover-packages.yml"),
-  "utf8",
-);
 
 test("release drafter discovers publishable packages dynamically", () => {
   assert.ok(
     workflow.includes(
-      "uses: ./.github/workflows/reusable_discover-packages.yml",
+      "uses: moyarich/reusable-workflows/.github/workflows/reusable_discover-packages.yml@main",
     ),
   );
   assert.match(workflow, /require-publish-config: true/);
@@ -73,16 +69,6 @@ test("first package release uses curated changelog notes with commit fallback", 
   assert.doesNotMatch(workflow, /git rev-list --max-parents=0 HEAD/);
 });
 
-test("shared discovery workflow exposes reusable package metadata", () => {
-  assert.match(discovery, /workflow_call:/);
-  assert.match(discovery, /packages:/);
-  assert.match(discovery, /matrix:/);
-  assert.match(discovery, /has-packages:/);
-  assert.match(discovery, /count:/);
-  assert.match(discovery, /require-publish-config:/);
-  assert.match(discovery, /require-test-script:/);
-  assert.match(discovery, /require-build-script:/);
-});
 
 test("draft release workflow does not require the release environment", () => {
   assert.doesNotMatch(workflow, /environment:\s*\n\s*name: release/);
