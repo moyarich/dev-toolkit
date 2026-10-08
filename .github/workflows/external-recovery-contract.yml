@@ -12,7 +12,7 @@ jobs:
       contents: write
       packages: read
       pull-requests: read
-    uses: moyarich/reusable-workflows/.github/workflows/reusable_reset-release.yml@88b1f958206adb25581e37ee18196e5533e29ec4
+    uses: moyarich/reusable-workflows/.github/workflows/reusable_reset-release.yml@6609dd7fbee659084efccb676d087be4fe7aa109
     with:
       package: "."
       target-branch: main
