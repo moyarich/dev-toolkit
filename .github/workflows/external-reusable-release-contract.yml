@@ -78,26 +78,3 @@ jobs:
           test -n "$TAG"
           test "$ACTION" = "previewed"
 
-  reset-preview:
-    permissions:
-      contents: write
-      packages: read
-      pull-requests: read
-    uses: moyarich/reusable-workflows/.github/workflows/reusable_reset-release.yml@main
-    with:
-      package: "."
-      target-branch: main
-      dry-run: true
-
-  restore-preview:
-    permissions:
-      actions: read
-      contents: write
-      packages: read
-      pull-requests: read
-    uses: moyarich/reusable-workflows/.github/workflows/reusable_restore-release.yml@main
-    with:
-      package: "."
-      target-branch: main
-      restore-source: 'commit:${{ github.sha }}'
-      dry-run: true
