@@ -1,4 +1,5 @@
 name: External recovery contract
+# Exercise the reusable resolution stage alone
 on:
   pull_request:
     paths:
