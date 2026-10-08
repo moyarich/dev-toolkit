@@ -1,5 +1,5 @@
 name: External recovery contract
-# Exercise the reusable workflow summary entrypoint alone
+# Validate release recovery through an unpublished fixture without mutations
 on:
   pull_request:
     paths:
@@ -12,8 +12,21 @@ jobs:
       contents: write
       packages: read
       pull-requests: read
-    uses: moyarich/reusable-workflows/.github/workflows/reusable_reset-release.yml@3e0e224667889b469844fd9ce1fb4cf7ee82216d
+    uses: moyarich/reusable-workflows/.github/workflows/reusable_reset-release.yml@2291f4ee9bf3b128d1e109597793cc4725c58815
     with:
-      package: "."
-      target-branch: main
+      package: .github/recovery-contract-fixture
+      target-branch: test/external-recovery-only
+      dry-run: true
+
+  restore-preview:
+    permissions:
+      actions: read
+      contents: write
+      packages: read
+      pull-requests: read
+    uses: moyarich/reusable-workflows/.github/workflows/reusable_restore-release.yml@2291f4ee9bf3b128d1e109597793cc4725c58815
+    with:
+      package: .github/recovery-contract-fixture
+      target-branch: test/external-recovery-only
+      restore-source: 'commit:${{ github.event.pull_request.head.sha }}'
       dry-run: true
