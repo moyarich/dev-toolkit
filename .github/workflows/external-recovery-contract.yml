@@ -1,5 +1,5 @@
 name: External recovery contract
-# Exercise the reusable resolution stage alone
+# Exercise the reusable workflow summary entrypoint alone
 on:
   pull_request:
     paths:
