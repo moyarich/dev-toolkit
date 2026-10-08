@@ -50,7 +50,7 @@ jobs:
 
   draft-preview:
     permissions:
-      contents: read
+      contents: write
       pull-requests: read
     uses: moyarich/reusable-workflows/.github/workflows/reusable_release-drafter.yml@main
     with:
@@ -80,7 +80,7 @@ jobs:
 
   reset-preview:
     permissions:
-      contents: read
+      contents: write
       packages: read
     uses: moyarich/reusable-workflows/.github/workflows/reusable_reset-release.yml@main
     with:
@@ -91,7 +91,7 @@ jobs:
   restore-preview:
     permissions:
       actions: read
-      contents: read
+      contents: write
       packages: read
     uses: moyarich/reusable-workflows/.github/workflows/reusable_restore-release.yml@main
     with:
