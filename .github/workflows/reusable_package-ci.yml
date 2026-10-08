@@ -44,7 +44,7 @@ permissions:
 jobs:
   discover-packages:
     name: "Discover packages"
-    uses: moyarich/reusable-workflows/.github/workflows/reusable_discover-packages.yml@main
+    uses: ./.github/workflows/reusable_discover-packages.yml
     with:
       packages-directory: ${{ inputs.packages-directory }}
       require-test-script: true
