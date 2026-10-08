@@ -1,46 +1,56 @@
 # dev-toolkit
 
-Reusable Node.js developer tooling and packages for `moyarich` projects.
+Node.js development packages and command-line tools maintained in this monorepo. Cross-repository workflow automation and workspace release tooling are maintained separately.
 
-Cross-repository GitHub Actions workflows now live in [`moyarich/actions`](https://github.com/moyarich/actions). This repository keeps the packages and CLIs those workflows consume.
+## Repository ownership
 
-## What belongs here
-
-- reusable Node.js developer tooling in `packages/`
-- package-specific documentation in `packages/*/docs/`
-- development documentation for this monorepo in `docs/`
-- repository-local workflows that build, test, release, or publish these packages
+| Repository | What it provides |
+| --- | --- |
+| [moyarich/dev-toolkit](https://github.com/moyarich/dev-toolkit) | Developer packages, CLIs, demos, and repository-specific CI |
+| [moyarich/reusable-workflows](https://github.com/moyarich/reusable-workflows) | Reusable GitHub Actions workflows, their examples and workflow documentation |
+| [moyarich/workspace-tools](https://github.com/moyarich/workspace-tools) | Workspace discovery, dependency, lockfile, release, and publishing CLIs |
 
 ## Packages
 
-### `@moyarich/git-history-cleanup`
+- [Git history cleanup](packages/git-history-cleanup/README.md) — inspect historical blobs and select paths for safe history cleanup.
+- [VS Code test cleaner](packages/vscode-test-cleaner/README.md) — clean test installations.
+- [Demo tools](packages/demo-tools/README.md) — build repeatable demos, screenshots, and recordings.
+- [Vite package-bin plugin](packages/vite-plugin-package-bin/README.md) — create package executables.
+- [README screenshots](packages/readme-screenshots/README.md) — capture documentation screenshots.
+- [VS Code extension tools](packages/vs-code-ext-tools/README.md) — build and test extensions.
 
-Interactive and scriptable Git history inspection and cleanup.
+## CI example
 
-- Lists the largest reachable historical blobs.
-- Browses deleted and current historical paths as a virtual filesystem.
-- Shows aggregate historical size, largest blob size, and blob counts.
-- Multi-selects files and directories before rewriting history with `git filter-repo`.
-- Keeps remote pushes opt-in while still supporting scripted cleanup.
+Call the shared workflow from your repository rather than copying its implementation:
 
-See [packages/git-history-cleanup/README.md](packages/git-history-cleanup/README.md).
-
-### `@moyarich/vscode-test-cleaner`
-
-Interactive and automation-friendly cleanup for VS Code test environments created by `@vscode/test-electron`.
-
-### `@moyarich/demo-tools`
-
-Strategy-first automation for creating demos, screenshots, and recordings.
-
-## GitHub Actions
-
-Public reusable workflows were moved to:
-
-```text
-https://github.com/moyarich/actions
+```yaml
+name: Package CI
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+  packages: read
+jobs:
+  packages:
+    uses: moyarich/reusable-workflows/.github/workflows/reusable_package-ci.yml@v0
+    with:
+      packages-directory: packages
+      node-version: "24"
 ```
 
-Consumer repositories should call the released workflows from that repository. `@moyarich/workspace-tools` moved with the workflow platform to `moyarich/actions`; `dev-toolkit` remains the home of general-purpose developer packages such as `@moyarich/readme-screenshots` and `@moyarich/vite-plugin-package-bin`.
+For repository-wide formatting, use `reusable_prettier.yml` with `mode: check` on pull requests or `mode: fix` for a writable maintenance workflow. `prettier-config: this-repository` uses the caller's own formatting rules.
 
-See [Getting started](docs/01-getting-started/page.mdx) for monorepo development guidance.
+For all supported workflows, inputs, and copyable examples, see the [reusable-workflows examples](https://github.com/moyarich/reusable-workflows/tree/main/examples).
+
+## Development
+
+```sh
+npm ci
+npm test
+npm run lint
+npm run typecheck
+```
+
+Repository-specific architecture and package guidance: [Getting started](docs/01-getting-started/page.mdx). CLI usage for workspace releases and publishing belongs in [workspace-tools](https://github.com/moyarich/workspace-tools).
