@@ -1,0 +1,49 @@
+name: External reusable release contract
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/external-reusable-release-contract.yml
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  select:
+    permissions:
+      contents: read
+    uses: moyarich/reusable-workflows/.github/workflows/reusable_select-release-packages.yml@main
+    with:
+      packages-json: '[{"name":"external-fixture","directory":"."}]'
+      package: external-fixture
+      event-name: workflow_dispatch
+      after-sha: ${{ github.sha }}
+      target-branch: ${{ github.sha }}
+      version-mode: bump
+      version-bump: patch
+
+  parameters:
+    permissions:
+      contents: read
+    uses: moyarich/reusable-workflows/.github/workflows/reusable_dispatch-input-summary.yml@main
+    with:
+      parameters-json: '{"package":"external-fixture","dry-run":true,"apiKey":"placeholder"}'
+      heading: External consumer input contract
+
+  assert:
+    needs: [select, parameters]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Assert reusable outputs
+        env:
+          MATRIX_JSON: ${{ needs.select.outputs.matrix }}
+          COUNT: ${{ needs.select.outputs.count }}
+          VERSION_MODE: ${{ needs.select.outputs.version-mode }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$COUNT" = "1"
+          test "$VERSION_MODE" = "bump"
+          jq -e '.include | length == 1 and .[0].name == "external-fixture" and .[0].directory == "."' <<< "$MATRIX_JSON"
