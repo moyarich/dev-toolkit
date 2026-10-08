@@ -1,54 +1,51 @@
 # Development Guide
 
-`dev-toolkit` is the monorepo for reusable Node.js packages, CLIs, and developer tooling used across Moya projects.
+`dev-toolkit` houses general-purpose Node.js development packages and demo applications.
 
-Reusable GitHub Actions workflows are maintained separately in [`moyarich/actions`](https://github.com/moyarich/actions). This repository keeps the implementation packages those workflows consume.
+Reusable GitHub Actions workflows are provided by [moyarich/reusable-workflows](https://github.com/moyarich/reusable-workflows); workspace release and publishing CLIs are provided by [moyarich/workspace-tools](https://github.com/moyarich/workspace-tools).
 
 ## Repository layout
 
 ```text
 dev-toolkit/
-├── .github/
-│   └── workflows/   # repository-local callers and CI
-├── docs/
-├── packages/
+├── .github/workflows/   # this repository's CI callers
+├── apps/                # example and playground applications
+├── docs/                # development documentation
+├── packages/            # independent developer packages
 ├── package.json
 └── README.md
 ```
 
 ## Development
 
-Install workspace dependencies from the repository root:
+Install the locked dependencies at the root:
 
 ```sh
-npm install
-```
-
-Run package tests:
-
-```sh
+npm ci
 npm test
-```
-
-Run available lint and typecheck scripts:
-
-```sh
 npm run lint
 npm run typecheck
 ```
 
 ## Adding a package
 
-Create a directory under `packages/` with its own `package.json`. The root npm workspace automatically includes `packages/*`.
+Create a package under `packages/` with its own `package.json`. Root npm workspaces include `packages/*`. Keep package-specific usage and examples alongside each package.
 
-A package should be split out when it has an independent responsibility or lifecycle. Closely related commands should remain together until maintaining them separately provides a concrete benefit.
+## Reusable CI example
+
+```yaml
+jobs:
+  checks:
+    uses: moyarich/reusable-workflows/.github/workflows/reusable_node-ci.yml@v0
+    with:
+      package-directory: packages/my-package
+      node-version: "24"
+```
+
+Use [workflow examples](https://github.com/moyarich/reusable-workflows/tree/main/examples) for other supported callers. The `@v0` major tag is intended for stable consumers; use a fixed commit SHA when an immutable workflow revision is required.
 
 ## Versioning
 
-Packages use semantic versioning. Public GitHub workflow versioning is owned by `moyarich/actions`.
+Version each package according to its published contract. Versioning and publishing tools live in `moyarich/workspace-tools`; public reusable workflow versioning is owned by `moyarich/reusable-workflows`.
 
-## Shared automation packages
-
-`@moyarich/workspace-tools` moved to [`moyarich/actions`](https://github.com/moyarich/actions/tree/main/packages/workspace-tools) because it is the executable implementation used by the reusable workflow platform.
-
-General build tooling such as `@moyarich/vite-plugin-package-bin` remains in `dev-toolkit`. Packages that use it declare it in their own build dependencies; reusable workflows do not depend on or invoke the plugin directly.
+Build tooling such as `@moyarich/vite-plugin-package-bin` stays in dev-toolkit and is configured by packages that need it.
