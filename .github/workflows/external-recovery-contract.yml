@@ -18,7 +18,6 @@ jobs:
       target-branch: test/external-recovery-only
       dry-run: true
 
-
   # Test named restore-source CLI inputs and recovery guards from a separate repository.
   restore-preview:
     permissions:
