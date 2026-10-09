@@ -19,6 +19,7 @@ jobs:
       dry-run: true
 
 
+  # Exercise published CLI resolution and historical-source guards without mutating releases.
   restore-preview:
     permissions:
       actions: read
