@@ -13,51 +13,20 @@ permissions:
   issues: write
 
 jobs:
-  set-dependencies:
-    name: Set native issue dependencies
-    runs-on: ubuntu-latest
-    env:
-      GH_TOKEN: ${{ github.token }}
-      GH_REPO: ${{ github.repository }}
+  issue-2:
+    name: Set #2 blocked by #3
+    uses: moyarich/reusable-workflows/.github/workflows/reusable_manage-issue-dependencies.yml@v0
+    with:
+      issue: "2"
+      related_issues: "3"
+      relationship: blocked-by
+      action: add
 
-    steps:
-      - name: Apply dependencies
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          ensure_blocked_by() {
-            local issue="$1"
-            local blocker="$2"
-
-            if gh issue view "$issue" \
-              --repo "$GH_REPO" \
-              --json blockedBy \
-              --jq '.blockedBy[].number' \
-              | grep -Fxq "$blocker"; then
-              echo "#$issue is already blocked by #$blocker"
-              return
-            fi
-
-            echo "Setting #$issue as blocked by #$blocker"
-            gh issue edit "$issue" \
-              --repo "$GH_REPO" \
-              --add-blocked-by "$blocker"
-          }
-
-          ensure_blocked_by 2 3
-          ensure_blocked_by 9 7
-
-      - name: Show dependency state
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          for issue in 2 3 7 9; do
-            echo "## Issue #$issue" >> "$GITHUB_STEP_SUMMARY"
-            gh issue view "$issue" \
-              --repo "$GH_REPO" \
-              --json blockedBy,blocking \
-              >> "$GITHUB_STEP_SUMMARY"
-            echo >> "$GITHUB_STEP_SUMMARY"
-          done
+  issue-9:
+    name: Set #9 blocked by #7
+    uses: moyarich/reusable-workflows/.github/workflows/reusable_manage-issue-dependencies.yml@v0
+    with:
+      issue: "9"
+      related_issues: "7"
+      relationship: blocked-by
+      action: add
