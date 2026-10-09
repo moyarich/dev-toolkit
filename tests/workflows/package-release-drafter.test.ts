@@ -13,7 +13,7 @@ const template = readFileSync(
 );
 test("release drafter discovers publishable packages dynamically", () => {
   assert.ok(
-    /uses: moyarich\/reusable-workflows\/\.github\/workflows\/reusable_discover-packages\.yml@/.test(
+    /uses: moyarich\/reusable-workflows\/\.github\/workflows\/reusable_discover-packages\.yml@v0/.test(
       workflow,
     ),
   );
