@@ -33,7 +33,6 @@ jobs:
     with:
       packages-directory: packages
       require-publish-config: true
-      node-version: "24"
 
   select-packages:
     name: "Select packages for drafting"
