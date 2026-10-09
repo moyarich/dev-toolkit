@@ -69,7 +69,6 @@ test("first package release uses curated changelog notes with commit fallback", 
   assert.doesNotMatch(workflow, /git rev-list --max-parents=0 HEAD/);
 });
 
-
 test("draft release workflow does not require the release environment", () => {
   assert.doesNotMatch(workflow, /environment:\s*\n\s*name: release/);
   assert.doesNotMatch(workflow, /approve-release:/);
