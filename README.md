@@ -4,11 +4,11 @@ Node.js development packages and command-line tools maintained in this monorepo.
 
 ## Repository ownership
 
-| Repository | What it provides |
-| --- | --- |
-| [moyarich/dev-toolkit](https://github.com/moyarich/dev-toolkit) | Developer packages, CLIs, demos, and repository-specific CI |
+| Repository                                                                    | What it provides                                                             |
+| ----------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| [moyarich/dev-toolkit](https://github.com/moyarich/dev-toolkit)               | Developer packages, CLIs, demos, and repository-specific CI                  |
 | [moyarich/reusable-workflows](https://github.com/moyarich/reusable-workflows) | Reusable GitHub Actions workflows, their examples and workflow documentation |
-| [moyarich/workspace-tools](https://github.com/moyarich/workspace-tools) | Workspace discovery, dependency, lockfile, release, and publishing CLIs |
+| [moyarich/workspace-tools](https://github.com/moyarich/workspace-tools)       | Workspace discovery, dependency, lockfile, release, and publishing CLIs      |
 
 ## Packages
 
