@@ -19,7 +19,7 @@ jobs:
       dry-run: true
 
 
-  # Exercise published CLI resolution and historical-source guards without mutating releases.
+  # Verify published CLI installation and release recovery through an external caller.
   restore-preview:
     permissions:
       actions: read
