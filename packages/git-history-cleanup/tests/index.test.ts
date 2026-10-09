@@ -106,7 +106,7 @@ describe("multi-selection", () => {
         "packages/a/nested/image.png",
         "README.md",
       ]),
-    ).toEqual(["README.md", "packages/a/"]);
+    ).toEqual(["packages/a/", "README.md"]);
   });
 
   it("marks descendants as covered by selected directories", () => {

@@ -1,0 +1,6 @@
+{
+  "name": "@moyarich/recovery-contract-fixture-nonpublish",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Unpublished fixture for reusable recovery workflow dry-run contract tests"
+}
