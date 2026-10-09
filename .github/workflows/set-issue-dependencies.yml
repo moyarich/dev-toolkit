@@ -2,31 +2,48 @@ name: Set issue dependencies
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
-    paths:
-      - ".github/workflows/set-issue-dependencies.yml"
+    inputs:
+      issue:
+        description: Issue number or URL
+        required: true
+        type: string
+      related_issues:
+        description: Related issue numbers or URLs, comma-separated
+        required: true
+        type: string
+      relationship:
+        description: Dependency relationship
+        required: true
+        default: blocked-by
+        type: choice
+        options:
+          - blocked-by
+          - blocking
+      action:
+        description: Add or remove dependency
+        required: true
+        default: add
+        type: choice
+        options:
+          - add
+          - remove
+      dry_run:
+        description: Preview without applying changes
+        required: true
+        default: true
+        type: boolean
 
 permissions:
   contents: read
   issues: write
 
 jobs:
-  issue-2:
-    name: Set #2 blocked by #3
+  manage-dependencies:
+    name: Manage issue dependencies
     uses: moyarich/reusable-workflows/.github/workflows/reusable_manage-issue-dependencies.yml@v0
     with:
-      issue: "2"
-      related_issues: "3"
-      relationship: blocked-by
-      action: add
-
-  issue-9:
-    name: Set #9 blocked by #7
-    uses: moyarich/reusable-workflows/.github/workflows/reusable_manage-issue-dependencies.yml@v0
-    with:
-      issue: "9"
-      related_issues: "7"
-      relationship: blocked-by
-      action: add
+      issue: ${{ inputs.issue }}
+      related_issues: ${{ inputs.related_issues }}
+      relationship: ${{ inputs.relationship }}
+      action: ${{ inputs.action }}
+      dry_run: ${{ inputs.dry_run }}
