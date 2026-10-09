@@ -23,7 +23,11 @@ test("only dev-toolkit workflow callers live locally", () => {
 test("local callers invoke reusable-workflows at v0, never main", () => {
   for (const name of expected) {
     const yaml = readFileSync(resolve(workflowDir, name), "utf8");
-    const uses = [...yaml.matchAll(/^\s+uses:\s+(moyarich\/reusable-workflows\/\.github\/workflows\/\S+)/gm)];
+    const uses = [
+      ...yaml.matchAll(
+        /^\s+uses:\s+(moyarich\/reusable-workflows\/\.github\/workflows\/\S+)/gm,
+      ),
+    ];
     assert.ok(uses.length > 0, `${name} must delegate to reusable-workflows`);
     for (const [, workflow] of uses) {
       assert.match(workflow, /@v0$/);
