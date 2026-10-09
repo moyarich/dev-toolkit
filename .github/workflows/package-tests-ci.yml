@@ -51,10 +51,10 @@ jobs:
         with:
           node-version: ${{ inputs.node-version || '24' }}
           cache: npm
-          registry-url: https://npm.pkg.github.com
+          registry-url: https://registry.npmjs.org
 
       - name: Install workspace dependencies
-        run: npm ci --prefer-offline --no-audit --no-fund
+        run: npm install --include=optional --no-audit --no-fund
         env:
           NODE_AUTH_TOKEN: ${{ github.token }}
 
