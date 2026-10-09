@@ -7,6 +7,7 @@
 - Reusable VS Code extension development and publishing tools.
 - `vs-code-publish` CLI for packaging and publishing extensions.
 - `run-extension-dev` CLI for launching local extension development environments.
+- `run-vscode-tests` CLI for reusing a shared VS Code test download cache across extension repositories.
 - Commander-based CLI handling and interactive prompts.
 - Package-local getting-started, development, publishing, and CLI documentation.
 

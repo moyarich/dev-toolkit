@@ -1,255 +1,51 @@
 # Development Guide
 
-This repository centralizes development tooling that is reusable across multiple repositories.
+`dev-toolkit` houses general-purpose Node.js development packages and demo applications.
 
-## Architecture
-
-The repository has two primary forms of reusable infrastructure:
-
-### GitHub Actions workflows
-
-Reusable workflows belong in:
-
-```text
-.github/workflows/
-```
-
-GitHub requires reusable workflow files to live directly in that directory. They should expose `workflow_call` and define inputs or secrets when callers need configuration.
-
-Consumer repositories should keep small caller workflows and delegate implementation here.
-
-Example:
-
-```yaml
-jobs:
-  ci:
-    uses: moyarich/dev-toolkit/.github/workflows/node-ci.yml@v1
-```
-
-Prefer version tags for consumers rather than permanently referencing `main`.
-
-### Node.js tooling
-
-Reusable JavaScript tooling belongs in:
-
-```text
-packages/
-```
-
-Reusable packages live under `packages/`. Each package owns its source, tests, documentation, build configuration, and published runtime.
+Reusable GitHub Actions workflows are provided by [moyarich/reusable-workflows](https://github.com/moyarich/reusable-workflows); workspace release and publishing CLIs are provided by [moyarich/workspace-tools](https://github.com/moyarich/workspace-tools).
 
 ## Repository layout
 
 ```text
 dev-toolkit/
-├── .github/
-│   └── workflows/
-├── docs/
-├── packages/
-│   └── <package>/
-│       ├── src/
-│       ├── tests/
-│       └── package.json
+├── .github/workflows/   # this repository's CI callers
+├── apps/                # example and playground applications
+├── docs/                # development documentation
+├── packages/            # independent developer packages
 ├── package.json
 └── README.md
 ```
 
 ## Development
 
-Install workspace dependencies from the repository root:
+Install the locked dependencies at the root:
 
 ```sh
-npm install
-```
-
-Run package tests:
-
-```sh
+npm ci
 npm test
-```
-
-Run available lint and typecheck scripts:
-
-```sh
 npm run lint
 npm run typecheck
 ```
 
 ## Adding a package
 
-Create a directory under `packages/` with its own `package.json`. The root npm workspace automatically includes `packages/*`.
+Create a package under `packages/` with its own `package.json`. Root npm workspaces include `packages/*`. Keep package-specific usage and examples alongside each package.
 
-A package should be split out when it has an independent responsibility or lifecycle. Closely related commands should remain together until maintaining them separately provides a concrete benefit.
+## Reusable CI example
 
-## Workflow development
+```yaml
+jobs:
+  checks:
+    uses: moyarich/reusable-workflows/.github/workflows/reusable_node-ci.yml@v0
+    with:
+      package-directory: packages/my-package
+      node-version: "24"
+```
 
-Keep repository-specific triggers in the consuming repository where appropriate. Put reusable jobs and implementation details here.
-
-A reusable workflow should:
-
-- declare `on.workflow_call`
-- expose only necessary inputs and secrets
-- provide sensible defaults
-- avoid assumptions about a specific consuming repository
-- pin third-party actions appropriately
-- document breaking changes
+Use [workflow examples](https://github.com/moyarich/reusable-workflows/tree/main/examples) for other supported callers. The `@v0` major tag is intended for stable consumers; use a fixed commit SHA when an immutable workflow revision is required.
 
 ## Versioning
 
-Shared tooling should be versioned deliberately because changes can affect many repositories.
+Version each package according to its published contract. Versioning and publishing tools live in `moyarich/workspace-tools`; public reusable workflow versioning is owned by `moyarich/reusable-workflows`.
 
-For reusable workflows, consumers can reference a stable major tag:
-
-```yaml
-uses: moyarich/dev-toolkit/.github/workflows/node-ci.yml@v1
-```
-
-For npm packages, use normal semantic versioning.
-
-## Migration
-
-Reusable scripts and workflows should be migrated from existing repositories only after identifying which behavior is truly generic. Repository-specific behavior should remain in the consuming repository or be exposed as explicit configuration.
-
-## Workspace tools
-
-The reusable CLI package currently provides:
-
-```sh
-workspace-release <package>=<version-spec>
-workspace-publish [<package>] [--registry=github|npm|both] [--tag=latest] [--access=public|restricted] [--dry-run]
-```
-
-Examples:
-
-```sh
-workspace-release css-expand-collapse=patch
-workspace-publish css-expand-collapse --dry-run
-workspace-publish css-expand-collapse --registry=github
-workspace-publish css-expand-collapse --registry=npm --tag=next
-workspace-publish css-expand-collapse --registry=both
-workspace-publish --dry-run
-```
-
-`workspace-release` preserves the package-qualified tag convention:
-
-```text
-<package-directory>@<version>
-```
-
-It requires a clean working tree, delegates version calculation to `npm version`, commits the package manifest and lockfile, and creates the tag.
-
-`workspace-publish` validates the selected workspace before publishing. GitHub Packages uses `npm publish`; npmjs.org uses staged publishing so human approval with 2FA remains a separate step.
-
-Credential environment variables are intentionally registry-specific:
-
-```text
-_GITHUB_TOKEN
-_NPM_TOKEN
-```
-
-They are mapped to `NODE_AUTH_TOKEN` only for the npm subprocess.
-
-## README screenshot tooling
-
-`@moyarich/readme-screenshots` extracts the reusable README screenshot automation originally used by `pointer-bubble`.
-
-The package intentionally does not know about a specific playground, framework, heading, component, or screenshot filename. Consumers provide those details in `readme-screenshots.config.mjs`.
-
-```js
-export default {
-  url: "http://127.0.0.1:5173",
-  outputDir: "docs/screenshots",
-  screenshots: [
-    { name: "playground-overview.png" },
-    {
-      name: "feature-example.png",
-      selector: '[data-readme-screenshot="feature-example"]',
-      scrollIntoView: true,
-      waitForMs: 500,
-    },
-  ],
-};
-```
-
-Run locally with:
-
-```sh
-readme-screenshots
-readme-screenshots path/to/config.mjs
-```
-
-The reusable workflow accepts the site start command, URL, config path, output directory, Node version, Playwright version, and commit message. A consumer keeps only its trigger and repository-specific inputs:
-
-```yaml
-name: README screenshots
-
-on:
-  workflow_dispatch:
-
-jobs:
-  screenshots:
-    uses: moyarich/dev-toolkit/.github/workflows/readme-screenshots.yml@v1
-    with:
-      start-command: npm run dev --workspace @scope/playground -- --host 127.0.0.1
-      url: http://127.0.0.1:5173
-      config: readme-screenshots.config.mjs
-      output-directory: docs/screenshots
-```
-
-The workflow commits only the configured output directory when generated screenshots change.
-
-### Automatic screenshot generation
-
-A screenshot config is optional. With no config, the runner automatically captures the configured site URL at a 1440×1000 viewport and writes:
-
-```text
-docs/screenshots/playground-overview.png
-```
-
-This is the recommended default for new repositories. A consumer workflow only needs to provide the command that starts its preview/dev server:
-
-```yaml
-jobs:
-  screenshots:
-    uses: moyarich/dev-toolkit/.github/workflows/readme-screenshots.yml@v1
-    with:
-      start-command: npm run dev -- --host 127.0.0.1
-```
-
-Repositories that need additional or sectional screenshots can add `readme-screenshots.config.mjs`. For example, `pointer-bubble` can preserve its overview plus MapLibre capture by configuring the second screenshot with a stable selector. Prefer a dedicated `data-readme-screenshot` attribute over visible heading text so documentation automation does not break when copy changes.
-
-The generated screenshot files remain owned by the consuming repository. The reusable workflow starts the site, waits for its URL, invokes the shared capture package, and commits changed files from the configured output directory.
-
-## GitHub Pages
-
-The reusable `github-pages.yml` workflow builds and deploys a static site without assuming a framework, workspace name, build script, or output directory.
-
-A consuming repository keeps its trigger and repository-specific build details:
-
-```yaml
-name: GitHub Pages
-
-on:
-  push:
-    branches: [main]
-  workflow_dispatch:
-
-jobs:
-  pages:
-    uses: moyarich/dev-toolkit/.github/workflows/github-pages.yml@v1
-    with:
-      build-command: npm run build:playground
-      output-directory: apps/playground/dist
-```
-
-Inputs:
-
-- `build-command` — required command that creates the static site.
-- `output-directory` — required path to the generated site, relative to `working-directory`.
-- `node-version` — defaults to Node 24.
-- `install-command` — defaults to `npm ci --include=optional`.
-- `working-directory` — defaults to the repository root.
-
-During the build, the workflow exposes Pages metadata as `PAGES_BASE_PATH`, `PAGES_BASE_URL`, and `PAGES_ORIGIN`. A consuming build can use these values when its framework needs an explicit repository base path. The toolkit does not assume Vite or rewrite application configuration.
-
-The workflow owns the standard Pages plumbing: checkout, Node setup, dependency installation, Pages configuration, build execution, artifact upload, deployment permissions, deployment environment, and deployment.
+Build tooling such as `@moyarich/vite-plugin-package-bin` stays in dev-toolkit and is configured by packages that need it.

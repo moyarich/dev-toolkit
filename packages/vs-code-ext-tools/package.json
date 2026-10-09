@@ -5,7 +5,8 @@
   "type": "module",
   "bin": {
     "vs-code-publish": "./dist/bin/vs-code-publish.mjs",
-    "run-extension-dev": "./dist/bin/run-extension-dev.mjs"
+    "run-extension-dev": "./dist/bin/run-extension-dev.mjs",
+    "run-vscode-tests": "./dist/bin/run-vscode-tests.mjs"
   },
   "files": [
     "dist",
@@ -24,7 +25,9 @@
   "dependencies": {
     "@inquirer/prompts": "^8.7.2",
     "chalk": "^6.0.1",
-    "commander": "^15.0.0"
+    "commander": "^15.0.0",
+    "@vscode/test-cli": "^0.0.15",
+    "@vscode/test-electron": "^3.1.0"
   },
   "repository": {
     "type": "git",

@@ -12,7 +12,6 @@ const distPackages = [
   "vite-plugin-package-bin",
   "vs-code-ext-tools",
   "web-components",
-  "workspace-tools",
 ];
 
 for (const directory of distPackages) {
