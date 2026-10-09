@@ -34,6 +34,7 @@ jobs:
       contents: write
     uses: moyarich/reusable-workflows/.github/workflows/reusable_prettier.yml@main
     with:
+      mode: fix
       commit: true
       node-version: ${{ inputs.node-version || '24' }}
 
