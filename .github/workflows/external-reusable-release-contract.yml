@@ -79,4 +79,3 @@ jobs:
           test "$TAG" != "null"
           test "$ACTION" = "previewed"
 
-
