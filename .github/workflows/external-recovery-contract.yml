@@ -19,7 +19,7 @@ jobs:
       dry-run: true
 
 
-  # Verify published CLI installation and release recovery through an external caller.
+  # Test named restore-source CLI inputs and recovery guards from a separate repository.
   restore-preview:
     permissions:
       actions: read
