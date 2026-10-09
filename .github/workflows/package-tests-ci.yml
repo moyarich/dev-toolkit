@@ -32,8 +32,10 @@ jobs:
     if: ${{ github.event_name == 'push' }}
     permissions:
       contents: write
-    uses: ./.github/workflows/reusable_format.yml
+    uses: moyarich/reusable-workflows/.github/workflows/reusable_prettier.yml@main
     with:
+      mode: fix
+      prettier-config: this-repository
       commit: true
       node-version: ${{ inputs.node-version || '24' }}
 
@@ -86,11 +88,10 @@ jobs:
     name: "Package CI"
     needs: format
     if: ${{ always() && (needs.format.result == 'success' || needs.format.result == 'skipped') && (github.event_name != 'workflow_dispatch' || inputs.package-directory == 'all') }}
-    uses: ./.github/workflows/reusable_package-ci.yml
+    uses: moyarich/reusable-workflows/.github/workflows/reusable_package-ci.yml@main
     with:
       packages-directory: packages
       node-version: ${{ inputs.node-version || '24' }}
-      exclude-package-names: '["@moyarich/auto-glow-md"]'
 
   auto-glow-ci:
     name: "Auto Glow CI"
@@ -104,7 +105,7 @@ jobs:
     name: "Package CI · ${{ inputs.package-directory }}"
     needs: format
     if: ${{ always() && (needs.format.result == 'success' || needs.format.result == 'skipped') && github.event_name == 'workflow_dispatch' && inputs.package-directory != 'all' && inputs.package-directory != 'packages/moyarich-auto-glow-md' && inputs.package-directory != '@moyarich/auto-glow-md' }}
-    uses: ./.github/workflows/reusable_node-ci.yml
+    uses: moyarich/reusable-workflows/.github/workflows/reusable_node-ci.yml@main
     with:
       package-directory: ${{ inputs.package-directory }}
       node-version: ${{ inputs.node-version }}

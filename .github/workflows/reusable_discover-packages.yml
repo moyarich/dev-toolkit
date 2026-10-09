@@ -105,11 +105,20 @@ jobs:
         with:
           node-version: ${{ inputs.node-version }}
 
+      - name: Checkout canonical package discovery source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          repository: moyarich/workspace-tools
+          ref: main
+          path: .github/shared-discovery
+          sparse-checkout: src/discover-packages.ts
+          persist-credentials: false
+
       - name: Prepare package discovery CLI
         shell: bash
         run: |
           set -euo pipefail
-          test -f packages/workspace-tools/src/discover-packages.ts
+          test -f .github/shared-discovery/src/discover-packages.ts
 
           TOOL_ROOT="$(mktemp -d "$RUNNER_TEMP/package-discovery.XXXXXX")"
           DISCOVERY_CLI="$TOOL_ROOT/discover-packages.mjs"
@@ -119,7 +128,7 @@ jobs:
           import { stripTypeScriptTypes } from "node:module";
 
           const source = readFileSync(
-            "packages/workspace-tools/src/discover-packages.ts",
+            ".github/shared-discovery/src/discover-packages.ts",
             "utf8",
           );
 
