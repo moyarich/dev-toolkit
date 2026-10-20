@@ -25,7 +25,6 @@ on:
         default: all
         options:
           - all
-          - all
       registry:
         description: Publish destination
         required: true
