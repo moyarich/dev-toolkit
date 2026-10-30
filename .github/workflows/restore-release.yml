@@ -14,7 +14,7 @@ on:
         default: all
         options:
           - all
-          - all
+          - packages/example
       target-branch:
         description: Branch used to resolve the package path and changelog
         required: true
