@@ -14,7 +14,7 @@ on:
         default: all
         options:
           - all
-          - all
+          - packages/example
       target-branch:
         description: Branch used to resolve the package path and changelog
         required: true
@@ -68,7 +68,7 @@ jobs:
       contents: write
       packages: read
       pull-requests: read
-    uses: moyarich/reusable-workflows/.github/workflows/reusable_bulk-restore-release.yml@main
+    uses: moyarich/reusable-workflows/.github/workflows/reusable_release-bulk-restore.yml@main
     with:
       package: ${{ inputs.package }}
       target-branch: ${{ inputs.target-branch }}
